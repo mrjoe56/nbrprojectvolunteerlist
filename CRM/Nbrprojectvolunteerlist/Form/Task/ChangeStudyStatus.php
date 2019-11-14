@@ -11,5 +11,169 @@ use CRM_Nbrprojectvolunteerlist_ExtensionUtil as E;
  */
 class CRM_Nbrprojectvolunteerlist_Form_Task_ChangeStudyStatus extends CRM_Contact_Form_Task {
 
+  private $_countSelected = NULL;
+  private $_selected = [];
+  private $_projectId = NULL;
+
+  /**
+   * Method to get the data for the selected contact IDs
+   *
+   */
+  private function getSelectedData() {
+    $this->_selected = [];
+    $bioResourceColumn = CRM_Nihrbackbone_BackboneConfig::singleton()->getVolunteerAliasCustomField('nva_bioresource_id', 'column_name');
+    $studyParticipantColumn = CRM_Nihrbackbone_BackboneConfig::singleton()->getParticipationCustomField('nvpd_study_participant_id', 'column_name');
+    $eligiblesColumn = CRM_Nihrbackbone_BackboneConfig::singleton()->getParticipationCustomField('nvpd_eligible_status_id', 'column_name');
+    $projectColumn = CRM_Nihrbackbone_BackboneConfig::singleton()->getParticipationCustomField('nvpd_project_id', 'column_name');
+    $statusColumn = CRM_Nihrbackbone_BackboneConfig::singleton()->getParticipationCustomField('nvpd_study_participation_status', 'column_name');
+    $participantTable = CRM_Nihrbackbone_BackboneConfig::singleton()->getParticipationDataCustomGroup('table_name');
+    $aliasTable = CRM_Nihrbackbone_BackboneConfig::singleton()->getVolunteerAliasCustomGroup('table_name');
+    $ovssOptionGroupId = CRM_Nihrbackbone_BackboneConfig::singleton()->getStudyParticipationStatusOptionGroupId();
+    $query = "
+        SELECT vol.id AS contact_id, vol.display_name, cvnva." . $bioResourceColumn . " AS bioresource_id, 
+        cvnpd." . $studyParticipantColumn . " AS study_participant_id, cvnpd." . $eligiblesColumn . " AS eligible_status_id,
+        ovss.label AS study_status
+        FROM " . $participantTable . " AS cvnpd
+        JOIN civicrm_case_contact AS ccc ON cvnpd.entity_id = ccc.case_id
+        JOIN civicrm_case AS cas ON ccc.case_id = cas.id
+        JOIN civicrm_contact AS vol ON ccc.contact_id = vol.id
+        LEFT JOIN civicrm_option_value AS ovss ON cvnpd." . $statusColumn . " = ovss.value AND ovss.option_group_id = " . $ovssOptionGroupId . "
+        LEFT JOIN " . $aliasTable. " AS cvnva ON vol.id = cvnva.entity_id
+        WHERE cvnpd." . $projectColumn. " = %1 AND cas.is_deleted = %2 AND vol.id IN (";
+    $queryParams = [
+      1 => [(int)$this->_projectId, "Integer"],
+      2 => [0, "Integer"],
+    ];
+    $i = 2;
+    $elements = [];
+    foreach ($this->_contactIds as $contactId) {
+      $i++;
+      $queryParams[$i] = [(int) $contactId, 'Integer'];
+      $elements[] = "%" . $i;
+    }
+    $query .= implode("," , $elements) . ")";
+    $dao = CRM_Core_DAO::executeQuery($query, $queryParams);
+    while ($dao->fetch()) {
+      $volunteer = [
+        'display_name' => $dao->display_name,
+        'bioresource_id' => $dao->bioresource_id,
+        'study_participant_id' => $dao->study_participant_id,
+        'eligible_status' => implode(', ', CRM_Nihrbackbone_NbrVolunteerCase::getEligibleDescriptions($dao->eligible_status_id)),
+        'study_status' => $dao->study_status,
+      ];
+      $this->_selected[$dao->contact_id] = $volunteer;
+    }
+  }
+
+  /**
+   * Overridden parent method om formulier op te bouwen
+   */
+  public function buildQuickForm()   {
+    if (isset(self::$_searchFormValues['project_id'])) {
+      $this->_projectId = self::$_searchFormValues['project_id'];
+    }
+    $this->add('select', 'nbr_study_status_id', E::ts('Change status on study to'), $this->getStudyStatusList(),
+      TRUE, ['class' => 'crm-select2']);
+    $this->assign('status_txt', E::ts('New status for selected volunteers:'));
+    $this->assign('selected_txt', E::ts('Volunteers for which the status will be changed:'));
+    $this->assign('count_selected_txt', E::ts('Number of volunteers whose status will be changed: ') . $this->_countSelected);
+    $this->getSelectedData();
+    $this->assign('selected', $this->_selected);
+    $this->addDefaultButtons(ts('Change Study Status'));
+  }
+
+  /**
+   * Method to get all potential project statuses
+   *
+   * @return array
+   */
+  private function getStudyStatusList() {
+    $status = [];
+    try {
+      $result = civicrm_api3('OptionValue', 'get', [
+        'return' => ["label", "value"],
+        'option_group_id' => "nbr_study_participation_status",
+        'options' => ['limit' => 0],
+        'is_active' => 1,
+      ]);
+      foreach ($result['values'] as $optionValueId => $optionValue) {
+        $status[$optionValue['value']] = $optionValue['label'];
+      }
+    }
+    catch (CiviCRM_API3_Exception $ex) {
+    }
+    return $status;
+  }
+
+  /**
+   * Overridden parent method
+   */
+  public function postProcess() {
+    if (isset($this->_submitValues['nbr_study_status_id'])) {
+      // set new status for each selected volunteer on the relevant projects
+      $participationTable = CRM_Nihrbackbone_BackboneConfig::singleton()->getParticipationDataCustomGroup('table_name');
+      $statusColumn = CRM_Nihrbackbone_BackboneConfig::singleton()->getParticipationCustomField('nvpd_study_participation_status', 'column_name');
+      // get case_ids for relevant cases
+      $caseIds = $this->getRelevantCaseIds();
+      $update = "UPDATE " . $participationTable . " SET " . $statusColumn . " = %1 WHERE entity_id IN (";
+      $updateParams = [1 => [$this->_submitValues['nbr_study_status_id'], "String"]];
+      $i = 1;
+      $elements = [];
+      foreach ($caseIds as $caseId) {
+        $i++;
+        $elements[$i] = "%" . $i;
+        $updateParams[$i] = [(int) $caseId, "Integer"];
+      }
+      if (!empty($elements)) {
+        $update .= implode(',', $elements) . ")";
+        CRM_Core_DAO::executeQuery($update, $updateParams);
+        CRM_Core_Session::setStatus(E::ts('Updated status of selected volunteers on all projects of study of project ') . $this->_projectId
+          . E::ts(' to ' . CRM_Nihrbackbone_Utils::getOptionValueLabel($this->_submitValues['nbr_study_status_id'],
+              CRM_Nihrbackbone_BackboneConfig::singleton()->getStudyParticipationStatusOptionGroupId())), E::ts('Successfully changed status on study'), 'success');
+      }
+    }
+  }
+
+  /**
+   * Method to find the relevant case ids
+   *
+   * @return array
+   */
+  private function getRelevantCaseIds() {
+    $caseIds = [];
+    // first get study id of the project id that we are working on
+    $studyId = CRM_Nihrbackbone_NihrProject::getProjectStudyId($this->_projectId);
+    // then get all projects that belong to this study
+    $projectIds = CRM_Nihrbackbone_BAO_NihrStudy::getProjectIds($studyId);
+    $participationTable = CRM_Nihrbackbone_BackboneConfig::singleton()->getParticipationDataCustomGroup('table_name');
+    $projectColumn = CRM_Nihrbackbone_BackboneConfig::singleton()->getParticipationCustomField('nvpd_project_id', 'column_name');
+    $query = "SELECT ccc.case_id
+        FROM " . $participationTable. " AS cvnpd
+            LEFT JOIN civicrm_case_contact AS ccc ON cvnpd.entity_id = ccc.case_id
+        WHERE ccc.contact_id IN (";
+    $queryParams = [];
+    $i = 0;
+    $contactElements = [];
+    foreach ($this->_contactIds as $contactId) {
+      $i++;
+      $queryParams[$i] = [(int) $contactId, 'Integer'];
+      $contactElements[] = "%" . $i;
+    }
+    $query .= implode("," , $contactElements) . ") AND cvnpd." . $projectColumn . " IN (";
+    $projectElements = [];
+    foreach ($projectIds as $projectId) {
+      $i++;
+      $queryParams[$i] = [(int) $projectId, "Integer"];
+      $projectElements[] = "%" . $i;
+    }
+    $query .= implode(",", $projectElements) . ")";
+    $dao = CRM_Core_DAO::executeQuery($query, $queryParams);
+    while ($dao->fetch()) {
+      $caseIds[] = $dao->case_id;
+    }
+    return $caseIds;
+  }
+
+
 }
 
