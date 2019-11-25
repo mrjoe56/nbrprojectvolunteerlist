@@ -110,23 +110,16 @@ class CRM_Nbrprojectvolunteerlist_Form_Task_ChangeProjectStatus extends CRM_Cont
    */
   public function postProcess() {
     if (isset($this->_submitValues['nbr_project_status_id'])) {
-      // set new status for each selected volunteer on the relevant project
-      $participationTable = CRM_Nihrbackbone_BackboneConfig::singleton()->getParticipationDataCustomGroup('table_name');
       $statusColumn = CRM_Nihrbackbone_BackboneConfig::singleton()->getParticipationCustomField('nvpd_project_participation_status', 'column_name');
-      // get case_ids for relevant cases
+      $updateParams = [];
+      $update = "";
       $caseIds = $this->getRelevantCaseIds();
-      $update = "UPDATE " . $participationTable . " SET " . $statusColumn . " = %1 WHERE entity_id IN (";
-      $updateParams = [1 => [$this->_submitValues['nbr_project_status_id'], "String"]];
-      $i = 1;
-      $elements = [];
-      foreach ($caseIds as $caseId) {
-        $i++;
-        $elements[$i] = "%" . $i;
-        $updateParams[$i] = [(int) $caseId, "Integer"];
-      }
+      $elements = CRM_Nbrprojectvolunteerlist_Utils::setUpdateParams($caseIds, $statusColumn, $this->_submitValues['nbr_project_status_id'], $updateParams, $update);
       if (!empty($elements)) {
         $update .= implode(',', $elements) . ")";
         CRM_Core_DAO::executeQuery($update, $updateParams);
+        $newStatusLabel = CRM_Nihrbackbone_Utils::getOptionValueLabel($this->_submitValues['nbr_project_status_id'], CRM_Nihrbackbone_BackboneConfig::singleton()->getProjectParticipationStatusOptionGroupId());
+        CRM_Nbrprojectvolunteerlist_CaseActivity::addStatusChangeActivities('project', $newStatusLabel, $caseIds);
         CRM_Core_Session::setStatus(E::ts('Updated status of selected volunteers on project ') . $this->_projectId
           . E::ts(' to ' . CRM_Nihrbackbone_Utils::getOptionValueLabel($this->_submitValues['nbr_project_status_id'],
               CRM_Nihrbackbone_BackboneConfig::singleton()->getProjectParticipationStatusOptionGroupId())), E::ts('Successfully changed status on project'), 'success');
@@ -142,23 +135,19 @@ class CRM_Nbrprojectvolunteerlist_Form_Task_ChangeProjectStatus extends CRM_Cont
   private function getRelevantCaseIds() {
     $caseIds = [];
     $participationTable = CRM_Nihrbackbone_BackboneConfig::singleton()->getParticipationDataCustomGroup('table_name');
+    $projectStatusColumn = CRM_Nihrbackbone_BackboneConfig::singleton()->getParticipationCustomField('nvpd_project_participation_status', 'column_name');
     $projectColumn = CRM_Nihrbackbone_BackboneConfig::singleton()->getParticipationCustomField('nvpd_project_id', 'column_name');
-    $query = "SELECT ccc.case_id
+    $query = "SELECT ccc.case_id, cvnpd. " . $projectStatusColumn . " AS project_status_id
         FROM " . $participationTable. " AS cvnpd
             LEFT JOIN civicrm_case_contact AS ccc ON cvnpd.entity_id = ccc.case_id
         WHERE cvnpd." . $projectColumn . " = %1 AND ccc.contact_id IN (";
     $queryParams = [1 => [$this->_projectId, "Integer"]];
     $i = 1;
-    $elements = [];
-    foreach ($this->_contactIds as $contactId) {
-      $i++;
-      $queryParams[$i] = [(int) $contactId, 'Integer'];
-      $elements[] = "%" . $i;
-    }
+    $elements = CRM_Nbrprojectvolunteerlist_Utils::processContactQueryElements($this->_contactIds, $i, $queryParams);
     $query .= implode("," , $elements) . ")";
     $dao = CRM_Core_DAO::executeQuery($query, $queryParams);
     while ($dao->fetch()) {
-      $caseIds[] = $dao->case_id;
+      $caseIds[$dao->case_id] = $dao->project_status_id;
     }
     return $caseIds;
   }

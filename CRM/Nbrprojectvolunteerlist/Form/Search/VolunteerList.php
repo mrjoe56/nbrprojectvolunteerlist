@@ -17,11 +17,13 @@ class CRM_Nbrprojectvolunteerlist_Form_Search_VolunteerList extends CRM_Contact_
    */
   function buildForm(&$form) {
     CRM_Utils_System::setTitle(E::ts('NIHR BioResource Volunteer List'));
-    $form->add('select','project_id', E::ts('Project Code'), $this->getProjectList(),[
-      'class' => 'crm-select2',
-      'multiple' => TRUE,
-    ] ,TRUE
-    );
+    $form->add('select','project_id', E::ts('Project Code is one of'), $this->getProjectList(), TRUE,
+      ['class' => 'crm-select2']);
+    $form->add('select','gender_id', E::ts('Gender is one of'), $this->getGenderList(), FALSE,
+      ['class' => 'crm-select2']);
+    $form->add('text', 'first_name', E::ts('First Name contains'), [], FALSE);
+    $form->add('text', 'last_name', E::ts('Last Name contains'), [], FALSE);
+    $form->add('text', 'bioresource_id', E::ts('Bioresource ID is'), [], FALSE);
     // Optionally define default search values
     $form->setDefaults([
       'project_id' => NULL,
@@ -31,7 +33,7 @@ class CRM_Nbrprojectvolunteerlist_Form_Search_VolunteerList extends CRM_Contact_
      * if you are using the standard template, this array tells the template what elements
      * are part of the search criteria
      */
-    $form->assign('elements', ['project_id']);
+    $form->assign('elements', ['project_id', 'first_name', 'last_name', 'gender_id', 'bioresource_id']);
   }
 
   /**
@@ -39,6 +41,7 @@ class CRM_Nbrprojectvolunteerlist_Form_Search_VolunteerList extends CRM_Contact_
    * @return array
    */
   private function getProjectList() {
+    $result = [];
     try {
       $apiValues = civicrm_api3('Campaign', 'get', [
         'return' => ['title'],
@@ -50,6 +53,29 @@ class CRM_Nbrprojectvolunteerlist_Form_Search_VolunteerList extends CRM_Contact_
         if (isset($project['title'])) {
           $result[$projectId] = $project['title'];
         }
+      }
+    }
+    catch (CiviCRM_API3_Exception $ex) {
+    }
+    return $result;
+  }
+
+  /**
+   * Method to build the list of genders
+   * @return array
+   */
+  private function getGenderList() {
+    $result = ["-- none --"] ;
+    try {
+      $apiValues = civicrm_api3('OptionValue', 'get', [
+        'return' => ['value', 'label'],
+        'option_group_id' => "gender",
+        'is_active' => 1,
+        'options' => ['limit' => 0],
+        'sequential' => 1,
+      ]);
+      foreach ($apiValues['values'] as $gender) {
+        $result[$gender['value']] = $gender['label'];
       }
     }
     catch (CiviCRM_API3_Exception $ex) {
@@ -166,17 +192,72 @@ class CRM_Nbrprojectvolunteerlist_Form_Search_VolunteerList extends CRM_Contact_
    * @return string, sql fragment with conditional expressions
    */
   function where($includeContactIDs = FALSE) {
+    $clauses = [];
     $params = [1 => ["nihr_volunteer", "String"]];
+    $index = 1;
     $where = "contact_a.contact_sub_type   = %1";
-    if (isset($this->_formValues['project_id']) && !empty($this->_formValues['project_id'])) {
-      $projectIdColumn = CRM_Nihrbackbone_BackboneConfig::singleton()->getParticipationCustomField('nvpd_project_id', 'column_name');
-      $clause[] = "nvpd." . $projectIdColumn . " = %2";
-      $params[2] = [$this->_formValues['project_id'], "Integer"];
-    }
-    if (!empty($clause)) {
-      $where .= ' AND ' . implode(' AND ', $clause);
+    $this->addEqualsClauses($index, $clauses, $params);
+    $this->addLikeClauses($index, $clauses, $params);
+    $this->addMultipleClauses($index, $clauses, $params);
+    if (!empty($clauses)) {
+      $where .= ' AND ' . implode(' AND ', $clauses);
     }
     return $this->whereClause($where, $params);
+  }
+  // todo complete multiple clauses and make gender multiple
+  private function addMultipleClauses(&$index, &$where, &$params) {
+
+  }
+
+  /**
+   * Method to add the equals clauses
+   * @param $index
+   * @param $clauses
+   * @param $params
+   */
+  private function addEqualsClauses(&$index, &$clauses, &$params) {
+    $equalFields = ['project_id', 'bioresource_id', 'gender_id'];
+    foreach ($equalFields as $equalField) {
+      if (isset($this->_formValues[$equalField]) && !empty($this->_formValues[$equalField])) {
+        $index++;
+        switch ($equalField) {
+          case 'project_id':
+            $projectIdColumn = CRM_Nihrbackbone_BackboneConfig::singleton()->getParticipationCustomField('nvpd_project_id', 'column_name');
+            $clauses[] = "nvpd." . $projectIdColumn . " = %" . $index;
+            $params[$index] = [$this->_formValues['project_id'], "Integer"];
+            break;
+          case 'bioresource_id':
+            $bioResourceIDColumn = CRM_Nihrbackbone_BackboneConfig::singleton()->getVolunteerAliasCustomField('nva_bioresource_id', 'column_name');
+            $clauses[] = "nva" . $bioResourceIDColumn . " = %" . $index;
+            $params[$index] = [$this->_formValues['bioresource_id'], "String"];
+            break;
+          case 'gender_id':
+            if ($this->_formValues['gender_id'] != 0) {
+              $clauses[] = "contact_a.gender_id = %" . $index;
+              $params[$index] = [$this->_formValues['gender_id'], "Integer"];
+            }
+            break;
+        }
+      }
+    }
+  }
+
+  /**
+   * Method to add like clauses
+   *
+   * @param int $index
+   * @param array $clauses
+   * @param array $params
+   */
+  private function addLikeClauses(&$index, &$clauses, &$params) {
+    $likeFields = ['first_name', 'last_name'];
+    foreach ($likeFields as $likeField) {
+      if (isset($this->_formValues[$likeField]) && !empty($this->_formValues[$likeField])) {
+        $index++;
+        $params[$index] = ["%" . $this->_formValues[$likeField] . "%", "String"];
+        $clauses[] = "contact_a." . $likeField . " LIKE %" . $index;
+      }
+    }
   }
 
   /**
