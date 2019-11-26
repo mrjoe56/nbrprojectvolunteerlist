@@ -150,7 +150,7 @@ class CRM_Nbrprojectvolunteerlist_Form_Task_ChangeStudyStatus extends CRM_Contac
         WHERE ccc.contact_id IN (";
     $queryParams = [];
     $i = 0;
-    $contactElements = CRM_Nbrprojectvolunteerlist_Utils::processContactQueryElements($this->_contactIds, $i, &$queryParams);
+    $contactElements = CRM_Nbrprojectvolunteerlist_Utils::processContactQueryElements($this->_contactIds, $i, $queryParams);
     $query .= implode("," , $contactElements) . ") AND cvnpd." . $projectColumn . " IN (";
     $projectElements = [];
     foreach ($projectIds as $projectId) {
