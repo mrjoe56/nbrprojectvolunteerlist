@@ -23,7 +23,6 @@ class CRM_Nbrprojectvolunteerlist_Form_Search_VolunteerList extends CRM_Contact_
       ['class' => 'crm-select2']);
     $form->add('text', 'first_name', E::ts('First Name contains'), [], FALSE);
     $form->add('text', 'last_name', E::ts('Last Name contains'), [], FALSE);
-    $form->add('text', 'bioresource_id', E::ts('Bioresource ID is'), [], FALSE);
     // Optionally define default search values
     $form->setDefaults([
       'project_id' => NULL,
@@ -33,7 +32,7 @@ class CRM_Nbrprojectvolunteerlist_Form_Search_VolunteerList extends CRM_Contact_
      * if you are using the standard template, this array tells the template what elements
      * are part of the search criteria
      */
-    $form->assign('elements', ['project_id', 'first_name', 'last_name', 'gender_id', 'bioresource_id']);
+    $form->assign('elements', ['project_id', 'first_name', 'last_name', 'gender_id']);
   }
 
   /**
@@ -107,7 +106,6 @@ class CRM_Nbrprojectvolunteerlist_Form_Search_VolunteerList extends CRM_Contact_
     // return by reference
     $columns = [
       E::ts('Name') => 'sort_name',
-      E::ts('BioResource ID') => 'nva_bioresource_id',
       E::ts('Study/Part ID') => 'nvpd_study_participant_id',
       E::ts('Gender') => 'gender',
       E::ts('Age') => 'birth_date',
@@ -143,15 +141,13 @@ class CRM_Nbrprojectvolunteerlist_Form_Search_VolunteerList extends CRM_Contact_
    * @return string, sql fragment with SELECT arguments
    */
   function select() {
-    $bioResourceIDColumn = CRM_Nihrbackbone_BackboneConfig::singleton()->getVolunteerAliasCustomField('nva_bioresource_id', 'column_name');
     $eligibleColumn = CRM_Nihrbackbone_BackboneConfig::singleton()->getParticipationCustomField('nvpd_eligible_status_id', 'column_name');
     $studyParticipantIDColumn = CRM_Nihrbackbone_BackboneConfig::singleton()->getParticipationCustomField('nvpd_study_participant_id', 'column_name');
     $dateInvitedColumn = CRM_Nihrbackbone_BackboneConfig::singleton()->getParticipationCustomField('nvpd_date_invited', 'column_name');
     $distanceColumn = CRM_Nihrbackbone_BackboneConfig::singleton()->getParticipationCustomField('nvpd_distance_volunteer_to_study_centre', 'column_name');
     return "
-      DISTINCT(contact_a.id) AS contact_id, contact_a.sort_name, nva." . $bioResourceIDColumn . ", 
-      contact_a.birth_date, genderov.label AS gender, ethnicov.label AS ethnicity, adr.city AS volunteer_address, 
-      nvpd." . $eligibleColumn . ", nvpd.". $studyParticipantIDColumn . ", prostatus.label AS project_status, 
+      DISTINCT(contact_a.id) AS contact_id, contact_a.sort_name, contact_a.birth_date, genderov.label AS gender, 
+      ethnicov.label AS ethnicity, adr.city AS volunteer_address, nvpd." . $eligibleColumn . ", nvpd.". $studyParticipantIDColumn . ", prostatus.label AS project_status, 
       stustatus.label AS study_status, nvpd." . $dateInvitedColumn . ", nvpd." . $distanceColumn;
   }
 
@@ -163,7 +159,6 @@ class CRM_Nbrprojectvolunteerlist_Form_Search_VolunteerList extends CRM_Contact_
   function from() {
     $nvgoTable = CRM_Nihrbackbone_BackboneConfig::singleton()->getVolunteerGeneralObservationsCustomGroup('table_name');
     $nvpdTable = CRM_Nihrbackbone_BackboneConfig::singleton()->getParticipationDataCustomGroup('table_name');
-    $nvaTable = CRM_Nihrbackbone_BackboneConfig::singleton()->getVolunteerAliasCustomGroup('table_name');
     $genderOptionGroupId = CRM_Nihrbackbone_BackboneConfig::singleton()->getGenderOptionGroupId();
     $ethnicityOptionGroupId = CRM_Nihrbackbone_BackboneConfig::singleton()->getEthnicityOptionGroupId();
     $projectStatusOptionGroupId = CRM_Nihrbackbone_BackboneConfig::singleton()->getProjectParticipationStatusOptionGroupId();
@@ -175,7 +170,6 @@ class CRM_Nbrprojectvolunteerlist_Form_Search_VolunteerList extends CRM_Contact_
       FROM civicrm_contact AS contact_a
       JOIN civicrm_case_contact AS ccc ON contact_a.id = ccc.contact_id
       JOIN civicrm_case AS cas ON ccc.case_id = cas.id AND cas.is_deleted = 0
-      LEFT JOIN " . $nvaTable . " AS nva ON contact_a.id = nva.entity_id
       LEFT JOIN " . $nvgoTable . " AS nvgo ON ccc.contact_id = nvgo.entity_id
       LEFT JOIN civicrm_address AS adr ON contact_a.id = adr.contact_id AND adr.is_primary = 1
       LEFT JOIN " . $nvpdTable . " AS nvpd ON cas.id = nvpd.entity_id
@@ -216,7 +210,7 @@ class CRM_Nbrprojectvolunteerlist_Form_Search_VolunteerList extends CRM_Contact_
    * @param $params
    */
   private function addEqualsClauses(&$index, &$clauses, &$params) {
-    $equalFields = ['project_id', 'bioresource_id', 'gender_id'];
+    $equalFields = ['project_id', 'gender_id'];
     foreach ($equalFields as $equalField) {
       if (isset($this->_formValues[$equalField]) && !empty($this->_formValues[$equalField])) {
         $index++;
@@ -225,11 +219,6 @@ class CRM_Nbrprojectvolunteerlist_Form_Search_VolunteerList extends CRM_Contact_
             $projectIdColumn = CRM_Nihrbackbone_BackboneConfig::singleton()->getParticipationCustomField('nvpd_project_id', 'column_name');
             $clauses[] = "nvpd." . $projectIdColumn . " = %" . $index;
             $params[$index] = [$this->_formValues['project_id'], "Integer"];
-            break;
-          case 'bioresource_id':
-            $bioResourceIDColumn = CRM_Nihrbackbone_BackboneConfig::singleton()->getVolunteerAliasCustomField('nva_bioresource_id', 'column_name');
-            $clauses[] = "nva" . $bioResourceIDColumn . " = %" . $index;
-            $params[$index] = [$this->_formValues['bioresource_id'], "String"];
             break;
           case 'gender_id':
             if ($this->_formValues['gender_id'] != 0) {
