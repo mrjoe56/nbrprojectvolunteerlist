@@ -21,19 +21,24 @@ class CRM_Nbrprojectvolunteerlist_Form_Task_ChangeProjectStatus extends CRM_Cont
    */
   private function getSelectedData() {
     $this->_selected = [];
+    $nviTable = CRM_Nihrbackbone_BackboneConfig::singleton()->getVolunteerIdsCustomGroup('table_name');
     $studyParticipantColumn = CRM_Nihrbackbone_BackboneConfig::singleton()->getParticipationCustomField('nvpd_study_participant_id', 'column_name');
     $eligiblesColumn = CRM_Nihrbackbone_BackboneConfig::singleton()->getParticipationCustomField('nvpd_eligible_status_id', 'column_name');
     $projectColumn = CRM_Nihrbackbone_BackboneConfig::singleton()->getParticipationCustomField('nvpd_project_id', 'column_name');
-    $statusColumn = CRM_Nihrbackbone_BackboneConfig::singleton()->getParticipationCustomField('nvpd_study_participation_status', 'column_name');
+    $statusColumn = CRM_Nihrbackbone_BackboneConfig::singleton()->getParticipationCustomField('nvpd_project_participation_status', 'column_name');
     $participantTable = CRM_Nihrbackbone_BackboneConfig::singleton()->getParticipationDataCustomGroup('table_name');
     $ovpsOptionGroupId = CRM_Nihrbackbone_BackboneConfig::singleton()->getProjectParticipationStatusOptionGroupId();
+    $bioresourceIdColumn = CRM_Nihrbackbone_BackboneConfig::singleton()->getVolunteerIdsCustomField('nva_bioresource_id', 'column_name');
+    $participantIdColumn = CRM_Nihrbackbone_BackboneConfig::singleton()->getVolunteerIdsCustomField('nva_participant_id', 'column_name');
     $query = "
         SELECT vol.id AS contact_id, vol.display_name, cvnpd." . $studyParticipantColumn . " AS study_participant_id, 
-        cvnpd." . $eligiblesColumn . " AS eligible_status_id, ovps.label AS project_status
+        cvnpd." . $eligiblesColumn . " AS eligible_status_id, ovps.label AS project_status, nvi." . $bioresourceIdColumn
+        . " AS bioresource_id, nvi." . $participantIdColumn. " AS participant_id
         FROM " . $participantTable . " AS cvnpd
         JOIN civicrm_case_contact AS ccc ON cvnpd.entity_id = ccc.case_id
         JOIN civicrm_case AS cas ON ccc.case_id = cas.id
         JOIN civicrm_contact AS vol ON ccc.contact_id = vol.id
+        LEFT JOIN " . $nviTable . " AS nvi ON ccc.contact_id = nvi.entity_id
         LEFT JOIN civicrm_option_value AS ovps ON cvnpd." . $statusColumn. " = ovps.value AND ovps.option_group_id = " . $ovpsOptionGroupId . "
         WHERE cvnpd." . $projectColumn. " = %1 AND cas.is_deleted = %2 AND vol.id IN (";
     $queryParams = [
@@ -52,10 +57,18 @@ class CRM_Nbrprojectvolunteerlist_Form_Task_ChangeProjectStatus extends CRM_Cont
     while ($dao->fetch()) {
       $volunteer = [
         'display_name' => $dao->display_name,
+        'bioresource_id' => $dao->bioresource_id,
+        'participant_id' => $dao->participant_id,
         'study_participant_id' => $dao->study_participant_id,
-        'eligible_status' => implode(', ', CRM_Nihrbackbone_NbrVolunteerCase::getEligibleDescriptions($dao->eligible_status_id)),
         'project_status' => $dao->project_status,
       ];
+      $eligibleStatus = implode(', ', CRM_Nihrbackbone_NbrVolunteerCase::getEligibleDescriptions($dao->eligible_status_id));
+      if (!empty($eligibleStatus)) {
+        $volunteer['eligible_status'] = $eligibleStatus;
+      }
+      else {
+        $volunteer['eligible_status'] = "Eligible";
+      }
       $this->_selected[$dao->contact_id] = $volunteer;
     }
   }

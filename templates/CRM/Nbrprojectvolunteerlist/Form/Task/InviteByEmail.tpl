@@ -15,6 +15,7 @@
         <tr>
           <th>{ts}Name{/ts}</th>
           <th>{ts}BioResource ID{/ts}</th>
+          <th>{ts}Participant ID{/ts}</th>
           <th>{ts}Study/Participant ID{/ts}</th>
           <th>{ts}Eligibility{/ts}</th>
           <th>{ts}Email{/ts}</th>
@@ -23,6 +24,7 @@
             <tr id='contactid{$contact_id}' class="{cycle values="odd-row,even-row"}">
               <td>{$invite.display_name}</td>
               <td>{$invite.bioresource_id}</td>
+              <td>{$invite.participant_id}</td>
               <td>{$invite.study_participant_id}</td>
               <td>{$invite.eligible_status}</td>
               <td>{$invite.email}</td>
@@ -31,6 +33,30 @@
       </table>
     {/if}
   <p>{$count_invited_txt}</p>
+  <h3>{$invalid_txt}</h3>
+    {if !empty($invalids)}
+      <table>
+        <tr>
+          <th>{ts}Name{/ts}</th>
+          <th>{ts}BioResource ID{/ts}</th>
+          <th>{ts}Participant ID{/ts}</th>
+          <th>{ts}Study/Participant ID{/ts}</th>
+          <th>{ts}Eligibility{/ts}</th>
+          <th>{ts}Email{/ts}</th>
+        </tr>
+          {foreach from=$invalids key=contact_id item=invalid}
+            <tr id='contactid{$contact_id}' class="{cycle values="odd-row,even-row"}">
+              <td>{$invalid.display_name}</td>
+              <td>{$invalid.bioresource_id}</td>
+              <td>{$invalid.participant_id}</td>
+              <td>{$invalid.study_participant_id}</td>
+              <td>{$invalid.eligible_status}</td>
+              <td>{$invalid.email}</td>
+            </tr>
+          {/foreach}
+      </table>
+    {/if}
+  <p>{$count_invalid_txt}</p>
 </div>
 <p>
 <div class="form-item">

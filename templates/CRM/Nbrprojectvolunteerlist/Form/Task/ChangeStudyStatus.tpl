@@ -15,6 +15,7 @@
         <tr>
           <th>{ts}Name{/ts}</th>
           <th>{ts}BioResource ID{/ts}</th>
+          <th>{ts}Participant ID{/ts}</th>
           <th>{ts}Study/Participant ID{/ts}</th>
           <th>{ts}Eligibility{/ts}</th>
           <th>{ts}Current Study Status{/ts}</th>
@@ -23,9 +24,10 @@
             <tr id='contactid{$contact_id}' class="{cycle values="odd-row,even-row"}">
               <td>{$volunteer.display_name}</td>
               <td>{$volunteer.bioresource_id}</td>
+              <td>{$volunteer.participant_id}</td>
               <td>{$volunteer.study_participant_id}</td>
               <td>{$volunteer.eligible_status}</td>
-              <td>{$volunter.study_status}</td>
+              <td>{$volunteer.study_status}</td>
             </tr>
           {/foreach}
       </table>

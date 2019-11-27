@@ -106,6 +106,8 @@ class CRM_Nbrprojectvolunteerlist_Form_Search_VolunteerList extends CRM_Contact_
     // return by reference
     $columns = [
       E::ts('Name') => 'sort_name',
+      E::ts('Bioresource ID') => 'nva_bioresource_id',
+      E::ts('Participant ID') => 'nva_participant_id',
       E::ts('Study/Part ID') => 'nvpd_study_participant_id',
       E::ts('Gender') => 'gender',
       E::ts('Age') => 'birth_date',
@@ -145,10 +147,13 @@ class CRM_Nbrprojectvolunteerlist_Form_Search_VolunteerList extends CRM_Contact_
     $studyParticipantIDColumn = CRM_Nihrbackbone_BackboneConfig::singleton()->getParticipationCustomField('nvpd_study_participant_id', 'column_name');
     $dateInvitedColumn = CRM_Nihrbackbone_BackboneConfig::singleton()->getParticipationCustomField('nvpd_date_invited', 'column_name');
     $distanceColumn = CRM_Nihrbackbone_BackboneConfig::singleton()->getParticipationCustomField('nvpd_distance_volunteer_to_study_centre', 'column_name');
+    $bioresourceIdColumn = CRM_Nihrbackbone_BackboneConfig::singleton()->getVolunteerIdsCustomField('nva_bioresource_id', 'column_name');
+    $participantIdColumn = CRM_Nihrbackbone_BackboneConfig::singleton()->getVolunteerIdsCustomField('nva_participant_id', 'column_name');
     return "
       DISTINCT(contact_a.id) AS contact_id, contact_a.sort_name, contact_a.birth_date, genderov.label AS gender, 
-      ethnicov.label AS ethnicity, adr.city AS volunteer_address, nvpd." . $eligibleColumn . ", nvpd.". $studyParticipantIDColumn . ", prostatus.label AS project_status, 
-      stustatus.label AS study_status, nvpd." . $dateInvitedColumn . ", nvpd." . $distanceColumn;
+      ethnicov.label AS ethnicity, adr.city AS volunteer_address, nvpd." . $eligibleColumn . ", nvpd.". $studyParticipantIDColumn . ", 
+      prostatus.label AS project_status, stustatus.label AS study_status, nvpd." . $dateInvitedColumn . ", nvpd." . $distanceColumn .
+      ", nvi." . $bioresourceIdColumn . ", nvi." . $participantIdColumn;
   }
 
   /**
@@ -159,6 +164,7 @@ class CRM_Nbrprojectvolunteerlist_Form_Search_VolunteerList extends CRM_Contact_
   function from() {
     $nvgoTable = CRM_Nihrbackbone_BackboneConfig::singleton()->getVolunteerGeneralObservationsCustomGroup('table_name');
     $nvpdTable = CRM_Nihrbackbone_BackboneConfig::singleton()->getParticipationDataCustomGroup('table_name');
+    $nviTable = CRM_Nihrbackbone_BackboneConfig::singleton()->getVolunteerIdsCustomGroup('table_name');
     $genderOptionGroupId = CRM_Nihrbackbone_BackboneConfig::singleton()->getGenderOptionGroupId();
     $ethnicityOptionGroupId = CRM_Nihrbackbone_BackboneConfig::singleton()->getEthnicityOptionGroupId();
     $projectStatusOptionGroupId = CRM_Nihrbackbone_BackboneConfig::singleton()->getProjectParticipationStatusOptionGroupId();
@@ -173,6 +179,7 @@ class CRM_Nbrprojectvolunteerlist_Form_Search_VolunteerList extends CRM_Contact_
       LEFT JOIN " . $nvgoTable . " AS nvgo ON ccc.contact_id = nvgo.entity_id
       LEFT JOIN civicrm_address AS adr ON contact_a.id = adr.contact_id AND adr.is_primary = 1
       LEFT JOIN " . $nvpdTable . " AS nvpd ON cas.id = nvpd.entity_id
+      LEFT JOIN " . $nviTable . " AS nvi ON contact_a.id = nvi.entity_id
       LEFT JOIN civicrm_option_value AS genderov ON contact_a.gender_id = genderov.value AND genderov.option_group_id = " . $genderOptionGroupId ." 
       LEFT JOIN civicrm_option_value AS ethnicov ON nvgo." . $ethnicityColumn . " = ethnicov.value AND ethnicov.option_group_id = " . $ethnicityOptionGroupId . "
       LEFT JOIN civicrm_option_value AS prostatus ON nvpd." . $projectStatusColumn . " = prostatus.value AND prostatus.option_group_id = " . $projectStatusOptionGroupId . "
