@@ -146,6 +146,13 @@ class CRM_Nbrprojectvolunteerlist_Form_Task_InviteByEmail extends CRM_Contact_Fo
           ]);
           // now add the invite activity
           CRM_Nihrbackbone_NbrVolunteerCase::addInviteActivity($caseId, $contactId, $this->_projectId);
+          // change status on project to invited
+          $statusCustomField = "custom_" . CRM_Nihrbackbone_BackboneConfig::singleton()->getParticipationCustomField('nvpd_project_participation_status', 'id');
+          civicrm_api3('Case', 'create', [
+            'contact_id' => $contactId,
+            'id' => $caseId,
+            $statusCustomField => "project_participation_status_invited",
+          ]);
         }
         catch (CiviCRM_API3_Exception $ex) {
           Civi::log()->warning(E::ts("Could not send invitation to project with ID ") . $this->_projectId
