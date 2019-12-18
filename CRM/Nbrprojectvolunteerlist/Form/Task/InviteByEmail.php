@@ -34,7 +34,7 @@ class CRM_Nbrprojectvolunteerlist_Form_Task_InviteByEmail extends CRM_Contact_Fo
     $participantIdColumn = CRM_Nihrbackbone_BackboneConfig::singleton()->getVolunteerIdsCustomField('nva_participant_id', 'column_name');
     $nviTable = CRM_Nihrbackbone_BackboneConfig::singleton()->getVolunteerIdsCustomGroup('table_name');
     $query = "
-        SELECT vol.id AS contact_id, vol.display_name, nvi." . $bioresourceIdColumn . " AS bioresource_id, 
+        SELECT vol.id AS contact_id, vol.display_name, nvi." . $bioresourceIdColumn . " AS bioresource_id,
         nvi." . $participantIdColumn . " AS participant_id, cvnpd." . $studyParticipantColumn . " AS study_participant_id, cvnpd. "
       . $eligiblesColumn. " AS eligible_status_id, ce.email
         FROM " . $participantTable . " AS cvnpd
@@ -136,7 +136,7 @@ class CRM_Nbrprojectvolunteerlist_Form_Task_InviteByEmail extends CRM_Contact_Fo
     if (isset($this->_projectId) && !empty($this->_contactIds) && !empty($this->_submitValues['template_id'])) {
       // first find all relevant cases
       $caseIds = $this->getRelevantCaseIds();
-      // then send email (include case_id so the activity is recorded)
+      // then send email (include case_id so the activity is recorded) and add an invited activity
       foreach ($caseIds as $caseId => $contactId) {
         try {
           civicrm_api3('Email', 'send', [
@@ -144,6 +144,8 @@ class CRM_Nbrprojectvolunteerlist_Form_Task_InviteByEmail extends CRM_Contact_Fo
             'contact_id' => $contactId,
             'case_id' => $caseId,
           ]);
+          // now add the invite activity
+          CRM_Nihrbackbone_NbrVolunteerCase::addInviteActivity($caseId, $contactId, $this->_projectId);
         }
         catch (CiviCRM_API3_Exception $ex) {
           Civi::log()->warning(E::ts("Could not send invitation to project with ID ") . $this->_projectId
