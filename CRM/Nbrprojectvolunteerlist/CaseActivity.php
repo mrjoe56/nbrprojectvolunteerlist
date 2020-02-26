@@ -12,24 +12,13 @@ use CRM_Nbrprojectvolunteerlist_ExtensionUtil as E;
 class CRM_Nbrprojectvolunteerlist_CaseActivity {
 
   /**
-   * Method to create the a case activity for a status change
+   * Method to create the a case activity for a study status change
    *
    * @param $caseIds
    */
-  public static function addStatusChangeActivities($type, $newStatusLabel, $caseIds) {
-    switch ($type) {
-      case 'study':
-        $activityTypeId = CRM_Nihrbackbone_BackboneConfig::singleton()->getChangedStudyStatusActivityTypeId();
-        $optionGroupId = CRM_Nihrbackbone_BackboneConfig::singleton()->getStudyParticipationStatusOptionGroupId();
-        break;
-      case 'project':
-        $activityTypeId = CRM_Nihrbackbone_BackboneConfig::singleton()->getChangeProjectStatusActivityTypeId();
-        $optionGroupId = CRM_Nihrbackbone_BackboneConfig::singleton()->getProjectParticipationStatusOptionGroupId();
-        break;
-      default:
-        $activityTypeId = NULL;
-        $optionGroupId = NULL;
-    }
+  public static function addStatusChangeActivities($newStatusLabel, $caseIds) {
+    $activityTypeId = CRM_Nihrbackbone_BackboneConfig::singleton()->getChangedStudyStatusActivityTypeId();
+    $optionGroupId = CRM_Nihrbackbone_BackboneConfig::singleton()->getStudyParticipationStatusOptionGroupId();
     foreach ($caseIds as $caseId => $caseStatus) {
       if ($activityTypeId) {
         $currentStatusLabel = CRM_Nihrbackbone_Utils::getOptionValueLabel($caseStatus, $optionGroupId);

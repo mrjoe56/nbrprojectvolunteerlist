@@ -99,17 +99,15 @@ class CRM_Nbrprojectvolunteerlist_Form_Search_VolunteerList extends CRM_Contact_
     // return by reference
     $columns = [
       E::ts('Name') => 'sort_name',
-      E::ts('Bioresource ID') => 'nva_bioresource_id',
-      E::ts('Participant ID') => 'nva_participant_id',
       E::ts('Study/Part ID') => 'nvpd_study_participant_id',
-      E::ts('Gender') => 'gender',
+      E::ts('Gndr') => 'gender',
       E::ts('Age') => 'birth_date',
-      E::ts('Ethnicity') => 'ethnicity',
-      E::ts('Location') => 'volunteer_address',
+      E::ts('Ethn.') => 'ethnicity',
+      E::ts('Loc.') => 'volunteer_address',
       E::ts('Eligibility') => 'nvpd_eligible_status_id',
       E::ts('Recall Group') => 'nvpd_recall_group',
-      E::ts('Study Status') => 'study_status',
-      E::ts('Invite Date') => 'nvpd_date_invited',
+      E::ts('Status') => 'study_status',
+      E::ts('Inv. Date') => 'nvpd_date_invited',
       E::ts('Distance') => 'nvpd_distance_volunteer_to_study_centre',
     ];
     return $columns;
@@ -140,14 +138,12 @@ class CRM_Nbrprojectvolunteerlist_Form_Search_VolunteerList extends CRM_Contact_
     $studyParticipantIDColumn = CRM_Nihrbackbone_BackboneConfig::singleton()->getParticipationCustomField('nvpd_study_participant_id', 'column_name');
     $dateInvitedColumn = CRM_Nihrbackbone_BackboneConfig::singleton()->getParticipationCustomField('nvpd_date_invited', 'column_name');
     $distanceColumn = CRM_Nihrbackbone_BackboneConfig::singleton()->getParticipationCustomField('nvpd_distance_volunteer_to_study_centre', 'column_name');
-    $bioresourceIdColumn = CRM_Nihrbackbone_BackboneConfig::singleton()->getVolunteerIdsCustomField('nva_bioresource_id', 'column_name');
-    $participantIdColumn = CRM_Nihrbackbone_BackboneConfig::singleton()->getVolunteerIdsCustomField('nva_participant_id', 'column_name');
     $recallColumn = CRM_Nihrbackbone_BackboneConfig::singleton()->getParticipationCustomField('nvpd_recall_group', 'column_name');
     return "
       DISTINCT(contact_a.id) AS contact_id, contact_a.sort_name, contact_a.birth_date, genderov.label AS gender,
       ethnicov.label AS ethnicity, adr.city AS volunteer_address, nvpd." . $eligibleColumn . ", nvpd.". $studyParticipantIDColumn
       . ", nvpd." . $recallColumn . ", stustatus.label AS study_status, nvpd."
-      . $dateInvitedColumn . ", nvpd." . $distanceColumn .", nvi." . $bioresourceIdColumn . ", nvi." . $participantIdColumn;
+      . $dateInvitedColumn . ", nvpd." . $distanceColumn;
   }
 
   /**
@@ -309,6 +305,15 @@ class CRM_Nbrprojectvolunteerlist_Form_Search_VolunteerList extends CRM_Contact_
           else {
             $row[$fieldName] = implode(', ', CRM_Nihrbackbone_NbrVolunteerCase::getEligibleDescriptions($row[$fieldName]));
           }
+          break;
+
+        case 'gender':
+          $row['gender'] = substr($row['gender'],0,1);
+          break;
+
+        case 'ethnicity':
+          $parts = explode('(', $row['ethnicity']);
+          $row['ethnicity'] = trim($parts[0]);
           break;
       }
     }
