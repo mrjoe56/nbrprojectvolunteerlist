@@ -376,7 +376,7 @@ class CRM_Nbrprojectvolunteerlist_Form_Search_VolunteerList extends CRM_Contact_
           }
           break;
 
-        case 'invite_date':
+        case 'nvpd_date_invited':
           if (!empty($row[$fieldName])) {
             $row[$fieldName] = date('d-m-Y', strtotime($row[$fieldName]));
           }
