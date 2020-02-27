@@ -29,7 +29,7 @@
 <div class="crm-block crm-form-block crm-contact-custom-search-form-block">
   <div class="crm-accordion-wrapper crm-custom_search_form-accordion {if $rows}collapsed{/if}">
     <div class="crm-accordion-header crm-master-accordion-header">
-      {ts}Edit pipo Criteria{/ts}
+      {ts}Edit Search Criteria{/ts}
     </div><!-- /.crm-accordion-header -->
     <div class="crm-accordion-body">
       <div class="crm-submit-buttons">{include file="CRM/common/formButtons.tpl" location="top"}</div>
@@ -80,14 +80,16 @@
               <tr>
                 <th scope="col" title="Select All Rows">{$form.toggleSelect.html}</th>
                 {foreach from=$columnHeaders item=header}
-                  <th scope="col">
-                    {if $header.sort}
-                      {assign var='key' value=$header.sort}
-                      {$sort->_response.$key.link}
-                    {else}
-                      {$header.name}
-                    {/if}
-                  </th>
+                  {if $header.name != "Case ID"}
+                    <th scope="col">
+                      {if $header.sort}
+                        {assign var='key' value=$header.sort}
+                        {$sort->_response.$key.link}
+                      {else}
+                        {$header.name}
+                      {/if}
+                    </th>
+                  {/if}
                 {/foreach}
                 <th>&nbsp;</th>
               </tr>
@@ -99,14 +101,16 @@
                   {assign var=cbName value=$row.checkbox}
                   <td>{$form.$cbName.html}</td>
                   {foreach from=$columnHeaders item=header}
-                    {assign var=fName value=$header.sort}
-                    {if $fName eq 'sort_name'}
-                      <td><a href="{crmURL p='civicrm/contact/view' q="reset=1&cid=`$row.contact_id`&key=`$qfKey`&context=custom"}">{$row.sort_name}</a></td>
-                    {else}
-                      <td>{$row.$fName}</td>
+                    {if $header.name != 'Case ID'}
+                      {assign var=fName value=$header.sort}
+                      {if $fName eq 'sort_name'}
+                        <td><a href="{crmURL p='civicrm/contact/view' q="reset=1&cid=`$row.contact_id`&key=`$qfKey`&context=custom"}">{$row.sort_name}</a></td>
+                      {else}
+                        <td>{$row.$fName}</td>
+                      {/if}
                     {/if}
                   {/foreach}
-                  <td>{$row.action}</td>
+                  <td><a href="{crmURL p='civicrm/contact/view/case' q="reset=1&id=`$row.case_id`&cid=`$row.contact_id`&action=view&context=case"}">Manage Case</a></td>
                 </tr>
               {/foreach}
             </table>

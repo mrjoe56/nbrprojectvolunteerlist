@@ -7,6 +7,7 @@ use CRM_Nbrprojectvolunteerlist_ExtensionUtil as E;
 class CRM_Nbrprojectvolunteerlist_Form_Search_VolunteerList extends CRM_Contact_Form_Search_Custom_Base implements CRM_Contact_Form_Search_Interface {
 
   private $_force = NULL;
+  private $_studyId = NULL;
 
   /**
    * CRM_Nbrprojectvolunteerlist_Form_Search_VolunteerList constructor.
@@ -24,6 +25,7 @@ class CRM_Nbrprojectvolunteerlist_Form_Search_VolunteerList extends CRM_Contact_
     parent::__construct($formValues);
   }
 
+
   /**
    * Prepare a set of search fields
    *
@@ -38,16 +40,42 @@ class CRM_Nbrprojectvolunteerlist_Form_Search_VolunteerList extends CRM_Contact_
       ['class' => 'crm-select2', 'placeholder' => ' - select gender(s) -', 'multiple' => TRUE]);
     $form->add('text', 'first_name', E::ts('First Name contains'), [], FALSE);
     $form->add('text', 'last_name', E::ts('Last Name contains'), [], FALSE);
+    if ($this->_studyId) {
+      $form->add('select', 'recall_group', E::ts('Recall Group'), CRM_Nihrbackbone_NbrStudy::getRecallGroupList($this->_studyId), FALSE,
+        ['class' => 'crm-select2', 'placeholder' => '- select recall group -', 'multiple' => TRUE]);
+    }
+    else {
+      $form->add('select', 'recall_group', E::ts('Recall Group'), CRM_Nihrbackbone_NbrStudy::getRecallGroupList(), FALSE,
+        ['class' => 'crm-select2', 'placeholder' => '- select recall group -', 'multiple' => TRUE]);
+    }
+    $form->add('select', 'study_status_id', E::ts('Status'), CRM_Nihrbackbone_Utils::getOptionValueList(CRM_Nihrbackbone_BackboneConfig::singleton()->getStudyParticipationStatusOptionGroupId()), FALSE,
+    ['class' => 'crm-select2', 'placeholder' => '- select status -', 'multiple' => TRUE]);
+    $form->add('select', 'age_from', E::ts('Age From'), CRM_Nihrbackbone_Utils::getAgeList(), FALSE,
+    ['class' => 'crm-select2', 'placeholder' => '- select age from -']);
+    $form->add('select', 'age_to', E::ts('Age To'), CRM_Nihrbackbone_Utils::getAgeList(), FALSE,
+    ['class' => 'crm-select2', 'placeholder' => '- select age to -']);
     // Optionally define default search values
     $form->setDefaults([
-      'project_id' => NULL,
+      'study_id' => NULL,
     ]);
+    $this->assignFilters($form);
+  }
 
-    /**
-     * if you are using the standard template, this array tells the template what elements
-     * are part of the search criteria
-     */
-    $form->assign('elements', ['study_id', 'first_name', 'last_name', 'gender_id']);
+  /**
+   * assign filters
+   *
+   * @param $form
+   */
+  private function assignFilters(&$form) {
+    $form->assign('elements', [
+      'study_id',
+      'first_name',
+      'last_name',
+      'gender_id',
+      'recall_group',
+      'study_status_id',
+      'age_from',
+      'age_to']);
   }
 
   /**
@@ -104,11 +132,12 @@ class CRM_Nbrprojectvolunteerlist_Form_Search_VolunteerList extends CRM_Contact_
       E::ts('Age') => 'birth_date',
       E::ts('Ethn.') => 'ethnicity',
       E::ts('Loc.') => 'volunteer_address',
+      E::ts('Distance') => 'nvpd_distance_volunteer_to_study_centre',
       E::ts('Eligibility') => 'nvpd_eligible_status_id',
       E::ts('Recall Group') => 'nvpd_recall_group',
       E::ts('Status') => 'study_status',
       E::ts('Inv. Date') => 'nvpd_date_invited',
-      E::ts('Distance') => 'nvpd_distance_volunteer_to_study_centre',
+      E::ts('Case ID') => 'case_id'
     ];
     return $columns;
   }
@@ -140,7 +169,7 @@ class CRM_Nbrprojectvolunteerlist_Form_Search_VolunteerList extends CRM_Contact_
     $distanceColumn = CRM_Nihrbackbone_BackboneConfig::singleton()->getParticipationCustomField('nvpd_distance_volunteer_to_study_centre', 'column_name');
     $recallColumn = CRM_Nihrbackbone_BackboneConfig::singleton()->getParticipationCustomField('nvpd_recall_group', 'column_name');
     return "
-      DISTINCT(contact_a.id) AS contact_id, contact_a.sort_name, contact_a.birth_date, genderov.label AS gender,
+      DISTINCT(contact_a.id) AS contact_id, cas.id AS case_id, contact_a.sort_name, contact_a.birth_date, genderov.label AS gender,
       ethnicov.label AS ethnicity, adr.city AS volunteer_address, nvpd." . $eligibleColumn . ", nvpd.". $studyParticipantIDColumn
       . ", nvpd." . $recallColumn . ", stustatus.label AS study_status, nvpd."
       . $dateInvitedColumn . ", nvpd." . $distanceColumn;
@@ -186,6 +215,7 @@ class CRM_Nbrprojectvolunteerlist_Form_Search_VolunteerList extends CRM_Contact_
     $where = "contact_a.contact_sub_type   = %1";
     $this->addEqualsClauses($index, $clauses, $params);
     $this->addLikeClauses($index, $clauses, $params);
+    $this->addDateRangeClauses($index, $clauses, $params);
     if (!empty($clauses)) {
       $where .= ' AND ' . implode(' AND ', $clauses);
     }
@@ -201,7 +231,7 @@ class CRM_Nbrprojectvolunteerlist_Form_Search_VolunteerList extends CRM_Contact_
    * @param $params
    */
   private function addMultipleClauses(&$index, &$where, &$params) {
-    $multipleFields = ['gender_id'];
+    $multipleFields = ['gender_id', 'recall_group', 'study_status_id'];
     foreach ($multipleFields as $multipleField) {
       $clauses = [];
       if (isset($this->_formValues[$multipleField]) && !empty($this->_formValues[$multipleField])) {
@@ -211,6 +241,30 @@ class CRM_Nbrprojectvolunteerlist_Form_Search_VolunteerList extends CRM_Contact_
               $index++;
               $clauses[] = "contact_a.gender_id = %" . $index;
               $params[$index] = [(int) $multipleValue, "Integer"];
+            }
+            if (!empty($clauses)) {
+              $where .= " AND (" . implode(" OR ", $clauses) . ")";
+            }
+            break;
+
+          case 'recall_group':
+            $recallColumn = CRM_Nihrbackbone_BackboneConfig::singleton()->getParticipationCustomField('nvpd_recall_group', 'column_name');
+            foreach ($this->_formValues[$multipleField] as $multipleValue) {
+              $index++;
+              $clauses[] = "nvpd." . $recallColumn . " = %" . $index;
+              $params[$index] = [$multipleValue, "String"];
+            }
+            if (!empty($clauses)) {
+              $where .= " AND (" . implode(" OR ", $clauses) . ")";
+            }
+            break;
+
+          case 'study_status_id':
+            $statusColumn = CRM_Nihrbackbone_BackboneConfig::singleton()->getParticipationCustomField('nvpd_study_participation_status', 'column_name');
+            foreach ($this->_formValues[$multipleField] as $multipleValue) {
+              $index++;
+              $clauses[] = "nvpd." . $statusColumn . " = %" . $index;
+              $params[$index] = [$multipleValue, "String"];
             }
             if (!empty($clauses)) {
               $where .= " AND (" . implode(" OR ", $clauses) . ")";
@@ -244,6 +298,35 @@ class CRM_Nbrprojectvolunteerlist_Form_Search_VolunteerList extends CRM_Contact_
   }
 
   /**
+   * Method to add the date range clauses
+   *
+   * @param $index
+   * @param $clauses
+   * @param $params
+   */
+  private function addDateRangeClauses(&$index, &$clauses, &$params) {
+    $rangeFields = ['age'];
+    foreach ($rangeFields as $rangeField) {
+      $fromField = $rangeField . "_from";
+      $toField = $rangeField . "_to";
+      switch ($rangeField) {
+        case 'age':
+          if (isset($this->_formValues[$fromField]) && !empty($this->_formValues[$fromField])) {
+            $index++;
+            $clauses[] = "TIMESTAMPDIFF(YEAR, contact_a.birth_date, CURDATE()) >= %" . $index;
+            $params[$index] = [$this->_formValues[$fromField], "String"];
+          }
+          if (isset($this->_formValues[$toField]) && !empty($this->_formValues[$toField])) {
+            $index++;
+            $clauses[] = "TIMESTAMPDIFF(YEAR, contact_a.birth_date, CURDATE()) <= %" . $index;
+            $params[$index] = [$this->_formValues[$toField], "String"];
+          }
+          break;
+      }
+    }
+  }
+
+  /**
    * Method to add like clauses
    *
    * @param int $index
@@ -267,7 +350,7 @@ class CRM_Nbrprojectvolunteerlist_Form_Search_VolunteerList extends CRM_Contact_
    * @return string, template path (findable through Smarty template path)
    */
   function templateFile() {
-    return 'CRM/Contact/Form/Search/Custom.tpl';
+    return 'CRM/Nbrprojectvolunteerlist/Form/Search/VolunteerList.tpl';
   }
 
   /**
@@ -278,6 +361,7 @@ class CRM_Nbrprojectvolunteerlist_Form_Search_VolunteerList extends CRM_Contact_
    */
   function alterRow(&$row) {
     foreach ($row as $fieldName => &$field) {
+      // add case url
       switch ($fieldName) {
         case 'birth_date':
           $birthDate = $row[$fieldName];
@@ -395,9 +479,9 @@ class CRM_Nbrprojectvolunteerlist_Form_Search_VolunteerList extends CRM_Contact_
     }
     // if the study id is in the request, start the search with this study
     if ($this->_force) {
-      $studyId = CRM_Utils_Request::retrieveValue('sid', 'Integer');
-      if ($studyId) {
-        $defaults['study_id'] = $studyId;
+      $this->_studyId = CRM_Utils_Request::retrieveValue('sid', 'Integer');
+      if ($this->_studyId) {
+        $defaults['study_id'] = $this->_studyId;
       }
     }
     return $defaults;
