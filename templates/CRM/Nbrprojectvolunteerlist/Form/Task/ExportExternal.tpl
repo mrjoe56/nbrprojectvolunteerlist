@@ -72,7 +72,7 @@
           <td>{$invalid.recall_group}</td>
           <td>{$invalid.age}</td>
           <td>{$invalid.gender}</td>
-          <td>{$invalid.birth_date|truncate:10:''|crmDate}</td>
+          <td>{$invalid.birth_date}</td>
           <td>{$invalid.email}</td>
           <td>{$invalid.phone}</td>
           <td>{$invalid.mobile}</td>
@@ -80,7 +80,7 @@
           <td>{$invalid.city}</td>
           <td>{$invalid.county}</td>
           <td>{$invalid.postal_code}</td>
-          <td>{$invalid.date_invited|truncate:10:''|crmDate}</td>
+          <td>{$invalid.date_invited}</td>
         </tr>
       {/foreach}
     </table>
