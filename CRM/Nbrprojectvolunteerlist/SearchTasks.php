@@ -117,6 +117,10 @@ class CRM_Nbrprojectvolunteerlist_SearchTasks {
         'title' => "Change Status on Study for Volunteer(s)",
         'class' => "CRM_Nbrprojectvolunteerlist_Form_Task_ChangeStudyStatus",
       ],
+      [
+        'title' => "Export CSV for External Researcher(s)",
+        'class' => "CRM_Nbrprojectvolunteerlist_Form_Task_ExportExternal",
+      ],
     ];
     foreach ($nbrTasks as $nbrTask) {
       $tasks[] = $nbrTask;

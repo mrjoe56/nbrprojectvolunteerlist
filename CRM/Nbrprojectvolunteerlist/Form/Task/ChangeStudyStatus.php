@@ -41,13 +41,7 @@ class CRM_Nbrprojectvolunteerlist_Form_Task_ChangeStudyStatus extends CRM_Contac
       2 => [0, "Integer"],
     ];
     $i = 2;
-    $elements = [];
-    foreach ($this->_contactIds as $contactId) {
-      $i++;
-      $queryParams[$i] = [(int) $contactId, 'Integer'];
-      $elements[] = "%" . $i;
-    }
-    $query .= implode("," , $elements) . ")";
+    CRM_Nbrprojectvolunteerlist_Utils::addContactIdsToQuery($i, $this->_contactIds, $query, $queryParams);
     $dao = CRM_Core_DAO::executeQuery($query, $queryParams);
     while ($dao->fetch()) {
       $volunteer = [
@@ -67,7 +61,7 @@ class CRM_Nbrprojectvolunteerlist_Form_Task_ChangeStudyStatus extends CRM_Contac
   }
 
   /**
-   * Overridden parent method om formulier op te bouwen
+   * Overridden parent method to prepare the form
    */
   public function buildQuickForm()   {
     if (isset(self::$_searchFormValues['study_id'])) {

@@ -3,6 +3,11 @@
 require_once 'nbrprojectvolunteerlist.civix.php';
 use CRM_Nbrprojectvolunteerlist_ExtensionUtil as E;
 
+/**
+ * Implements hook_civicrm_searchTasks().
+ *
+ * @link https://docs.civicrm.org/dev/en/latest/hooks/hook_civicrm_searchTasks
+ */
 function nbrprojectvolunteerlist_civicrm_searchTasks($objectType, &$tasks) {
   if (strtolower($objectType) == "contact") {
     // todo check if there is not an easier way to determine if I am in the correct custom search

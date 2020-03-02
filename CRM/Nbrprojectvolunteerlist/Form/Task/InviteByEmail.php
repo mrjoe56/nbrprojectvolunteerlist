@@ -46,13 +46,7 @@ class CRM_Nbrprojectvolunteerlist_Form_Task_InviteByEmail extends CRM_Contact_Fo
       3 => [0, "Integer"],
     ];
     $i = 3;
-    $elements = [];
-    foreach ($this->_contactIds as $contactId) {
-      $i++;
-      $queryParams[$i] = [(int) $contactId, 'Integer'];
-      $elements[] = "%" . $i;
-    }
-    $query .= implode("," , $elements) . ")";
+    CRM_Nbrprojectvolunteerlist_Utils::addContactIdsToQuery($i, $this->_contactIds, $query, $queryParams);
     $dao = CRM_Core_DAO::executeQuery($query, $queryParams);
     while ($dao->fetch()) {
       $volunteer = [
@@ -126,7 +120,7 @@ class CRM_Nbrprojectvolunteerlist_Form_Task_InviteByEmail extends CRM_Contact_Fo
    * Overridden parent method
    */
   public function postProcess() {
-    // only if we have a project, contactIds and a template
+    // only if we have a study, contactIds and a template
     if (isset($this->_studyId) && !empty($this->_contactIds) && !empty($this->_submitValues['template_id'])) {
       // first find all relevant cases
       $caseIds = $this->getRelevantCaseIds();
@@ -174,7 +168,11 @@ class CRM_Nbrprojectvolunteerlist_Form_Task_InviteByEmail extends CRM_Contact_Fo
       2 => [$this->_studyId, "Integer"],
       ];
     $i = 2;
-    $elements = CRM_Nbrprojectvolunteerlist_Utils::processContactQueryElements($this->_contactIds, $i, $queryParams);
+    $contactIds = [];
+    foreach ($this->_invited as $invitedId => $invitedData) {
+      $contactIds[] = $invitedId;
+    }
+    $elements = CRM_Nbrprojectvolunteerlist_Utils::processContactQueryElements($contactIds, $i, $queryParams);
     $query .= implode("," , $elements) . ")";
     $dao = CRM_Core_DAO::executeQuery($query, $queryParams);
     while ($dao->fetch()) {

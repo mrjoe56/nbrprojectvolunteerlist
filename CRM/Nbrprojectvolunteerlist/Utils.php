@@ -51,5 +51,23 @@ class CRM_Nbrprojectvolunteerlist_Utils {
     }
     return $elements;
   }
+
+  /**
+   * Method to add contact ids clause (contact_id IN (....)) to query
+   *
+   * @param $i
+   * @param $contactIds
+   * @param $query
+   * @param $queryParams
+   */
+  public static function addContactIdsToQuery($i, $contactIds, &$query, &$queryParams) {
+    $elements = [];
+    foreach ($contactIds as $contactId) {
+      $i++;
+      $queryParams[$i] = [(int) $contactId, 'Integer'];
+      $elements[] = "%" . $i;
+    }
+    $query .= implode("," , $elements) . ")";
+  }
 }
 
