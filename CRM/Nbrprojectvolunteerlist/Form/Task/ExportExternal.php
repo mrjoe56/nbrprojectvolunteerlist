@@ -65,14 +65,14 @@ class CRM_Nbrprojectvolunteerlist_Form_Task_ExportExternal extends CRM_Contact_F
         'recall_group' => $dao->recall_group,
         'age' => $dao->age,
         'gender' => $dao->gender,
-        'birth_date' => date('d-m-Y', strtotime($dao->birth_date)),
         'email' => $dao->email,
         'street_address' => $dao->street_address,
         'city' => $dao->city,
         'county' => $dao->county,
         'postal_code' => $dao->postal_code,
-        'date_invited' => date('d-m-Y', strtotime($dao->date_invited)),
       ];
+      // fix dates
+      $this->fixDates($dao, $volunteer);
       // add home and mobile phones
       $this->getPhones($dao->contact_id, $volunteer);
       // add if accepted else invalid
@@ -83,6 +83,26 @@ class CRM_Nbrprojectvolunteerlist_Form_Task_ExportExternal extends CRM_Contact_F
       else {
         $this->_countInvalid++;
         $this->_invalids[$dao->contact_id] = $volunteer;
+      }
+    }
+  }
+
+  /**
+   * Method to process the dates nicely
+   *
+   * @param $dao
+   * @param $volunteer
+   * @throws Exception
+   */
+  private function fixDates($dao, &$volunteer) {
+    $fields = ['birth_date', 'date_invited'];
+    foreach ($fields as $field) {
+      if (!empty($dao->$field)) {
+        $fixDate = new DateTime($dao->$field);
+        $volunteer[$field] = $fixDate->format('d-m-Y');
+      }
+      else {
+        $volunteer[$field] = "";
       }
     }
   }
@@ -146,7 +166,22 @@ class CRM_Nbrprojectvolunteerlist_Form_Task_ExportExternal extends CRM_Contact_F
     // only if we have a study and selected volunteers
     if (isset($this->_studyId) && !empty($this->_selected)) {
       $fileName = "export_external_" . date('Y-m-d') . ".csv";
-      $headers = ['First Name', 'Last Name', 'Study ID', 'Recall Group', 'Age', 'Gender', 'Date of Birth', 'Email', 'Street Address', 'City', 'County', 'Postcode', 'Date Invited', 'Phone', 'Mobile'];
+      $headers = [
+        'First Name',
+        'Last Name',
+        'Study ID',
+        'Recall Group',
+        'Age',
+        'Gender',
+        'Email',
+        'Street Address',
+        'City',
+        'County',
+        'Postcode',
+        'Date of Birth',
+        'Date Invited',
+        'Phone',
+        'Mobile'];
       $rows = [];
       foreach ($this->_selected as $selectedId => $selectedData) {
         unset($selectedData['contact_id']);
