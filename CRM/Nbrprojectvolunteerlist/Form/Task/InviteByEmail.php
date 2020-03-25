@@ -133,7 +133,14 @@ class CRM_Nbrprojectvolunteerlist_Form_Task_InviteByEmail extends CRM_Contact_Fo
             'case_id' => $caseId,
           ]);
           // now add the invite activity
-          CRM_Nihrbackbone_NbrVolunteerCase::addInviteActivity($caseId, $contactId, $this->_studyId);
+          $studyNumber = CRM_Nihrbackbone_NbrStudy::getStudyNumberWithId($this->_studyId);
+          if ($studyNumber) {
+            $subject = "Invited to study " . $studyNumber;
+          }
+          else {
+            $subject = "Invited to study " . $this->_studyId;
+          }
+          CRM_Nihrbackbone_NbrVolunteerCase::addCaseActivity($caseId, $contactId, CRM_Nihrbackbone_BackboneConfig::singleton()->getInviteProjectActivityTypeId(), 'Completed', $subject);
           // change status on study to invited
           $statusCustomField = "custom_" . CRM_Nihrbackbone_BackboneConfig::singleton()->getParticipationCustomField('nvpd_study_participation_status', 'id');
           civicrm_api3('Case', 'create', [

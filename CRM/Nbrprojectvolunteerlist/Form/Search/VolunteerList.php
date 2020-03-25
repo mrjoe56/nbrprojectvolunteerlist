@@ -137,6 +137,7 @@ class CRM_Nbrprojectvolunteerlist_Form_Search_VolunteerList extends CRM_Contact_
       E::ts('Recall Group') => 'nvpd_recall_group',
       E::ts('Status') => 'study_status',
       E::ts('Inv. Date') => 'nvpd_date_invited',
+      E::ts('Researcher Date') => 'date_researcher',
       E::ts('Case ID') => 'case_id'
     ];
     return $columns;
@@ -172,7 +173,7 @@ class CRM_Nbrprojectvolunteerlist_Form_Search_VolunteerList extends CRM_Contact_
       DISTINCT(contact_a.id) AS contact_id, cas.id AS case_id, contact_a.sort_name, contact_a.birth_date, genderov.label AS gender,
       ethnicov.label AS ethnicity, adr.city AS volunteer_address, nvpd." . $eligibleColumn . ", nvpd.". $studyParticipantIDColumn
       . ", nvpd." . $recallColumn . ", stustatus.label AS study_status, nvpd."
-      . $dateInvitedColumn . ", nvpd." . $distanceColumn;
+      . $dateInvitedColumn . ", nvpd." . $distanceColumn . ", '' AS date_researcher";
   }
 
   /**
@@ -363,6 +364,13 @@ class CRM_Nbrprojectvolunteerlist_Form_Search_VolunteerList extends CRM_Contact_
     foreach ($row as $fieldName => &$field) {
       // add case url
       switch ($fieldName) {
+        case 'date_researcher':
+          $exportDate = CRM_Nihrbackbone_NbrVolunteerCase::getLatestExportDate($row['case_id']);
+          if ($exportDate) {
+            $row['date_researcher'] = $exportDate;
+          }
+          break;
+
         case 'birth_date':
           $birthDate = $row[$fieldName];
           $row[$fieldName] = "unknown";

@@ -38,7 +38,7 @@ class CRM_Nbrprojectvolunteerlist_Form_Task_ExportExternal extends CRM_Contact_F
       . " AS recall_group, a." . $statusColumn . " AS study_status_id, a. " . $inviteColumn . " AS date_invited,
       g.label AS study_status, c.first_name, c.last_name, h.label AS gender, d.email, e.street_address,
       TIMESTAMPDIFF(YEAR, c.birth_date , CURDATE()) AS age, e.city, e.postal_code, f.name AS county,
-      b.contact_id, c.birth_date
+      b.contact_id, c.birth_date, b.case_id, b.contact_id
       FROM " . $participantTable . " AS a
       LEFT JOIN civicrm_case_contact AS b ON a.entity_id = b.id
       LEFT JOIN civicrm_contact AS c ON b.contact_id = c.id
@@ -70,6 +70,8 @@ class CRM_Nbrprojectvolunteerlist_Form_Task_ExportExternal extends CRM_Contact_F
         'city' => $dao->city,
         'county' => $dao->county,
         'postal_code' => $dao->postal_code,
+        'case_id' => $dao->case_id,
+        'contact_id' => $dao->contact_id,
       ];
       // fix dates
       $this->fixDates($dao, $volunteer);
@@ -184,7 +186,12 @@ class CRM_Nbrprojectvolunteerlist_Form_Task_ExportExternal extends CRM_Contact_F
         'Mobile'];
       $rows = [];
       foreach ($this->_selected as $selectedId => $selectedData) {
-        unset($selectedData['contact_id']);
+        // add export activity
+        $caseId = $selectedData['case_id'];
+        $contactId = $selectedData['contact_id'];
+        $actTypeId = CRM_Nihrbackbone_BackboneConfig::singleton()->getExportExternalActivityTypeId();
+        CRM_Nihrbackbone_NbrVolunteerCase::addCaseActivity($caseId, $contactId, $actTypeId, 'Completed', 'Exported to External Researcher(s)');
+        unset($selectedData['contact_id'], $selectedData['case_id']);
         $rows[] = $selectedData;
       }
       CRM_Core_Report_Excel::writeCSVFile($fileName, $headers, $rows);
