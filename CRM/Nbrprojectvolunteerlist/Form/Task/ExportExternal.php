@@ -189,8 +189,12 @@ class CRM_Nbrprojectvolunteerlist_Form_Task_ExportExternal extends CRM_Contact_F
         // add export activity
         $caseId = $selectedData['case_id'];
         $contactId = $selectedData['contact_id'];
+        $activityParams = [
+          'status_id' => 'Completed',
+          'subject' => 'Exported to External Researcher(s)',
+          ];
         $actTypeId = CRM_Nihrbackbone_BackboneConfig::singleton()->getExportExternalActivityTypeId();
-        CRM_Nihrbackbone_NbrVolunteerCase::addCaseActivity($caseId, $contactId, $actTypeId, 'Completed', 'Exported to External Researcher(s)');
+        CRM_Nihrbackbone_NbrVolunteerCase::addCaseActivity($caseId, $contactId, $actTypeId, $activityParams);
         unset($selectedData['contact_id'], $selectedData['case_id']);
         $rows[] = $selectedData;
       }

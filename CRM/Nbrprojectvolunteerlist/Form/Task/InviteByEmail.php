@@ -133,21 +133,7 @@ class CRM_Nbrprojectvolunteerlist_Form_Task_InviteByEmail extends CRM_Contact_Fo
             'case_id' => $caseId,
           ]);
           // now add the invite activity
-          $studyNumber = CRM_Nihrbackbone_NbrStudy::getStudyNumberWithId($this->_studyId);
-          if ($studyNumber) {
-            $subject = "Invited to study " . $studyNumber;
-          }
-          else {
-            $subject = "Invited to study " . $this->_studyId;
-          }
-          CRM_Nihrbackbone_NbrVolunteerCase::addCaseActivity($caseId, $contactId, CRM_Nihrbackbone_BackboneConfig::singleton()->getInviteProjectActivityTypeId(), 'Completed', $subject);
-          // change status on study to invited
-          $statusCustomField = "custom_" . CRM_Nihrbackbone_BackboneConfig::singleton()->getParticipationCustomField('nvpd_study_participation_status', 'id');
-          civicrm_api3('Case', 'create', [
-            'contact_id' => $contactId,
-            'id' => $caseId,
-            $statusCustomField => "study_participation_status_invited",
-          ]);
+          CRM_Nihrbackbone_NbrInvitation::addInviteActivity($caseId, $contactId, $this->_studyId, "Invite By Email Action");
         }
         catch (CiviCRM_API3_Exception $ex) {
           Civi::log()->warning(E::ts("Could not send invitation to study ") . CRM_Nihrbackbone_NbrStudy::getStudyNumberWithId($this->_studyId)
@@ -169,12 +155,14 @@ class CRM_Nbrprojectvolunteerlist_Form_Task_InviteByEmail extends CRM_Contact_Fo
     $query = "SELECT ccc.case_id, ccc.contact_id
         FROM " . $participationTable. " AS cvnpd
         LEFT JOIN civicrm_case_contact AS ccc ON cvnpd.entity_id = ccc.case_id
-        WHERE cvnpd." . $studyColumn . " = %2 AND ccc.contact_id IN (";
+        LEFT JOIN civicrm_case AS cc ON ccc.case_id = cc.id
+        WHERE cvnpd." . $studyColumn . " = %2 AND cc.is_deleted = %3 AND ccc.contact_id IN (";
     $queryParams = [
       1 => [1, "Integer"],
       2 => [$this->_studyId, "Integer"],
+      3 => [0, "Integer"],
       ];
-    $i = 2;
+    $i = 3;
     $contactIds = [];
     foreach ($this->_invited as $invitedId => $invitedData) {
       $contactIds[] = $invitedId;

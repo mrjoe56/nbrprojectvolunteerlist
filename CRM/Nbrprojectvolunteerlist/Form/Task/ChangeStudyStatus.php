@@ -82,20 +82,23 @@ class CRM_Nbrprojectvolunteerlist_Form_Task_ChangeStudyStatus extends CRM_Contac
    */
   public function postProcess() {
     if (isset($this->_submitValues['nbr_study_status_id'])) {
-      $statusColumn = CRM_Nihrbackbone_BackboneConfig::singleton()->getParticipationCustomField('nvpd_study_participation_status', 'column_name');
-      $updateParams = [];
-      $update = "";
       $caseIds = $this->getRelevantCaseIds();
-      $elements = CRM_Nbrprojectvolunteerlist_Utils::setUpdateParams($caseIds, $statusColumn, $this->_submitValues['nbr_study_status_id'], $updateParams, $update);
-      if (!empty($elements)) {
-        $update .= implode(',', $elements) . ")";
-        CRM_Core_DAO::executeQuery($update, $updateParams);
-        $newStatusLabel = CRM_Nihrbackbone_Utils::getOptionValueLabel($this->_submitValues['nbr_study_status_id'], CRM_Nihrbackbone_BackboneConfig::singleton()->getStudyParticipationStatusOptionGroupId());
-        CRM_Nbrprojectvolunteerlist_CaseActivity::addStatusChangeActivities($newStatusLabel, $caseIds);
-        CRM_Core_Session::setStatus(E::ts('Updated status of selected volunteers on study ') . CRM_Nihrbackbone_NbrStudy::getStudyNumberWithId($this->_studyId)
-          . E::ts(' to ' . CRM_Nihrbackbone_Utils::getOptionValueLabel($this->_submitValues['nbr_study_status_id'],
-              CRM_Nihrbackbone_BackboneConfig::singleton()->getStudyParticipationStatusOptionGroupId())), E::ts('Successfully changed status on study'), 'success');
+      $newStatusLabel = CRM_Nihrbackbone_Utils::getOptionValueLabel($this->_submitValues['nbr_study_status_id'], CRM_Nihrbackbone_BackboneConfig::singleton()->getStudyParticipationStatusOptionGroupId());
+      foreach ($caseIds as $caseId => $caseData) {
+        CRM_Nihrbackbone_NbrVolunteerCase::updateStudyStatus($caseId, $caseData['contact_id'], $this->_submitValues['nbr_study_status_id']);
+        $currentStatusLabel = CRM_Nihrbackbone_Utils::getOptionValueLabel($caseData['study_status_id'], CRM_Nihrbackbone_BackboneConfig::singleton()->getStudyParticipationStatusOptionGroupId());
+        $activityData = [
+          'subject' => "Changed from status " . $currentStatusLabel . " to status " . $newStatusLabel,
+          'status_id' => "Completed",
+        ];
+        CRM_Nihrbackbone_NbrVolunteerCase::addCaseActivity($caseId, $caseData['contact_id'], CRM_Nihrbackbone_BackboneConfig::singleton()->getChangedStudyStatusActivityTypeId(), $activityData);
+        // if status is invited, add invite activity too
+        if ($this->_submitValues['nbr_study_status_id'] == 'study_participation_status_invited') {
+          CRM_Nihrbackbone_NbrInvitation::addInviteActivity($caseId, $caseData['contact_id'], $this->_studyId, 'Change Case Status Action');
+        }
       }
+      CRM_Core_Session::setStatus(E::ts('Updated status of selected volunteers on study ') . CRM_Nihrbackbone_NbrStudy::getStudyNumberWithId($this->_studyId)
+        . E::ts(' to ') . $newStatusLabel, E::ts('Successfully changed status on study'), 'success');
     }
   }
 
@@ -109,17 +112,24 @@ class CRM_Nbrprojectvolunteerlist_Form_Task_ChangeStudyStatus extends CRM_Contac
     $participationTable = CRM_Nihrbackbone_BackboneConfig::singleton()->getParticipationDataCustomGroup('table_name');
     $studyStatusColumn = CRM_Nihrbackbone_BackboneConfig::singleton()->getParticipationCustomField('nvpd_study_participation_status', 'column_name');
     $studyColumn = CRM_Nihrbackbone_BackboneConfig::singleton()->getParticipationCustomField('nvpd_study_id', 'column_name');
-    $query = "SELECT ccc.case_id, cvnpd. " . $studyStatusColumn . " AS study_status_id
+    $query = "SELECT ccc.case_id, cvnpd. " . $studyStatusColumn . " AS study_status_id, ccc.contact_id
         FROM " . $participationTable. " AS cvnpd
             LEFT JOIN civicrm_case_contact AS ccc ON cvnpd.entity_id = ccc.case_id
-        WHERE cvnpd." . $studyColumn . " = %1 AND ccc.contact_id IN (";
-    $queryParams = [1 => [$this->_studyId, "Integer"]];
-    $i = 1;
+            LEFT JOIN civicrm_case AS cc ON ccc.case_id = cc.id
+        WHERE cvnpd." . $studyColumn . " = %1 AND cc.is_deleted = %2 AND ccc.contact_id IN (";
+    $queryParams = [
+      1 => [$this->_studyId, "Integer"],
+      2 => [0, "Integer"]
+      ];
+    $i = 2;
     $elements = CRM_Nbrprojectvolunteerlist_Utils::processContactQueryElements($this->_contactIds, $i, $queryParams);
     $query .= implode("," , $elements) . ")";
     $dao = CRM_Core_DAO::executeQuery($query, $queryParams);
     while ($dao->fetch()) {
-      $caseIds[$dao->case_id] = $dao->study_status_id;
+      $caseIds[$dao->case_id] = [
+      'study_status_id' => $dao->study_status_id,
+      'contact_id' => $dao->contact_id,
+        ];
     }
     return $caseIds;
   }
