@@ -55,16 +55,18 @@ class CRM_Nbrprojectvolunteerlist_Form_Task_InviteByEmail extends CRM_Contact_Fo
         'email' => $dao->email,
       ];
       $eligibleStatus = implode(', ', CRM_Nihrbackbone_NbrVolunteerCase::getEligibleDescriptions($dao->eligible_status_id));
-      if (!empty($eligibleStatus)) {
-        $volunteer['eligible_status'] = $eligibleStatus;
-      }
-      else {
-        $volunteer['eligible_status'] = "Eligible";
-      }
-      // add if valid email else list as invalid
-      if (filter_var($dao->email, FILTER_VALIDATE_EMAIL)) {
-        $this->_countInvited++;
-        $this->_invited[$dao->contact_id] = $volunteer;
+      $volunteer['eligible_status'] = $eligibleStatus;
+      // only allow invite if eligible
+      if ($dao->eligible_status_id == CRM_Nihrbackbone_BackboneConfig::singleton()->getEligibleEligibleStatus()) {
+        // add if valid email else list as invalid
+        if (filter_var($dao->email, FILTER_VALIDATE_EMAIL)) {
+          $this->_countInvited++;
+          $this->_invited[$dao->contact_id] = $volunteer;
+        }
+        else {
+          $this->_countInvalid++;
+          $this->_invalids[$dao->contact_id] = $volunteer;
+        }
       }
       else {
         $this->_countInvalid++;
@@ -84,7 +86,7 @@ class CRM_Nbrprojectvolunteerlist_Form_Task_InviteByEmail extends CRM_Contact_Fo
       TRUE, ['class' => 'crm-select2']);
     $this->assign('template_txt', E::ts('Template used for invitation'));
     $this->assign('invited_txt', E::ts('Volunteers that will be invited by email:') . $this->_countInvited);
-    $this->assign('invalid_txt', E::ts('Volunteers that will NOT be invited because their email is invalid:') . $this->_countInvalid);
+    $this->assign('invalid_txt', E::ts('Volunteers that will NOT be invited because their email is invalid or because they are not eligible:') . $this->_countInvalid);
     $this->getInvitedData();
     $this->assign('count_invited_txt', E::ts('Number of volunteers that will be invited: ') . $this->_countInvited);
     $this->assign('count_invalid_txt', E::ts('Number of volunteers that will NOT be invited: ') . $this->_countInvalid);
