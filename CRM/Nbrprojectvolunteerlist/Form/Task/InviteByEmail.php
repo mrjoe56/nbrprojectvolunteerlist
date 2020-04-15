@@ -57,7 +57,7 @@ class CRM_Nbrprojectvolunteerlist_Form_Task_InviteByEmail extends CRM_Contact_Fo
       $eligibleStatus = implode(', ', CRM_Nihrbackbone_NbrVolunteerCase::getEligibleDescriptions($dao->eligible_status_id));
       $volunteer['eligible_status'] = $eligibleStatus;
       // only allow invite if eligible
-      if ($dao->eligible_status_id == CRM_Nihrbackbone_BackboneConfig::singleton()->getEligibleEligibleStatus()) {
+      if ($dao->eligible_status_id == Civi::service('nbrBackbone')->getEligibleEligibilityStatusValue()) {
         // add if valid email else list as invalid
         if (filter_var($dao->email, FILTER_VALIDATE_EMAIL)) {
           $this->_countInvited++;
