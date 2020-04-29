@@ -121,7 +121,7 @@ class CRM_Nbrprojectvolunteerlist_Form_Task_ChangeStudyStatus extends CRM_Contac
         FROM " . $participationTable. " AS cvnpd
             LEFT JOIN civicrm_case_contact AS ccc ON cvnpd.entity_id = ccc.case_id
             LEFT JOIN civicrm_case AS cc ON ccc.case_id = cc.id
-        WHERE cvnpd." . $studyColumn . " = %1 AND cc.is_deleted = %2 AND ccc.contact_id IN (";
+        WHERE cvnpd." . $studyColumn . " = %1 AND cc.is_deleted = %2";
     $queryParams = [
       1 => [$this->_studyId, "Integer"],
       2 => [0, "Integer"]
@@ -129,14 +129,17 @@ class CRM_Nbrprojectvolunteerlist_Form_Task_ChangeStudyStatus extends CRM_Contac
     $i = 2;
     // if new status in invited, invitation pending or accepted, only process if volunteer is eligible
     $contactIds = $this->selectValidVolunteers($newStatus);
-    $elements = CRM_Nbrprojectvolunteerlist_Utils::processContactQueryElements($contactIds, $i, $queryParams);
-    $query .= implode("," , $elements) . ")";
-    $dao = CRM_Core_DAO::executeQuery($query, $queryParams);
-    while ($dao->fetch()) {
-      $caseIds[$dao->case_id] = [
-      'study_status_id' => $dao->study_status_id,
-      'contact_id' => $dao->contact_id,
+    if (!empty($contactIds)) {
+      $query .= " AND ccc.contact_id IN (";
+      $elements = CRM_Nbrprojectvolunteerlist_Utils::processContactQueryElements($contactIds, $i, $queryParams);
+      $query .= implode("," , $elements) . ")";
+      $dao = CRM_Core_DAO::executeQuery($query, $queryParams);
+      while ($dao->fetch()) {
+        $caseIds[$dao->case_id] = [
+          'study_status_id' => $dao->study_status_id,
+          'contact_id' => $dao->contact_id,
         ];
+      }
     }
     return $caseIds;
   }
