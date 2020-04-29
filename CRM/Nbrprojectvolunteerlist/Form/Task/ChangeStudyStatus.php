@@ -12,7 +12,9 @@ use CRM_Nbrprojectvolunteerlist_ExtensionUtil as E;
 class CRM_Nbrprojectvolunteerlist_Form_Task_ChangeStudyStatus extends CRM_Contact_Form_Task {
 
   private $_countSelected = NULL;
+  private $_countWarnings = NULL;
   private $_selected = [];
+  private $_warnings = [];
   private $_studyId = NULL;
 
   /**
@@ -48,14 +50,14 @@ class CRM_Nbrprojectvolunteerlist_Form_Task_ChangeStudyStatus extends CRM_Contac
         'display_name' => $dao->display_name,
         'study_participant_id' => $dao->study_participant_id,
         'study_status' => $dao->study_status,
+        'eligible_status' => implode(', ', CRM_Nihrbackbone_NbrVolunteerCase::getEligibleDescriptions($dao->eligible_status_id)),
       ];
-      $eligibleStatus = implode(', ', CRM_Nihrbackbone_NbrVolunteerCase::getEligibleDescriptions($dao->eligible_status_id));
-      if (!empty($eligibleStatus)) {
-        $volunteer['eligible_status'] = $eligibleStatus;
+      // warning list for non-eligible volunteers
+      if ($dao->eligible_status_id != Civi::service('nbrBackbone')->getEligibleEligibilityStatusValue()) {
+        $this->_countWarnings++;
+        $this->_warnings[$dao->contact_id] = $volunteer;
       }
-      else {
-        $volunteer['eligible_status'] = "Eligible";
-      }
+      $this->_countSelected++;
       $this->_selected[$dao->contact_id] = $volunteer;
     }
   }
@@ -71,9 +73,12 @@ class CRM_Nbrprojectvolunteerlist_Form_Task_ChangeStudyStatus extends CRM_Contac
       TRUE, ['class' => 'crm-select2']);
     $this->assign('status_txt', E::ts('New status for selected volunteers:'));
     $this->assign('selected_txt', E::ts('Volunteers for which the status will be changed:'));
-    $this->assign('count_selected_txt', E::ts('Number of volunteers whose status will be changed: ') . $this->_countSelected);
+    $this->assign('warning_txt', E::ts('The volunteers below are not eligible and will NOT be processed if the new statis is invitation pending, invited or accepted!'));
     $this->getSelectedData();
+    $this->assign('count_selected_txt', E::ts('Number of volunteers whose status will be changed: ') . $this->_countSelected);
+    $this->assign('count_warning_txt', E::ts('Number of volunteers that might not be processed: ') . $this->_countWarnings);
     $this->assign('selected', $this->_selected);
+    $this->assign('warnings', $this->_warnings);
     $this->addDefaultButtons(ts('Change Study Status'));
   }
 
@@ -82,7 +87,7 @@ class CRM_Nbrprojectvolunteerlist_Form_Task_ChangeStudyStatus extends CRM_Contac
    */
   public function postProcess() {
     if (isset($this->_submitValues['nbr_study_status_id'])) {
-      $caseIds = $this->getRelevantCaseIds();
+      $caseIds = $this->getRelevantCaseIds($this->_submitValues['nbr_study_status_id']);
       $newStatusLabel = CRM_Nihrbackbone_Utils::getOptionValueLabel($this->_submitValues['nbr_study_status_id'], CRM_Nihrbackbone_BackboneConfig::singleton()->getStudyParticipationStatusOptionGroupId());
       foreach ($caseIds as $caseId => $caseData) {
         CRM_Nihrbackbone_NbrVolunteerCase::updateStudyStatus($caseId, $caseData['contact_id'], $this->_submitValues['nbr_study_status_id']);
@@ -107,7 +112,7 @@ class CRM_Nbrprojectvolunteerlist_Form_Task_ChangeStudyStatus extends CRM_Contac
    *
    * @return array
    */
-  private function getRelevantCaseIds() {
+  private function getRelevantCaseIds($newStatus) {
     $caseIds = [];
     $participationTable = CRM_Nihrbackbone_BackboneConfig::singleton()->getParticipationDataCustomGroup('table_name');
     $studyStatusColumn = CRM_Nihrbackbone_BackboneConfig::singleton()->getParticipationCustomField('nvpd_study_participation_status', 'column_name');
@@ -122,7 +127,9 @@ class CRM_Nbrprojectvolunteerlist_Form_Task_ChangeStudyStatus extends CRM_Contac
       2 => [0, "Integer"]
       ];
     $i = 2;
-    $elements = CRM_Nbrprojectvolunteerlist_Utils::processContactQueryElements($this->_contactIds, $i, $queryParams);
+    // if new status in invited, invitation pending or accepted, only process if volunteer is eligible
+    $contactIds = $this->selectValidVolunteers($newStatus);
+    $elements = CRM_Nbrprojectvolunteerlist_Utils::processContactQueryElements($contactIds, $i, $queryParams);
     $query .= implode("," , $elements) . ")";
     $dao = CRM_Core_DAO::executeQuery($query, $queryParams);
     while ($dao->fetch()) {
@@ -132,6 +139,28 @@ class CRM_Nbrprojectvolunteerlist_Form_Task_ChangeStudyStatus extends CRM_Contac
         ];
     }
     return $caseIds;
+  }
+
+  /**
+   * Method to select the volunteers that are valid for processing
+   *
+   * @param $newStatus
+   * @return array
+   */
+  private function selectValidVolunteers($newStatus) {
+    $contactIds = [];
+    // first found out if new status is an invited one
+    $invited = explode(',', Civi::settings()->get('nbr_invited_study_status'));
+    // if so, remove warnings from selected
+    if (in_array($newStatus, $invited)) {
+      foreach ($this->_warnings as $removeId => $warning) {
+        unset($this->_selected[$removeId]);
+      }
+    }
+    foreach ($this->_selected as $contactId => $selected) {
+      $contactIds[] = $contactId;
+    }
+    return $contactIds;
   }
 
 }

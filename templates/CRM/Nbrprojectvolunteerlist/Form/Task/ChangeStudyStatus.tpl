@@ -29,6 +29,27 @@
       </table>
     {/if}
   <p>{$count_selected_txt}</p>
+  <h3>{$warning_txt}</h3>
+  {if !empty($warnings)}
+    <table>
+      <tr>
+        <th>{ts}Name{/ts}</th>
+        <th>{ts}BioResource ID{/ts}</th>
+        <th>{ts}Participant ID{/ts}</th>
+        <th>{ts}Study/Participant ID{/ts}</th>
+        <th>{ts}Eligibility{/ts}</th>
+        <th>{ts}Email{/ts}</th>
+      </tr>
+      {foreach from=$warnings key=contact_id item=warning}
+        <tr id='contactid{$contact_id}' class="{cycle values="odd-row,even-row"}">
+          <td>{$warning.display_name}</td>
+          <td>{$warning.study_participant_id}</td>
+          <td>{$warning.eligible_status}</td>
+        </tr>
+      {/foreach}
+    </table>
+  {/if}
+  <p>{$count_warning_txt}</p>
 </div>
 <p>
 <div class="form-item">
