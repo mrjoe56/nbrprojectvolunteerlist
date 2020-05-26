@@ -33,7 +33,7 @@ class CRM_Nbrprojectvolunteerlist_Form_Search_VolunteerList extends CRM_Contact_
    * @return void
    */
   function buildForm(&$form) {
-    CRM_Utils_System::setTitle(E::ts('NIHR BioResource Volunteer List'));
+    CRM_Utils_System::setTitle(E::ts('Manage Study Participation'));
     $form->add('select','study_id', E::ts('Study'), $this->getStudyList(), TRUE,
       ['class' => 'crm-select2', 'placeholder' => '- select study -']);
     $form->add('select','gender_id', E::ts('Gender is one of'), CRM_Nihrbackbone_Utils::getOptionValueList('gender'), FALSE,
