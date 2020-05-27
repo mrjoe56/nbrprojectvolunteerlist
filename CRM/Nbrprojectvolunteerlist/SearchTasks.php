@@ -42,7 +42,7 @@ class CRM_Nbrprojectvolunteerlist_SearchTasks {
       self::setProjectVolunteerListTasks($tasks);
     }
     else {
-      Civi::settings()->set('nbr_cs_volunteerlist_qfKey', "");
+      Civi::settings()->set(CRM_Nbrprojectvolunteerlist_Utils::getQfKeySettingName(), "");
     }
   }
 
@@ -66,13 +66,13 @@ class CRM_Nbrprojectvolunteerlist_SearchTasks {
           // store key if we are not in display mode
           $display = CRM_Utils_Request::retrieveValue('_qf_Custom_display', "String");
           if (!$display) {
-            Civi::settings()->set('nbr_cs_volunteerlist_qfKey', $qfKey);
+            Civi::settings()->set(CRM_Nbrprojectvolunteerlist_Utils::getQfKeySettingName(), $qfKey);
             return TRUE;
           }
         }
         else {
           // clear qfKey
-          Civi::settings()->set('nbr_cs_volunteerlist_qfKey', "");
+          Civi::settings()->set(CRM_Nbrprojectvolunteerlist_Utils::getQfKeySettingName(), "");
           return TRUE;
         }
       }
@@ -80,7 +80,7 @@ class CRM_Nbrprojectvolunteerlist_SearchTasks {
     // if custom search or display and key correct, return TRUE
     if ($q == 'civicrm/contact/search/custom') {
       $qfKey = CRM_Utils_Request::retrieveValue('qfKey', "String");
-      $checkKey = Civi::settings()->get('nbr_cs_volunteerlist_qfKey');
+      $checkKey = Civi::settings()->get(CRM_Nbrprojectvolunteerlist_Utils::getQfKeySettingName());
       if ($checkKey == $qfKey) {
         return TRUE;
       }

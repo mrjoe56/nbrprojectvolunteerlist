@@ -22,9 +22,49 @@ class CRM_Nbrprojectvolunteerlist_Form_Search_VolunteerList extends CRM_Contact_
         $formValues = array_merge($this->getEntityDefaults($entity), $formValues);
       }
     }
+    else {
+      $this->clearFilters($formValues);
+    }
     parent::__construct($formValues);
   }
 
+  /**
+   * Method to clear filters
+   */
+  private function clearFilters($formValues) {
+    // only if this is a "fresh" call of the search and filters are empty
+    $qfDefault = CRM_Utils_Request::retrieveValue('_qf_default', 'String');
+    $filters = $this->getFilters();
+    $hasFilters = FALSE;
+    foreach ($formValues as $formKey => $formValue) {
+      if (in_array($formKey, $filters)) {
+        $hasFilters = TRUE;
+      }
+    }
+    if ($qfDefault == "Custom:refresh") {
+      $hasFilters = TRUE;
+    }
+    if ($hasFilters == FALSE) {
+      Civi::settings()->set(CRM_Nbrprojectvolunteerlist_Utils::getFilterSettingName(), []);
+    }
+  }
+    /**
+     * Method om filters op te halen
+     *
+     * @return array
+     */
+    private function getFilters() {
+      return [
+        'study_id',
+        'first_name',
+        'last_name',
+        'gender_id',
+        'recall_group',
+        'study_status_id',
+        'age_from',
+        'age_to',
+      ];
+    }
 
   /**
    * Prepare a set of search fields
@@ -111,11 +151,53 @@ class CRM_Nbrprojectvolunteerlist_Form_Search_VolunteerList extends CRM_Contact_
    *  - total: numeric
    */
   function summary() {
-    return NULL;
-    // return array(
-    //   'summary' => 'This is a summary',
-    //   'total' => 50.0,
-    // );
+    $searchFilters = [
+      'study_id' => 'Study ',
+      'first_name' => 'First name contains ',
+      'last_name' => 'Last name contains ',
+      'gender_id' => 'Gender is one of ',
+      'recall_group' => 'Recall Group is one of ',
+      'study_status_id' => 'Status is one of ',
+      'age_from' => 'Age from ',
+      'age_to' => 'Age to ',
+    ];
+    $filters = [];
+    foreach ($searchFilters as $searchFilter => $searchTxt) {
+      if (isset($this->_formValues[$searchFilter]) && !empty($this->_formValues[$searchFilter])) {
+        switch ($searchFilter) {
+          case "study_id":
+            $filters[] = $searchTxt . CRM_Nihrbackbone_NbrStudy::getStudyNumberWithId($this->_formValues[$searchFilter]);
+            break;
+          case "gender_id":
+            $genderLabels = [];
+            foreach ($this->_formValues[$searchFilter] as $gender) {
+              $genderLabels[] = CRM_Nihrbackbone_Utils::getOptionValueLabel($gender, 'gender');
+            }
+            $filters[] = $searchTxt . implode(", ", $genderLabels);
+            break;
+          case "study_status_id":
+            $statusLabels = [];
+            foreach ($this->_formValues[$searchFilter] as $status) {
+              $statusLabels[] = CRM_Nihrbackbone_Utils::getOptionValueLabel($status, CRM_Nihrbackbone_BackboneConfig::singleton()->getStudyParticipationStatusOptionGroupId());
+            }
+            $filters[] = $searchTxt . implode(", ", $statusLabels);
+            break;
+          default:
+            if (is_array($this->_formValues[$searchFilter])) {
+              $textLabels = [];
+              foreach ($this->_formValues[$searchFilter] as $value) {
+                $textLabels[] = $value;
+              }
+              $filters[] = $searchTxt . implode(", ", $textLabels);
+            }
+            else {
+              $filters[] = $searchTxt . $this->_formValues[$searchFilter];
+            }
+            break;
+        }
+      }
+    }
+    return ['summary' => "Filter(s) " . implode(" and " , $filters)];
   }
 
   /**
@@ -221,6 +303,7 @@ class CRM_Nbrprojectvolunteerlist_Form_Search_VolunteerList extends CRM_Contact_
       $where .= ' AND ' . implode(' AND ', $clauses);
     }
     $this->addMultipleClauses($index, $where, $params);
+    $this->setFiltersForUser();
     return $this->whereClause($where, $params);
   }
 
@@ -491,7 +574,40 @@ class CRM_Nbrprojectvolunteerlist_Form_Search_VolunteerList extends CRM_Contact_
       if ($this->_studyId) {
         $defaults['study_id'] = $this->_studyId;
       }
+      $this->setDefaultsWithFilters($defaults);
     }
     return $defaults;
   }
+
+  /**
+   * Method to save the filters for the user in setting
+   */
+  private function setFiltersForUser() {
+    $values = [];
+    $filters = $this->getFilters();
+    foreach ($filters as $filter) {
+      if (isset($this->_formValues[$filter])) {
+        $values[$filter] = $this->_formValues[$filter];
+      }
+    }
+    if (!empty($values)) {
+      Civi::settings()->set(CRM_Nbrprojectvolunteerlist_Utils::getFilterSettingName(), $values);
+    }
+  }
+
+  /**
+   * Methode to set the filters if they were saved for the user
+   *
+   * @param $defaults
+   */
+  private function setDefaultsWithFilters(&$defaults) {
+    $filters = Civi::settings()->get(CRM_Nbrprojectvolunteerlist_Utils::getFilterSettingName());
+    if (!empty($filters)) {
+      foreach ($filters as $key => $value) {
+        $defaults[$key] = $value;
+      }
+    }
+  }
+
+
 }

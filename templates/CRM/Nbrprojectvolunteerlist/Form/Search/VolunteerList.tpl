@@ -82,9 +82,9 @@
                 {foreach from=$columnHeaders item=header}
                   {if $header.name != "Case ID"}
                     <th scope="col">
-                      {if $header.sort}
-                        {assign var='key' value=$header.sort}
-                        {$sort->_response.$key.link}
+                      {if $header.sort and $header.name ne "Gndr" and $header.name ne "Ethn." and $header.name ne "Loc." and $header.name ne "Status"}
+                          {assign var='key' value=$header.sort}
+                          {$sort->_response.$key.link}
                       {else}
                         {$header.name}
                       {/if}

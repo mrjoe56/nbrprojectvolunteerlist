@@ -45,5 +45,22 @@ class CRM_Nbrprojectvolunteerlist_Utils {
     }
     $query .= implode("," , $elements) . ")";
   }
+
+  /**
+   * Method to get the qfkey setting name for the logged in user
+   * @return string
+   */
+  public static function getQfKeySettingName() {
+    return "nbr_cs_volunteerlist_qfkey_" . CRM_Core_Session::getLoggedInContactID();
+  }
+
+  /**
+   * Method to get the filter setting name for the logged in user
+   * @return string
+   */
+  public static function getFilterSettingName() {
+    return "nbr_cs_volunteerlist_filters_" . CRM_Core_Session::getLoggedInContactID();
+  }
+
 }
 
