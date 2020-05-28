@@ -22,50 +22,8 @@ class CRM_Nbrprojectvolunteerlist_Form_Search_VolunteerList extends CRM_Contact_
         $formValues = array_merge($this->getEntityDefaults($entity), $formValues);
       }
     }
-    else {
-      $this->clearFilters($formValues);
-    }
     parent::__construct($formValues);
   }
-
-  /**
-   * Method to clear filters
-   */
-  private function clearFilters($formValues) {
-    // only if this is a "fresh" call of the search and filters are empty (apart from study_id which is always used)
-    $qfDefault = CRM_Utils_Request::retrieveValue('_qf_default', 'String');
-    $filters = $this->getFilters();
-    unset($filters['study_id']);
-    $hasFilters = FALSE;
-    foreach ($formValues as $formKey => $formValue) {
-      if (in_array($formKey, $filters)) {
-        $hasFilters = TRUE;
-      }
-    }
-    if ($qfDefault == "Custom:refresh") {
-      $hasFilters = TRUE;
-    }
-    if ($hasFilters == FALSE) {
-      Civi::settings()->set(CRM_Nbrprojectvolunteerlist_Utils::getFilterSettingName(), []);
-    }
-  }
-    /**
-     * Method om filters op te halen
-     *
-     * @return array
-     */
-    private function getFilters() {
-      return [
-        'study_id',
-        'first_name',
-        'last_name',
-        'gender_id',
-        'recall_group',
-        'study_status_id',
-        'age_from',
-        'age_to',
-      ];
-    }
 
   /**
    * Prepare a set of search fields
@@ -304,7 +262,6 @@ class CRM_Nbrprojectvolunteerlist_Form_Search_VolunteerList extends CRM_Contact_
       $where .= ' AND ' . implode(' AND ', $clauses);
     }
     $this->addMultipleClauses($index, $where, $params);
-    $this->setFiltersForUser();
     return $this->whereClause($where, $params);
   }
 
@@ -575,40 +532,8 @@ class CRM_Nbrprojectvolunteerlist_Form_Search_VolunteerList extends CRM_Contact_
       if ($this->_studyId) {
         $defaults['study_id'] = $this->_studyId;
       }
-      $this->setDefaultsWithFilters($defaults);
     }
     return $defaults;
   }
-
-  /**
-   * Method to save the filters for the user in setting
-   */
-  private function setFiltersForUser() {
-    $values = [];
-    $filters = $this->getFilters();
-    foreach ($filters as $filter) {
-      if (isset($this->_formValues[$filter])) {
-        $values[$filter] = $this->_formValues[$filter];
-      }
-    }
-    if (!empty($values)) {
-      Civi::settings()->set(CRM_Nbrprojectvolunteerlist_Utils::getFilterSettingName(), $values);
-    }
-  }
-
-  /**
-   * Methode to set the filters if they were saved for the user
-   *
-   * @param $defaults
-   */
-  private function setDefaultsWithFilters(&$defaults) {
-    $filters = Civi::settings()->get(CRM_Nbrprojectvolunteerlist_Utils::getFilterSettingName());
-    if (!empty($filters)) {
-      foreach ($filters as $key => $value) {
-        $defaults[$key] = $value;
-      }
-    }
-  }
-
 
 }

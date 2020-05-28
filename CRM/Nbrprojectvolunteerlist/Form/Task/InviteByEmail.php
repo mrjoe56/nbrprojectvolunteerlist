@@ -147,8 +147,8 @@ class CRM_Nbrprojectvolunteerlist_Form_Task_InviteByEmail extends CRM_Contact_Fo
    * Overridden parent method
    */
   public function postProcess() {
-    // only if we have a study, contactIds and a template
-    if (isset($this->_studyId) && !empty($this->_contactIds) && !empty($this->_submitValues['template_id'])) {
+    // only if we have a study, invited ids and a template
+    if (isset($this->_studyId) && !empty($this->_invited) && !empty($this->_submitValues['template_id'])) {
       // first find all relevant cases
       $caseIds = $this->getRelevantCaseIds();
       // then send email (include case_id so the activity is recorded) and add an invited activity
@@ -177,33 +177,30 @@ class CRM_Nbrprojectvolunteerlist_Form_Task_InviteByEmail extends CRM_Contact_Fo
    */
   private function getRelevantCaseIds() {
     $caseIds = [];
-    $participationTable = CRM_Nihrbackbone_BackboneConfig::singleton()->getParticipationDataCustomGroup('table_name');
-    $studyColumn = CRM_Nihrbackbone_BackboneConfig::singleton()->getParticipationCustomField('nvpd_study_id', 'column_name');
-    $query = "SELECT ccc.case_id, ccc.contact_id
+    if (!empty($this->_invited)) {
+      $participationTable = CRM_Nihrbackbone_BackboneConfig::singleton()->getParticipationDataCustomGroup('table_name');
+      $studyColumn = CRM_Nihrbackbone_BackboneConfig::singleton()->getParticipationCustomField('nvpd_study_id', 'column_name');
+      $query = "SELECT ccc.case_id, ccc.contact_id
         FROM " . $participationTable. " AS cvnpd
         LEFT JOIN civicrm_case_contact AS ccc ON cvnpd.entity_id = ccc.case_id
         LEFT JOIN civicrm_case AS cc ON ccc.case_id = cc.id
-        WHERE cvnpd." . $studyColumn . " = %2 AND cc.is_deleted = %3";
-    $queryParams = [
-      1 => [1, "Integer"],
-      2 => [$this->_studyId, "Integer"],
-      3 => [0, "Integer"],
+        WHERE cvnpd." . $studyColumn . " = %2 AND cc.is_deleted = %3 AND ccc.contact_id IN(";
+      $queryParams = [
+        1 => [1, "Integer"],
+        2 => [$this->_studyId, "Integer"],
+        3 => [0, "Integer"],
       ];
-    $i = 3;
-    $contactIds = [];
-    if (!empty($this->_invited)) {
-      $query .= " AND ccc.contact_id IN (";
+      $i = 3;
+      $contactIds = [];
       foreach ($this->_invited as $invitedId => $invitedData) {
         $contactIds[] = $invitedId;
       }
-    }
-    $elements = CRM_Nbrprojectvolunteerlist_Utils::processContactQueryElements($contactIds, $i, $queryParams);
-    if (!empty($contactIds)) {
+      $elements = CRM_Nbrprojectvolunteerlist_Utils::processContactQueryElements($contactIds, $i, $queryParams);
       $query .= implode("," , $elements) . ")";
-    }
-    $dao = CRM_Core_DAO::executeQuery($query, $queryParams);
-    while ($dao->fetch()) {
-      $caseIds[$dao->case_id] = $dao->contact_id;
+      $dao = CRM_Core_DAO::executeQuery($query, $queryParams);
+      while ($dao->fetch()) {
+        $caseIds[$dao->case_id] = $dao->contact_id;
+      }
     }
     return $caseIds;
   }
