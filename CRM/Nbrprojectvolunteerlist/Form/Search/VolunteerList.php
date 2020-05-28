@@ -179,6 +179,7 @@ class CRM_Nbrprojectvolunteerlist_Form_Search_VolunteerList extends CRM_Contact_
       E::ts('Status') => 'study_status',
       E::ts('Inv. Date') => 'nvpd_date_invited',
       E::ts('Researcher Date') => 'date_researcher',
+      E::ts('Latest Visit Date') => 'latest_visit_date',
       E::ts('Case ID') => 'case_id'
     ];
     return $columns;
@@ -214,7 +215,7 @@ class CRM_Nbrprojectvolunteerlist_Form_Search_VolunteerList extends CRM_Contact_
       DISTINCT(contact_a.id) AS contact_id, cas.id AS case_id, contact_a.sort_name, contact_a.birth_date, genderov.label AS gender,
       ethnicov.label AS ethnicity, adr.city AS volunteer_address, nvpd." . $eligibleColumn . ", nvpd.". $studyParticipantIDColumn
       . ", nvpd." . $recallColumn . ", stustatus.label AS study_status, nvpd."
-      . $dateInvitedColumn . ", nvpd." . $distanceColumn . ", '' AS date_researcher";
+      . $dateInvitedColumn . ", nvpd." . $distanceColumn . ", '' AS date_researcher, '' AS last_visit_date";
   }
 
   /**
@@ -405,13 +406,6 @@ class CRM_Nbrprojectvolunteerlist_Form_Search_VolunteerList extends CRM_Contact_
     foreach ($row as $fieldName => &$field) {
       // add case url
       switch ($fieldName) {
-        case 'date_researcher':
-          $exportDate = CRM_Nihrbackbone_NbrVolunteerCase::getLatestExportDate($row['case_id']);
-          if ($exportDate) {
-            $row['date_researcher'] = $exportDate;
-          }
-          break;
-
         case 'birth_date':
           $birthDate = $row[$fieldName];
           $row[$fieldName] = "unknown";
@@ -422,6 +416,29 @@ class CRM_Nbrprojectvolunteerlist_Form_Search_VolunteerList extends CRM_Contact_
                 $row['birth_date'] = $age['years'];
               }
             }
+          }
+          break;
+
+        case 'date_researcher':
+          $exportDate = CRM_Nihrbackbone_NbrVolunteerCase::getLatestExportDate($row['case_id']);
+          if ($exportDate) {
+            $row['date_researcher'] = $exportDate;
+          }
+          break;
+
+        case 'ethnicity':
+          $parts = explode('(', $row['ethnicity']);
+          $row['ethnicity'] = trim($parts[0]);
+          break;
+
+        case 'gender':
+          $row['gender'] = substr($row['gender'],0,1);
+          break;
+
+        case 'latest_visit_date':
+          $latestVisitDate = CRM_Nihrbackbone_NbrVolunteerCase::getLatestVisit($row['case_id']);
+          if ($latestVisitDate) {
+            $row['latest_visit_date'] = $latestVisitDate;
           }
           break;
 
@@ -440,14 +457,6 @@ class CRM_Nbrprojectvolunteerlist_Form_Search_VolunteerList extends CRM_Contact_
           }
           break;
 
-        case 'gender':
-          $row['gender'] = substr($row['gender'],0,1);
-          break;
-
-        case 'ethnicity':
-          $parts = explode('(', $row['ethnicity']);
-          $row['ethnicity'] = trim($parts[0]);
-          break;
       }
     }
   }
