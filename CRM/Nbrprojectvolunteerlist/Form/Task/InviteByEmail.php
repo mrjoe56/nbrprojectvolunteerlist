@@ -183,7 +183,7 @@ class CRM_Nbrprojectvolunteerlist_Form_Task_InviteByEmail extends CRM_Contact_Fo
         FROM " . $participationTable. " AS cvnpd
         LEFT JOIN civicrm_case_contact AS ccc ON cvnpd.entity_id = ccc.case_id
         LEFT JOIN civicrm_case AS cc ON ccc.case_id = cc.id
-        WHERE cvnpd." . $studyColumn . " = %2 AND cc.is_deleted = %3 AND ccc.contact_id IN (";
+        WHERE cvnpd." . $studyColumn . " = %2 AND cc.is_deleted = %3";
     $queryParams = [
       1 => [1, "Integer"],
       2 => [$this->_studyId, "Integer"],
@@ -191,11 +191,16 @@ class CRM_Nbrprojectvolunteerlist_Form_Task_InviteByEmail extends CRM_Contact_Fo
       ];
     $i = 3;
     $contactIds = [];
-    foreach ($this->_invited as $invitedId => $invitedData) {
-      $contactIds[] = $invitedId;
+    if (!empty($this->_invited)) {
+      $query .= " AND ccc.contact_id IN (";
+      foreach ($this->_invited as $invitedId => $invitedData) {
+        $contactIds[] = $invitedId;
+      }
     }
     $elements = CRM_Nbrprojectvolunteerlist_Utils::processContactQueryElements($contactIds, $i, $queryParams);
-    $query .= implode("," , $elements) . ")";
+    if (!empty($contactIds)) {
+      $query .= implode("," , $elements) . ")";
+    }
     $dao = CRM_Core_DAO::executeQuery($query, $queryParams);
     while ($dao->fetch()) {
       $caseIds[$dao->case_id] = $dao->contact_id;

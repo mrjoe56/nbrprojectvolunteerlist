@@ -53,7 +53,8 @@ class CRM_Nbrprojectvolunteerlist_Form_Task_ChangeStudyStatus extends CRM_Contac
         'eligible_status' => implode(', ', CRM_Nihrbackbone_NbrVolunteerCase::getEligibleDescriptions($dao->eligible_status_id)),
       ];
       // warning list for non-eligible volunteers
-      if ($dao->eligible_status_id != Civi::service('nbrBackbone')->getEligibleEligibilityStatusValue()) {
+      $cleanEligibleStatus = str_replace(CRM_Core_DAO::VALUE_SEPARATOR, "", $dao->eligible_status_id);
+      if ($cleanEligibleStatus != Civi::service('nbrBackbone')->getEligibleEligibilityStatusValue()) {
         $this->_countWarnings++;
         $this->_warnings[$dao->contact_id] = $volunteer;
       }
@@ -102,6 +103,7 @@ class CRM_Nbrprojectvolunteerlist_Form_Task_ChangeStudyStatus extends CRM_Contac
           CRM_Nihrbackbone_NbrInvitation::addInviteActivity($caseId, $caseData['contact_id'], $this->_studyId, 'Change Case Status Action');
         }
       }
+
       CRM_Core_Session::setStatus(E::ts('Updated status of selected volunteers on study ') . CRM_Nihrbackbone_NbrStudy::getStudyNumberWithId($this->_studyId)
         . E::ts(' to ') . $newStatusLabel, E::ts('Successfully changed status on study'), 'success');
     }

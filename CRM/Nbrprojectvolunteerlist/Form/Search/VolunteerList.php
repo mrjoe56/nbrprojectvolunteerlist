@@ -32,9 +32,10 @@ class CRM_Nbrprojectvolunteerlist_Form_Search_VolunteerList extends CRM_Contact_
    * Method to clear filters
    */
   private function clearFilters($formValues) {
-    // only if this is a "fresh" call of the search and filters are empty
+    // only if this is a "fresh" call of the search and filters are empty (apart from study_id which is always used)
     $qfDefault = CRM_Utils_Request::retrieveValue('_qf_default', 'String');
     $filters = $this->getFilters();
+    unset($filters['study_id']);
     $hasFilters = FALSE;
     foreach ($formValues as $formKey => $formValue) {
       if (in_array($formKey, $filters)) {
