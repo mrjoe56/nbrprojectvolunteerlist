@@ -86,7 +86,7 @@ class CRM_Nbrprojectvolunteerlist_SearchTasks {
       }
     }
     // if one of specific actions, return TRUE
-    $taskClasses = ['InviteByEmail', 'InviteByPdf', 'ChangeStudyStatus'];
+    $taskClasses = ['InviteByEmail', 'ChangeStudyStatus'];
     foreach ($taskClasses as $taskClass) {
       $checkDisplay = CRM_Utils_Request::retrieveValue('_qf_' . $taskClass . '_display', 'String');
       $checkNext = CRM_Utils_Request::retrieveValue('_qf_' . $taskClass . '_next', 'String');
@@ -108,10 +108,6 @@ class CRM_Nbrprojectvolunteerlist_SearchTasks {
       [
         'title' => "Invite Volunteer(s) by Email",
         'class' => "CRM_Nbrprojectvolunteerlist_Form_Task_InviteByEmail",
-      ],
-      [
-        'title' => "Invite Volunteer(s) by Letter",
-        'class' => "CRM_Nbrprojectvolunteerlist_Form_Task_InviteByPdf",
       ],
       [
         'title' => "Change Status on Study for Volunteer(s)",
