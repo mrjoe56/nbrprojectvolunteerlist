@@ -436,7 +436,7 @@ class CRM_Nbrprojectvolunteerlist_Form_Search_VolunteerList extends CRM_Contact_
           break;
 
         case 'latest_visit_date':
-          $latestVisitDate = CRM_Nihrbackbone_NbrVolunteerCase::getLatestVisit($row['case_id']);
+          $latestVisitDate = CRM_Nihrbackbone_NbrVolunteerCase::getNearestVisit($row['case_id']);
           if ($latestVisitDate) {
             $row['latest_visit_date'] = $latestVisitDate;
           }
