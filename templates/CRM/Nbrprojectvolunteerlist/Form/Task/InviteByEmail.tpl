@@ -1,6 +1,9 @@
 {* Confirm contacts and select template for InviteByEmail *}
 <h2>{ts}Invite by Email{/ts}</h2>
 <div class="messages status no-popup">
+  <div class="help-block" id="help">
+    {ts}You can invite a maximum of 50 volunteers in 1 batch. If you selected more volunteers one the Manage Study Participation page only 50 will actually be used!{/ts}
+  </div>
   <div class="crm-form-block">
     <h3>{$template_txt}</h3>
     <div class="crm-section">

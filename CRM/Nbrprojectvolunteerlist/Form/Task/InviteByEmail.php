@@ -23,9 +23,9 @@ class CRM_Nbrprojectvolunteerlist_Form_Task_InviteByEmail extends CRM_Contact_Fo
    */
   private function getInvitedData() {
     $this->_invited = [];
+    $this->_countInvalid = 0;
     $this->_invalids = [];
     $this->_countInvited = 0;
-    $this->_countInvalid = 0;
     $studyParticipantColumn = CRM_Nihrbackbone_BackboneConfig::singleton()->getParticipationCustomField('nvpd_study_participant_id', 'column_name');
     $eligiblesColumn = CRM_Nihrbackbone_BackboneConfig::singleton()->getParticipationCustomField('nvpd_eligible_status_id', 'column_name');
     $studyColumn = CRM_Nihrbackbone_BackboneConfig::singleton()->getParticipationCustomField('nvpd_study_id', 'column_name');
@@ -72,29 +72,39 @@ class CRM_Nbrprojectvolunteerlist_Form_Task_InviteByEmail extends CRM_Contact_Fo
       $volunteer['reason'] = E::ts("Not eligible");
       $this->_invalids[$dao->contact_id] = $volunteer;
     }
+    // do not allow if deceased
     elseif (CRM_Nihrbackbone_NihrVolunteer::isDeceased($dao->contact_id)) {
       $this->_countInvalid++;
       $volunteer['reason'] = E::ts("Deceased");
       $this->_invalids[$dao->contact_id] = $volunteer;
     }
+    // do not allow if email is empty
     elseif (empty($dao->email)) {
       $this->_countInvalid++;
       $volunteer['reason'] = E::ts("Does not have an active primary email address");
       $this->_invalids[$dao->contact_id] = $volunteer;
     }
+    // do not allow if contact has no_email flag
     elseif (!CRM_Nihrbackbone_NihrVolunteer::allowsEmail($dao->contact_id)) {
       $this->_countInvalid++;
       $volunteer['reason'] = E::ts("Does not want to be emailed");
       $this->_invalids[$dao->contact_id] = $volunteer;
     }
+    // do not allow if invalid email
     elseif (!filter_var($dao->email, FILTER_VALIDATE_EMAIL)) {
       $this->_countInvalid++;
       $volunteer['reason'] = E::ts("Invalid email address");
       $this->_invalids[$dao->contact_id] = $volunteer;
     }
+    // do not allow more than 50 invitations
+    elseif ($this->_countInvited >= 50) {
+      $this->_countInvalid++;
+      $volunteer['reason'] = E::ts("Can not mail more than 50");
+      $this->_invalids[$dao->contact_id] = $volunteer;
+    }
     else {
-        $this->_countInvited++;
-        $this->_invited[$dao->contact_id] = $volunteer;
+      $this->_countInvited++;
+      $this->_invited[$dao->contact_id] = $volunteer;
     }
   }
 
@@ -194,7 +204,7 @@ class CRM_Nbrprojectvolunteerlist_Form_Task_InviteByEmail extends CRM_Contact_Fo
         $contactIds[] = $invitedId;
       }
       $elements = CRM_Nbrprojectvolunteerlist_Utils::processContactQueryElements($contactIds, $i, $queryParams);
-      $query .= implode("," , $elements) . ")";
+      $query .= implode("," , $elements) . ") LIMIT 50";
       $dao = CRM_Core_DAO::executeQuery($query, $queryParams);
       while ($dao->fetch()) {
         $caseIds[$dao->case_id] = $dao->contact_id;

@@ -541,6 +541,9 @@ class CRM_Nbrprojectvolunteerlist_Form_Search_VolunteerList extends CRM_Contact_
       if ($this->_studyId) {
         $defaults['study_id'] = $this->_studyId;
       }
+      // if qfKey in request, clear prevnext (ugly hack)
+
+
     }
     return $defaults;
   }

@@ -106,7 +106,7 @@ class CRM_Nbrprojectvolunteerlist_SearchTasks {
   private static function setProjectVolunteerListTasks(&$tasks) {
     $nbrTasks = [
       [
-        'title' => "Invite Volunteer(s) by Email",
+        'title' => "Invite Volunteer(s) by Email (max. 50)",
         'class' => "CRM_Nbrprojectvolunteerlist_Form_Task_InviteByEmail",
       ],
       [
