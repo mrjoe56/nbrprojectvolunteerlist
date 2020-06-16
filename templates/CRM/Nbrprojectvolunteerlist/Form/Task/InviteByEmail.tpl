@@ -42,7 +42,7 @@
           <th>{ts}Participant ID{/ts}</th>
           <th>{ts}Study/Participant ID{/ts}</th>
           <th>{ts}Eligibility{/ts}</th>
-          <th>{ts}Email{/ts}</th>
+          <th>{ts}Reason{/ts}</th>
         </tr>
           {foreach from=$invalids key=contact_id item=invalid}
             <tr id='contactid{$contact_id}' class="{cycle values="odd-row,even-row"}">
@@ -51,7 +51,7 @@
               <td>{$invalid.participant_id}</td>
               <td>{$invalid.study_participant_id}</td>
               <td>{$invalid.eligible_status}</td>
-              <td>{$invalid.email}</td>
+              <td>{$invalid.reason}</td>
             </tr>
           {/foreach}
       </table>

@@ -38,7 +38,7 @@ class CRM_Nbrprojectvolunteerlist_Form_Task_InviteByEmail extends CRM_Contact_Fo
         JOIN civicrm_case_contact AS ccc ON cvnpd.entity_id = ccc.case_id
         JOIN civicrm_case AS cas ON ccc.case_id = cas.id
         JOIN civicrm_contact AS vol ON ccc.contact_id = vol.id
-        LEFT JOIN civicrm_email AS ce ON vol.id = ce.contact_id AND ce.is_primary = %1
+        LEFT JOIN civicrm_email AS ce ON vol.id = ce.contact_id AND ce.is_primary = %1 AND ce.on_hold = 0
         WHERE cvnpd." . $studyColumn . " = %2 AND cas.is_deleted = %3 AND vol.id IN (";
     $queryParams = [
       1 => [1, "Integer"],
@@ -49,55 +49,53 @@ class CRM_Nbrprojectvolunteerlist_Form_Task_InviteByEmail extends CRM_Contact_Fo
     CRM_Nbrprojectvolunteerlist_Utils::addContactIdsToQuery($i, $this->_contactIds, $query, $queryParams);
     $dao = CRM_Core_DAO::executeQuery($query, $queryParams);
     while ($dao->fetch()) {
-      $volunteer = [
-        'display_name' => $dao->display_name,
-        'study_participant_id' => $dao->study_participant_id,
-        'email' => $dao->email,
-      ];
-      $eligibleStatus = implode(', ', CRM_Nihrbackbone_NbrVolunteerCase::getEligibleDescriptions($dao->eligible_status_id));
-      $volunteer['eligible_status'] = $eligibleStatus;
-      // only allow invite if eligible
-      if ($this->isEligible($dao->eligible_status_id)) {
-        // add if valid email else list as invalid
-        if (filter_var($dao->email, FILTER_VALIDATE_EMAIL)) {
-          $this->_countInvited++;
-          $this->_invited[$dao->contact_id] = $volunteer;
-        }
-        else {
-          $this->_countInvalid++;
-          $this->_invalids[$dao->contact_id] = $volunteer;
-        }
-      }
-      else {
-        $this->_countInvalid++;
-        $this->_invalids[$dao->contact_id] = $volunteer;
-      }
+      $this->classifyVolunteer($dao);
     }
   }
 
   /**
-   * Check if status of volunteer is eligible
+   * Method to classify volunteer as invalid (with reason) or to be invited
    *
-   * @param $statusId
-   * @return bool
+   * @param $dao
    */
-  private function isEligible($statusId) {
-    if (empty($statusId)) {
-      return FALSE;
+  private function classifyVolunteer($dao) {
+    $volunteer = [
+      'display_name' => $dao->display_name,
+      'study_participant_id' => $dao->study_participant_id,
+      'email' => $dao->email,
+    ];
+    $eligibleStatus = implode(', ', CRM_Nihrbackbone_NbrVolunteerCase::getEligibleDescriptions($dao->eligible_status_id));
+    $volunteer['eligible_status'] = $eligibleStatus;
+    // only allow invite if eligible
+    if (!$this->isEligibleStatus($dao->eligible_status_id)) {
+      $this->_countInvalid++;
+      $volunteer['reason'] = E::ts("Not eligible");
+      $this->_invalids[$dao->contact_id] = $volunteer;
     }
-    $parts = explode(CRM_Core_DAO::VALUE_SEPARATOR, $statusId);
-    foreach ($parts as $key => $value) {
-      if (empty($value)) {
-        unset($parts[$key]);
-      }
+    elseif (CRM_Nihrbackbone_NihrVolunteer::isDeceased($dao->contact_id)) {
+      $this->_countInvalid++;
+      $volunteer['reason'] = E::ts("Deceased");
+      $this->_invalids[$dao->contact_id] = $volunteer;
     }
-    if (count($parts) == 1) {
-      $singleStatus = implode("", $parts);
-      if ($singleStatus == Civi::service('nbrBackbone')->getEligibleEligibilityStatusValue()) {
-        return TRUE;
-      }
+    elseif (empty($dao->email)) {
+      $this->_countInvalid++;
+      $volunteer['reason'] = E::ts("Does not have an active primary email address");
+      $this->_invalids[$dao->contact_id] = $volunteer;
     }
-    return FALSE;
+    elseif (!CRM_Nihrbackbone_NihrVolunteer::allowsEmail($dao->contact_id)) {
+      $this->_countInvalid++;
+      $volunteer['reason'] = E::ts("Does not want to be emailed");
+      $this->_invalids[$dao->contact_id] = $volunteer;
+    }
+    elseif (!filter_var($dao->email, FILTER_VALIDATE_EMAIL)) {
+      $this->_countInvalid++;
+      $volunteer['reason'] = E::ts("Invalid email address");
+      $this->_invalids[$dao->contact_id] = $volunteer;
+    }
+    else {
+        $this->_countInvited++;
+        $this->_invited[$dao->contact_id] = $volunteer;
+    }
   }
 
   /**
@@ -204,5 +202,31 @@ class CRM_Nbrprojectvolunteerlist_Form_Task_InviteByEmail extends CRM_Contact_Fo
     }
     return $caseIds;
   }
+
+  /**
+   * Check if status is eligible
+   *   *
+   * @param $statusId
+   * @return bool
+   */
+  private function isEligibleStatus($statusId) {
+    if (empty($statusId)) {
+      return FALSE;
+    }
+    $parts = explode(CRM_Core_DAO::VALUE_SEPARATOR, $statusId);
+    foreach ($parts as $key => $value) {
+      if (empty($value)) {
+        unset($parts[$key]);
+      }
+    }
+    if (count($parts) == 1) {
+      $singleStatus = implode("", $parts);
+      if ($singleStatus == Civi::service('nbrBackbone')->getEligibleEligibilityStatusValue()) {
+        return TRUE;
+      }
+    }
+    return FALSE;
+  }
+
 }
 
