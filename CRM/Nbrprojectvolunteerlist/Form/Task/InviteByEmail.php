@@ -30,10 +30,11 @@ class CRM_Nbrprojectvolunteerlist_Form_Task_InviteByEmail extends CRM_Contact_Fo
     $eligiblesColumn = CRM_Nihrbackbone_BackboneConfig::singleton()->getParticipationCustomField('nvpd_eligible_status_id', 'column_name');
     $studyColumn = CRM_Nihrbackbone_BackboneConfig::singleton()->getParticipationCustomField('nvpd_study_id', 'column_name');
     $participantTable = CRM_Nihrbackbone_BackboneConfig::singleton()->getParticipationDataCustomGroup('table_name');
+    $studyStatusColumn = CRM_Nihrbackbone_BackboneConfig::singleton()->getParticipationCustomField('nvpd_study_participation_status', 'column_name');
     $query = "
         SELECT vol.id AS contact_id, vol.display_name, cvnpd." . $studyParticipantColumn
         . " AS study_participant_id, cvnpd." . $eligiblesColumn. " AS eligible_status_id,
-        ce.email
+        ce.email, cvnpd." . $studyStatusColumn . " AS study_participation_status
         FROM " . $participantTable . " AS cvnpd
         JOIN civicrm_case_contact AS ccc ON cvnpd.entity_id = ccc.case_id
         JOIN civicrm_case AS cas ON ccc.case_id = cas.id
@@ -66,8 +67,14 @@ class CRM_Nbrprojectvolunteerlist_Form_Task_InviteByEmail extends CRM_Contact_Fo
     ];
     $eligibleStatus = implode(', ', CRM_Nihrbackbone_NbrVolunteerCase::getEligibleDescriptions($dao->eligible_status_id));
     $volunteer['eligible_status'] = $eligibleStatus;
+    // do not allow invite if participation status is excluded
+    if ($dao->study_participation_status == Civi::service('nbrBackbone')->getExcludedParticipationStatusValue()) {
+      $this->_countInvalid++;
+      $volunteer['reason'] = E::ts("Excluded");
+      $this->_invalids[$dao->contact_id] = $volunteer;
+    }
     // only allow invite if eligible
-    if (!$this->isEligibleStatus($dao->eligible_status_id)) {
+    elseif (!$this->isEligibleStatus($dao->eligible_status_id)) {
       $this->_countInvalid++;
       $volunteer['reason'] = E::ts("Not eligible");
       $this->_invalids[$dao->contact_id] = $volunteer;
