@@ -16,6 +16,7 @@ class CRM_Nbrprojectvolunteerlist_Form_Task_ChangeStudyStatus extends CRM_Contac
   private $_selected = [];
   private $_warnings = [];
   private $_studyId = NULL;
+  private $_countProcessed = 0;
 
   /**
    * Method to get the data for the selected contact IDs
@@ -74,7 +75,7 @@ class CRM_Nbrprojectvolunteerlist_Form_Task_ChangeStudyStatus extends CRM_Contac
       TRUE, ['class' => 'crm-select2']);
     $this->assign('status_txt', E::ts('New status for selected volunteers:'));
     $this->assign('selected_txt', E::ts('Volunteers for which the status will be changed:'));
-    $this->assign('warning_txt', E::ts('The volunteers below are not eligible and will NOT be processed if the new statis is invitation pending, invited or accepted!'));
+    $this->assign('warning_txt', E::ts('The volunteers below are not eligible and will NOT be processed if the new status is invitation pending, invited or accepted!'));
     $this->getSelectedData();
     $this->assign('count_selected_txt', E::ts('Number of volunteers whose status will be changed: ') . $this->_countSelected);
     $this->assign('count_warning_txt', E::ts('Number of volunteers that might not be processed: ') . $this->_countWarnings);
@@ -91,6 +92,7 @@ class CRM_Nbrprojectvolunteerlist_Form_Task_ChangeStudyStatus extends CRM_Contac
       $caseIds = $this->getRelevantCaseIds($this->_submitValues['nbr_study_status_id']);
       $newStatusLabel = CRM_Nihrbackbone_Utils::getOptionValueLabel($this->_submitValues['nbr_study_status_id'], CRM_Nihrbackbone_BackboneConfig::singleton()->getStudyParticipationStatusOptionGroupId());
       foreach ($caseIds as $caseId => $caseData) {
+        $this->_countProcessed++;
         CRM_Nihrbackbone_NbrVolunteerCase::updateStudyStatus($caseId, $caseData['contact_id'], $this->_submitValues['nbr_study_status_id']);
         $currentStatusLabel = CRM_Nihrbackbone_Utils::getOptionValueLabel($caseData['study_status_id'], CRM_Nihrbackbone_BackboneConfig::singleton()->getStudyParticipationStatusOptionGroupId());
         $activityData = [
@@ -104,7 +106,7 @@ class CRM_Nbrprojectvolunteerlist_Form_Task_ChangeStudyStatus extends CRM_Contac
         }
       }
 
-      CRM_Core_Session::setStatus(E::ts('Updated status of selected volunteers on study ') . CRM_Nihrbackbone_NbrStudy::getStudyNumberWithId($this->_studyId)
+      CRM_Core_Session::setStatus(E::ts('Updated status of ' . $this->_countProcessed . ' selected volunteers on study ') . CRM_Nihrbackbone_NbrStudy::getStudyNumberWithId($this->_studyId)
         . E::ts(' to ') . $newStatusLabel, E::ts('Successfully changed status on study'), 'success');
     }
   }
