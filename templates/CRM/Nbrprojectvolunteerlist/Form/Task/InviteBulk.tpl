@@ -1,13 +1,34 @@
 {* Confirm contacts and select template for InviteByEmail *}
-<h2>{ts}Invite by Email{/ts}</h2>
+<h2>{ts}Invite by Bulk Mail (50+){/ts}</h2>
 <div class="messages status no-popup">
-  <div class="help-block" id="help">    {ts}You can invite a maximum of 50 volunteers in 1 batch. If you selected more volunteers one the Manage Study Participation page only 50 will actually be used. If you do want to invite more than 50 volunteers please use the Invite Volunteer(s) by Bulk Mail (50+) action.{/ts}
+  <div class="help-block" id="help">
+    {ts}You can invite 50+ volunteers in 1 bulk mailing. If you need to mail less you can but you could also use the Invite By Email (max. 50) action.{/ts}
   </div>
   <div class="crm-form-block">
     <h3>{$template_txt}</h3>
     <div class="crm-section">
       <div class="label">{$form.template_id.label}</div>
       <div class="content">{$form.template_id.html}</div>
+      <div class="clear"></div>
+    </div>
+    <div class="crm-section">
+      <div class="label">{$form.subject.label}</div>
+      <div class="content">{$form.subject.html}</div>
+      <div class="clear"></div>
+    </div>
+    <div class="crm-section">
+      <div class="label">{$form.from_name.label}</div>
+      <div class="content">{$form.from_name.html}</div>
+      <div class="clear"></div>
+    </div>
+    <div class="crm-section">
+      <div class="label">{$form.from_email.label}</div>
+      <div class="content">{$form.from_email.html}</div>
+      <div class="clear"></div>
+    </div>
+    <div class="crm-section">
+      <div class="label">{$form.scheduled_date.label}</div>
+      <div class="content">{$form.scheduled_date.html}</div>
       <div class="clear"></div>
     </div>
   </div>

@@ -62,5 +62,48 @@ class CRM_Nbrprojectvolunteerlist_Utils {
     return "nbr_cs_volunteerlist_filters_" . CRM_Core_Session::getLoggedInContactID();
   }
 
+  /**
+   * Method to get all non-workflow active message templates
+   *
+   * @return array
+   */
+  public static function getTemplateList() {
+    $templates = [];
+    try {
+      $result = civicrm_api3('MessageTemplate', 'get', [
+        'return' => ["id", "msg_title"],
+        'is_active' => 1,
+        'options' => ['limit' => 0],
+        'workflow_id' => ['IS NULL' => 1],
+      ]);
+      foreach ($result['values'] as $msgTemplateId => $msgTemplate) {
+        $templates[$msgTemplateId] = $msgTemplate['msg_title'];
+      }
+    }
+    catch (CiviCRM_API3_Exception $ex) {
+    }
+    return $templates;
+  }
+
+  /**
+   * Method to create the params for the temporary group used by Invite by Bulk
+   *
+   * @return array
+   */
+  public static function createInviteBulkGroupParams() {
+    $now = new DateTime();
+    return [
+      'name' => "Nbr_Invite_Bulk_" . $now->format('Ymdhis'),
+      'title' => "Temporary Invite Bulk Mailing group, do not use!",
+      'description' => "This group is a temporary one used for inviting volunteers by Bulk Email - do not update or use, will be removed automatically when mailing is completed.",
+      'is_active' => 1,
+      'visibility' => "User and User Admin Only",
+      'group_type' => "Mailing List",
+      'is_hidden' => 1,
+      'is_reserved' => 1,
+      'created_id' => CRM_Core_Session::getLoggedInContactID()
+    ];
+  }
+
 }
 

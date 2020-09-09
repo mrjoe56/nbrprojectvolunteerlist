@@ -86,7 +86,7 @@ class CRM_Nbrprojectvolunteerlist_SearchTasks {
       }
     }
     // if one of specific actions, return TRUE
-    $taskClasses = ['InviteByEmail', 'ChangeStudyStatus'];
+    $taskClasses = ['InviteByEmail', 'ChangeStudyStatus', "InviteBulk"];
     foreach ($taskClasses as $taskClass) {
       $checkDisplay = CRM_Utils_Request::retrieveValue('_qf_' . $taskClass . '_display', 'String');
       $checkNext = CRM_Utils_Request::retrieveValue('_qf_' . $taskClass . '_next', 'String');
@@ -110,6 +110,10 @@ class CRM_Nbrprojectvolunteerlist_SearchTasks {
         'class' => "CRM_Nbrprojectvolunteerlist_Form_Task_InviteByEmail",
       ],
       [
+        'title' => "Invite Volunteer(s) by Bulk Mail (50+)",
+        'class' => "CRM_Nbrprojectvolunteerlist_Form_Task_InviteBulk",
+      ],
+      [
         'title' => "Change Status on Study for Volunteer(s)",
         'class' => "CRM_Nbrprojectvolunteerlist_Form_Task_ChangeStudyStatus",
       ],
@@ -126,8 +130,6 @@ class CRM_Nbrprojectvolunteerlist_SearchTasks {
       "CRM_Contact_Form_Task_RemoveFromGroup",
       "CRM_Contact_Form_Task_AddToTag",
       "CRM_Contact_Form_Task_RemoveFromTag",
-      "CRM_Contact_Form_Task_Email",
-      "CRM_Contact_Form_Task_PDF",
     ];
     foreach ($tasks as $taskId => $task) {
       if (isset($task['class'])) {
