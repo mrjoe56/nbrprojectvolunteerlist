@@ -140,9 +140,10 @@ class CRM_Nbrprojectvolunteerlist_Form_Task_InviteBulk extends CRM_Contact_Form_
   private function createNbrMailing($groupId, $mailingId) {
     try {
       civicrm_api3('NbrMailing', 'create', [
-        'mailing_type' => "invite",
+        'nbr_mailing_type' => "invite",
         'mailing_id' => $mailingId,
         'group_id' => $groupId,
+        'study_id' => $this->_studyId,
       ]);
       CRM_Core_Session::setStatus("Mailing for invite by bulk scheduled successfully.", "Bulk invite mailing scheduled", "success");
     }
