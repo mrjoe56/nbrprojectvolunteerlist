@@ -94,7 +94,7 @@ class CRM_Nbrprojectvolunteerlist_Utils {
     $now = new DateTime();
     return [
       'name' => "Nbr_Invite_Bulk_" . $now->format('Ymdhis'),
-      'title' => "Temporary Invite Bulk Mailing group, do not use!",
+      'title' => "Temp. Invite Bulk Mailing on " . $now->format('Y-m-d H:i:s') . " group",
       'description' => "This group is a temporary one used for inviting volunteers by Bulk Email - do not update or use, will be removed automatically when mailing is completed.",
       'is_active' => 1,
       'visibility' => "User and User Admin Only",
@@ -103,6 +103,77 @@ class CRM_Nbrprojectvolunteerlist_Utils {
       'is_reserved' => 1,
       'created_id' => CRM_Core_Session::getLoggedInContactID()
     ];
+  }
+
+  /**
+   * Method to create array with bulk invite mailing params
+   *
+   * @param $studyId
+   * @param $groupId
+   * @param $formValues
+   * @return array|false
+   */
+  public static function createInviteMailingParams($studyId, $groupId, $formValues) {
+    if (empty($groupId) || empty($studyId) || empty($formValues)) {
+      return FALSE;
+    }
+    $include = [$groupId];
+    $msgTemplate =  civicrm_api3('MessageTemplate', 'getsingle', ['id' => $formValues['msg_template_id']]);
+    $mailingParams = [
+      'name' => 'Bulk Invite study ' . CRM_Nihrbackbone_NbrStudy::getStudyNumberWithId($studyId),
+      'groups' => ['include' => $include],
+      'mailing_type' => 'standalone',
+      'template_type' => 'traditional',
+      //'body_html' => $msgTemplate['msg_html'],
+      'domain_id' => 1,
+      'header_id' => 1,
+      'footer_id' => 2,
+      'reply_id' => 8,
+      'unsubscribe_id' => 5,
+      'resubscribe_id' => 6,
+      'template_options' => '{"nonce":"1"}',
+      //'msg_template_id' => $formValues['msg_template_id'],
+    ];
+    $fromFormParams = ['subject', 'from_name', 'from_email'];
+    foreach ($fromFormParams as $fromFormParam) {
+      if (isset($formValues[$fromFormParam]) && !empty($formValues[$fromFormParam])) {
+        $mailingParams[$fromFormParam] = $formValues[$fromFormParam];
+      }
+    }
+    return $mailingParams;
+  }
+
+  /**
+   * Method to get the invited data for a study
+   *
+   * @param $studyId
+   * @param $contactIds
+   * @return CRM_Core_DAO|DB_Error|object
+   */
+  public static function getInvitedData($studyId, $contactIds) {
+    $studyParticipantColumn = CRM_Nihrbackbone_BackboneConfig::singleton()->getParticipationCustomField('nvpd_study_participant_id', 'column_name');
+    $eligiblesColumn = CRM_Nihrbackbone_BackboneConfig::singleton()->getParticipationCustomField('nvpd_eligible_status_id', 'column_name');
+    $studyColumn = CRM_Nihrbackbone_BackboneConfig::singleton()->getParticipationCustomField('nvpd_study_id', 'column_name');
+    $participantTable = CRM_Nihrbackbone_BackboneConfig::singleton()->getParticipationDataCustomGroup('table_name');
+    $studyStatusColumn = CRM_Nihrbackbone_BackboneConfig::singleton()->getParticipationCustomField('nvpd_study_participation_status', 'column_name');
+    $query = "
+        SELECT vol.id AS contact_id, vol.display_name, cvnpd." . $studyParticipantColumn
+      . " AS study_participant_id, cvnpd." . $eligiblesColumn. " AS eligible_status_id,
+        ce.email, cvnpd." . $studyStatusColumn . " AS study_participation_status
+        FROM " . $participantTable . " AS cvnpd
+        JOIN civicrm_case_contact AS ccc ON cvnpd.entity_id = ccc.case_id
+        JOIN civicrm_case AS cas ON ccc.case_id = cas.id
+        JOIN civicrm_contact AS vol ON ccc.contact_id = vol.id
+        LEFT JOIN civicrm_email AS ce ON vol.id = ce.contact_id AND ce.is_primary = %1 AND ce.on_hold = 0
+        WHERE cvnpd." . $studyColumn . " = %2 AND cas.is_deleted = %3 AND vol.id IN (";
+    $queryParams = [
+      1 => [1, "Integer"],
+      2 => [(int) $studyId, "Integer"],
+      3 => [0, "Integer"],
+    ];
+    $i = 3;
+    CRM_Nbrprojectvolunteerlist_Utils::addContactIdsToQuery($i, $contactIds, $query, $queryParams);
+    return CRM_Core_DAO::executeQuery($query, $queryParams);
   }
 
 }

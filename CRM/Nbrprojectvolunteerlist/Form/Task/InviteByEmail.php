@@ -26,29 +26,7 @@ class CRM_Nbrprojectvolunteerlist_Form_Task_InviteByEmail extends CRM_Contact_Fo
     $this->_countInvalid = 0;
     $this->_invalids = [];
     $this->_countInvited = 0;
-    $studyParticipantColumn = CRM_Nihrbackbone_BackboneConfig::singleton()->getParticipationCustomField('nvpd_study_participant_id', 'column_name');
-    $eligiblesColumn = CRM_Nihrbackbone_BackboneConfig::singleton()->getParticipationCustomField('nvpd_eligible_status_id', 'column_name');
-    $studyColumn = CRM_Nihrbackbone_BackboneConfig::singleton()->getParticipationCustomField('nvpd_study_id', 'column_name');
-    $participantTable = CRM_Nihrbackbone_BackboneConfig::singleton()->getParticipationDataCustomGroup('table_name');
-    $studyStatusColumn = CRM_Nihrbackbone_BackboneConfig::singleton()->getParticipationCustomField('nvpd_study_participation_status', 'column_name');
-    $query = "
-        SELECT vol.id AS contact_id, vol.display_name, cvnpd." . $studyParticipantColumn
-        . " AS study_participant_id, cvnpd." . $eligiblesColumn. " AS eligible_status_id,
-        ce.email, cvnpd." . $studyStatusColumn . " AS study_participation_status
-        FROM " . $participantTable . " AS cvnpd
-        JOIN civicrm_case_contact AS ccc ON cvnpd.entity_id = ccc.case_id
-        JOIN civicrm_case AS cas ON ccc.case_id = cas.id
-        JOIN civicrm_contact AS vol ON ccc.contact_id = vol.id
-        LEFT JOIN civicrm_email AS ce ON vol.id = ce.contact_id AND ce.is_primary = %1 AND ce.on_hold = 0
-        WHERE cvnpd." . $studyColumn . " = %2 AND cas.is_deleted = %3 AND vol.id IN (";
-    $queryParams = [
-      1 => [1, "Integer"],
-      2 => [(int)$this->_studyId, "Integer"],
-      3 => [0, "Integer"],
-    ];
-    $i = 3;
-    CRM_Nbrprojectvolunteerlist_Utils::addContactIdsToQuery($i, $this->_contactIds, $query, $queryParams);
-    $dao = CRM_Core_DAO::executeQuery($query, $queryParams);
+    $dao = CRM_Nbrprojectvolunteerlist_Utils::getInvitedData($this->_studyId, $this->_contactIds);
     while ($dao->fetch()) {
       $volunteer = new CRM_Nbrprojectvolunteerlist_NbrVolunteer();
       $volunteer->classifyVolunteer("email", $dao, $this->_invalids, $this->_countInvalid, $this->_invited, $this->_countInvited);

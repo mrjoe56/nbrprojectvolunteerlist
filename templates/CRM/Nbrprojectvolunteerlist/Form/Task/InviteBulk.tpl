@@ -7,8 +7,8 @@
   <div class="crm-form-block">
     <h3>{$template_txt}</h3>
     <div class="crm-section">
-      <div class="label">{$form.template_id.label}</div>
-      <div class="content">{$form.template_id.html}</div>
+      <div class="label">{$form.msg_template_id.label}</div>
+      <div class="content">{$form.msg_template_id.html}</div>
       <div class="clear"></div>
     </div>
     <div class="crm-section">
@@ -24,11 +24,6 @@
     <div class="crm-section">
       <div class="label">{$form.from_email.label}</div>
       <div class="content">{$form.from_email.html}</div>
-      <div class="clear"></div>
-    </div>
-    <div class="crm-section">
-      <div class="label">{$form.scheduled_date.label}</div>
-      <div class="content">{$form.scheduled_date.html}</div>
       <div class="clear"></div>
     </div>
   </div>

@@ -26,29 +26,7 @@ class CRM_Nbrprojectvolunteerlist_Form_Task_InviteBulk extends CRM_Contact_Form_
     $this->_countInvalid = 0;
     $this->_invalids = [];
     $this->_countInvited = 0;
-    $studyParticipantColumn = CRM_Nihrbackbone_BackboneConfig::singleton()->getParticipationCustomField('nvpd_study_participant_id', 'column_name');
-    $eligiblesColumn = CRM_Nihrbackbone_BackboneConfig::singleton()->getParticipationCustomField('nvpd_eligible_status_id', 'column_name');
-    $studyColumn = CRM_Nihrbackbone_BackboneConfig::singleton()->getParticipationCustomField('nvpd_study_id', 'column_name');
-    $participantTable = CRM_Nihrbackbone_BackboneConfig::singleton()->getParticipationDataCustomGroup('table_name');
-    $studyStatusColumn = CRM_Nihrbackbone_BackboneConfig::singleton()->getParticipationCustomField('nvpd_study_participation_status', 'column_name');
-    $query = "
-        SELECT vol.id AS contact_id, vol.display_name, cvnpd." . $studyParticipantColumn
-        . " AS study_participant_id, cvnpd." . $eligiblesColumn. " AS eligible_status_id,
-        ce.email, cvnpd." . $studyStatusColumn . " AS study_participation_status
-        FROM " . $participantTable . " AS cvnpd
-        JOIN civicrm_case_contact AS ccc ON cvnpd.entity_id = ccc.case_id
-        JOIN civicrm_case AS cas ON ccc.case_id = cas.id
-        JOIN civicrm_contact AS vol ON ccc.contact_id = vol.id
-        LEFT JOIN civicrm_email AS ce ON vol.id = ce.contact_id AND ce.is_primary = %1 AND ce.on_hold = 0
-        WHERE cvnpd." . $studyColumn . " = %2 AND cas.is_deleted = %3 AND vol.id IN (";
-    $queryParams = [
-      1 => [1, "Integer"],
-      2 => [(int)$this->_studyId, "Integer"],
-      3 => [0, "Integer"],
-    ];
-    $i = 3;
-    CRM_Nbrprojectvolunteerlist_Utils::addContactIdsToQuery($i, $this->_contactIds, $query, $queryParams);
-    $dao = CRM_Core_DAO::executeQuery($query, $queryParams);
+    $dao = CRM_Nbrprojectvolunteerlist_Utils::getInvitedData($this->_studyId, $this->_contactIds);
     while ($dao->fetch()) {
       $volunteer = new CRM_Nbrprojectvolunteerlist_NbrVolunteer();
       $volunteer->classifyVolunteer("mailing", $dao, $this->_invalids, $this->_countInvalid, $this->_invited, $this->_countInvited);
@@ -62,13 +40,12 @@ class CRM_Nbrprojectvolunteerlist_Form_Task_InviteBulk extends CRM_Contact_Form_
     if (isset(self::$_searchFormValues['study_id'])) {
       $this->_studyId = self::$_searchFormValues['study_id'];
     }
-    $this->add('select', 'template_id', E::ts('Message template for bulk mail'), CRM_Nbrprojectvolunteerlist_Utils::getTemplateList(),
+    $this->add('select', 'msg_template_id', E::ts('Message template for bulk mail'), CRM_Nbrprojectvolunteerlist_Utils::getTemplateList(),
       TRUE, ['class' => 'crm-select2']);
     $this->add('text', 'subject', E::ts("Subject for mailing"), ['size' => 'HUGE'], TRUE);
     $this->add('text', 'from_name', E::ts("Mailing from name"), [], TRUE);
     $this->add('text', 'from_email', E::ts('Mailing from email'), [], TRUE);
     $this->addRule('from_email',E::ts('Has to be a valid email address.'),'email');
-    $this->add('datepicker', 'scheduled_date', E::ts('Schedule mailing for date'), [],TRUE, ['time' => FALSE]);
     $this->assign('template_txt', E::ts('Template used for invitation mailing'));
     $this->assign('invited_txt', E::ts('Volunteers that will be invited by this mailing:') . $this->_countInvited);
     $this->assign('invalid_txt', E::ts('Volunteers that will NOT be invited with reason:') . $this->_countInvalid);
@@ -113,13 +90,36 @@ class CRM_Nbrprojectvolunteerlist_Form_Task_InviteBulk extends CRM_Contact_Form_
   }
 
   /**
+   * Method to add volunteer to temporary group for bulk invite
+   *
+   * @param $groupId
+   */
+  private function addVolunteersToGroup($groupId) {
+    foreach ($this->_invited as $invitedContactId => $invitedData) {
+      try {
+        civicrm_api3('GroupContact', 'create', [
+          'group_id' => $groupId,
+          'contact_id' => $invitedContactId,
+        ]);
+      }
+      catch (CiviCRM_API3_Exception $ex) {
+        Civi::log()->error('Could not add contact with ID ' . $invitedContactId . ' to mailing group for bulk invite with ID '
+          . $groupId . ' in ' . __METHOD__ . ', error message from API GroupContact create: ' . $ex->getMessage());
+        CRM_Core_Session::setStatus("Could not add volunteer with ID ' . $invitedContactId . ', will not be invited by mailing. Please correct manually.", "Can not add volunteer to bulk invite", "error");
+      }
+
+    }
+  }
+
+  /**
    * Method to create the mailing for the bulk invite
    *
    * @param $groupId
    */
   private function createMailing($groupId) {
+    $mailingParams = CRM_Nbrprojectvolunteerlist_Utils::createInviteMailingParams($this->_studyId, $groupId, $this->_submitValues);
     try {
-      $mailing = civicrm_api3('Mailing', 'create', CRM_Nbrprojectvolunteerlist_Utils::createInviteMailingParams($groupId));
+      $mailing = civicrm_api3('Mailing', 'create', $mailingParams);
       // insert record to link mailing id and group id
       $this->createNbrMailing($groupId, $mailing['id']);
     }
