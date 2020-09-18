@@ -4,29 +4,6 @@
   <div class="help-block" id="help">
     {ts}You can invite 50+ volunteers in 1 bulk mailing. If you need to mail less you can but you could also use the Invite By Email (max. 50) action.{/ts}
   </div>
-  <div class="crm-form-block">
-    <h3>{$template_txt}</h3>
-    <div class="crm-section">
-      <div class="label">{$form.msg_template_id.label}</div>
-      <div class="content">{$form.msg_template_id.html}</div>
-      <div class="clear"></div>
-    </div>
-    <div class="crm-section">
-      <div class="label">{$form.subject.label}</div>
-      <div class="content">{$form.subject.html}</div>
-      <div class="clear"></div>
-    </div>
-    <div class="crm-section">
-      <div class="label">{$form.from_name.label}</div>
-      <div class="content">{$form.from_name.html}</div>
-      <div class="clear"></div>
-    </div>
-    <div class="crm-section">
-      <div class="label">{$form.from_email.label}</div>
-      <div class="content">{$form.from_email.html}</div>
-      <div class="clear"></div>
-    </div>
-  </div>
   <h3>{$invited_txt}</h3>
     {if !empty($invited)}
       <table>

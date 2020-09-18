@@ -88,18 +88,19 @@ class CRM_Nbrprojectvolunteerlist_Utils {
   /**
    * Method to create the params for the temporary group used by Invite by Bulk
    *
+   * @param $studyId
    * @return array
    */
-  public static function createInviteBulkGroupParams() {
+  public static function createInviteBulkGroupParams($studyId) {
     $now = new DateTime();
+    $studyNumber = CRM_Nihrbackbone_NbrStudy::getStudyNumberWithId($studyId);
     return [
       'name' => "Nbr_Invite_Bulk_" . $now->format('Ymdhis'),
-      'title' => "Temp. Invite Bulk Mailing on " . $now->format('Y-m-d H:i:s') . " group",
+      'title' => "Temp. Invite Bulk Mailing " . $studyNumber . " group on " . $now->format('Y-m-d H:i:s'),
       'description' => "This group is a temporary one used for inviting volunteers by Bulk Email - do not update or use, will be removed automatically when mailing is completed.",
       'is_active' => 1,
       'visibility' => "User and User Admin Only",
       'group_type' => "Mailing List",
-      'is_hidden' => 1,
       'is_reserved' => 1,
       'created_id' => CRM_Core_Session::getLoggedInContactID()
     ];
@@ -118,21 +119,18 @@ class CRM_Nbrprojectvolunteerlist_Utils {
       return FALSE;
     }
     $include = [$groupId];
-    $msgTemplate =  civicrm_api3('MessageTemplate', 'getsingle', ['id' => $formValues['msg_template_id']]);
     $mailingParams = [
-      'name' => 'Bulk Invite study ' . CRM_Nihrbackbone_NbrStudy::getStudyNumberWithId($studyId),
+      'name' => 'Bulk Invite study ' . CRM_Nihrbackbone_NbrStudy::getStudyNumberWithId($studyId) . ' (created ' . date('d-m-Y') . ")",
       'groups' => ['include' => $include],
       'mailing_type' => 'standalone',
       'template_type' => 'traditional',
-      //'body_html' => $msgTemplate['msg_html'],
       'domain_id' => 1,
-      'header_id' => 1,
-      'footer_id' => 2,
-      'reply_id' => 8,
-      'unsubscribe_id' => 5,
-      'resubscribe_id' => 6,
+      'header_id' => Civi::service('nbrBackbone')->getMailingHeaderId(),
+      'footer_id' => Civi::service('nbrBackbone')->getMailingFooterId(),
+      'reply_id' => Civi::service('nbrBackbone')->getAutoResponderId(),
+      'unsubscribe_id' => Civi::service('nbrBackbone')->getUnsubscribeId(),
+      'resubscribe_id' => Civi::service('nbrBackbone')->getResubscribeId(),
       'template_options' => '{"nonce":"1"}',
-      //'msg_template_id' => $formValues['msg_template_id'],
     ];
     $fromFormParams = ['subject', 'from_name', 'from_email'];
     foreach ($fromFormParams as $fromFormParam) {

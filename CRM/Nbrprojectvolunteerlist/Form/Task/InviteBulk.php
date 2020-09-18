@@ -40,32 +40,14 @@ class CRM_Nbrprojectvolunteerlist_Form_Task_InviteBulk extends CRM_Contact_Form_
     if (isset(self::$_searchFormValues['study_id'])) {
       $this->_studyId = self::$_searchFormValues['study_id'];
     }
-    $this->add('select', 'msg_template_id', E::ts('Message template for bulk mail'), CRM_Nbrprojectvolunteerlist_Utils::getTemplateList(),
-      TRUE, ['class' => 'crm-select2']);
-    $this->add('text', 'subject', E::ts("Subject for mailing"), ['size' => 'HUGE'], TRUE);
-    $this->add('text', 'from_name', E::ts("Mailing from name"), [], TRUE);
-    $this->add('text', 'from_email', E::ts('Mailing from email'), [], TRUE);
-    $this->addRule('from_email',E::ts('Has to be a valid email address.'),'email');
-    $this->assign('template_txt', E::ts('Template used for invitation mailing'));
-    $this->assign('invited_txt', E::ts('Volunteers that will be invited by this mailing:') . $this->_countInvited);
+    $this->assign('invited_txt', E::ts('Volunteers that will be invited by this bulk mailing:') . $this->_countInvited);
     $this->assign('invalid_txt', E::ts('Volunteers that will NOT be invited with reason:') . $this->_countInvalid);
     $this->getInvitedData();
     $this->assign('count_invited_txt', E::ts('Number of volunteers that will be invited: ') . $this->_countInvited);
     $this->assign('count_invalid_txt', E::ts('Number of volunteers that will NOT be invited: ') . $this->_countInvalid);
     $this->assign('invited', $this->_invited);
     $this->assign('invalids', $this->_invalids);
-    $this->addDefaultButtons(ts('Schedule invitation mailing'));
-  }
-
-  /**
-   * Method to set default values
-   *
-   * @return array|mixed
-   */
-  public function setDefaultValues() {
-    $nowDate = new DateTime;
-    $defaults['scheduled_date'] = $nowDate->format('Y-m-d');
-    return $defaults;
+    $this->addDefaultButtons('Create draft invitation mailing');
   }
 
   /**
@@ -76,7 +58,7 @@ class CRM_Nbrprojectvolunteerlist_Form_Task_InviteBulk extends CRM_Contact_Form_
     if (isset($this->_studyId) && !empty($this->_invited)) {
       // first create temporary group
       try {
-        $group = civicrm_api3('Group', 'create', CRM_Nbrprojectvolunteerlist_Utils::createInviteBulkGroupParams());
+        $group = civicrm_api3('Group', 'create', CRM_Nbrprojectvolunteerlist_Utils::createInviteBulkGroupParams($this->_studyId));
         // next add all volunteers to invite to group
         $this->addVolunteersToGroup($group['id']);
         $this->createMailing($group['id']);
@@ -145,7 +127,8 @@ class CRM_Nbrprojectvolunteerlist_Form_Task_InviteBulk extends CRM_Contact_Form_
         'group_id' => $groupId,
         'study_id' => $this->_studyId,
       ]);
-      CRM_Core_Session::setStatus("Mailing for invite by bulk scheduled successfully.", "Bulk invite mailing scheduled", "success");
+      $studyNumber = CRM_Nihrbackbone_NbrStudy::getStudyNumberWithId($this->_studyId);
+      CRM_Core_Session::setStatus("Draft mailing for invite by bulk to " . $studyNumber . " successfully created.", "Draft Bulk invite mailing created", "success");
     }
     catch (CiviCRM_API3_Exception $ex) {
       Civi::log()->error('Could not create a record linking the bulk invite mailing with ID ' . $mailingId .
