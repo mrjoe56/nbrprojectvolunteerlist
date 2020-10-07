@@ -56,6 +56,8 @@ class CRM_Nbrprojectvolunteerlist_Form_Task_InviteBulk extends CRM_Contact_Form_
   public function postProcess() {
     // only if we have a study, invited ids and a template
     if (isset($this->_studyId) && !empty($this->_invited)) {
+      // change study status to invitation pending
+      $this->changeStatusInvitationPending();
       // first create temporary group
       try {
         $group = civicrm_api3('Group', 'create', CRM_Nbrprojectvolunteerlist_Utils::createInviteBulkGroupParams($this->_studyId));
@@ -70,6 +72,25 @@ class CRM_Nbrprojectvolunteerlist_Form_Task_InviteBulk extends CRM_Contact_Form_
       }
     }
   }
+
+  /**
+   * Method to change the invitation pending status for each invite
+   */
+  private function changeStatusInvitationPending() {
+    $status = Civi::service('nbrBackbone')->getInvitationPendingParticipationStatusValue();
+    foreach ($this->_invited as $invitedContactId => $invitedData) {
+      $caseId = CRM_Nihrbackbone_NbrVolunteerCase::getActiveParticipationCaseId($this->_studyId, $invitedContactId);
+      if ($caseId) {
+        CRM_Nihrbackbone_NbrVolunteerCase::updateStudyStatus($caseId, $invitedContactId, $status);
+
+      }
+      else {
+        Civi::log()->warning("Could not find a case ID for volunteer with ID " . $invitedContactId . " in study "
+          . $this->_studyId . ", volunteer status NOT set to Invitation Pending!");
+      }
+    }
+  }
+
 
   /**
    * Method to add volunteer to temporary group for bulk invite
