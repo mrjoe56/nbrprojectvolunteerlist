@@ -29,9 +29,13 @@ class CRM_Nbrprojectvolunteerlist_NbrParticipation {
           $studyId = (int) $searchFormValues['study_id'];
           if ($studyId) {
             $contactIds = $form->getVar('_contactIds');
+            $caseIds = [];
             foreach ($contactIds as $contactId) {
-              $caseId = CRM_Nihrbackbone_NbrVolunteerCase::getActiveParticipationCaseId($studyId, $contactId);
-              $form->setVar('_caseId', $caseId);
+              $caseIds[] = CRM_Nihrbackbone_NbrVolunteerCase::getActiveParticipationCaseId($studyId, $contactId);
+            }
+            if (!empty($caseIds)) {
+              $session = CRM_Core_Session::singleton();
+              $session->nbr_email_case_ids = $caseIds;
             }
           }
         }
@@ -39,5 +43,20 @@ class CRM_Nbrprojectvolunteerlist_NbrParticipation {
     }
   }
 
+  public static function fileEmailOnCases($activityId) {
+    // only if case ids in session (put there in buildForm of email
+    // task if iniated from MSP screen
+    $session = CRM_Core_Session::singleton();
+    if (isset($session->nbr_email_case_ids)) {
+      foreach ($session->nbr_email_case_ids as $caseId) {
+        $insert = "INSERT INTO civicrm_case_activity (case_id, activity_id) VALUES(%1, %2)";
+        CRM_Core_DAO::executeQuery($insert, [
+          1 => [(int) $caseId, "Integer"],
+          2 => [(int) $activityId, "Integer"],
+        ]);
+        unset($session->nbr_email_case_ids);
+      }
+    }
+  }
 }
 

@@ -3,6 +3,19 @@
 require_once 'nbrprojectvolunteerlist.civix.php';
 use CRM_Nbrprojectvolunteerlist_ExtensionUtil as E;
 
+function nbrprojectvolunteerlist_civicrm_post($op, $objectName, $objectId, &$objectRef) {
+  if ($objectName == "Activity" && $op == "create") {
+    // only if email activity type id
+    if ($objectRef->activity_type_id == Civi::service('nbrBackbone')->getEmailActivityTypeId()) {
+      if (CRM_Core_Transaction::isActive()) {
+        CRM_Core_Transaction::addCallback(CRM_Core_Transaction::PHASE_POST_COMMIT, 'CRM_Nbrprojectvolunteerlist_NbrParticipation::fileEmailOnCases', [$objectId]);
+      }
+      else {
+        CRM_Nbrprojectvolunteerlist_NbrParticipation::fileEmailOnCases($objectId);
+      }
+    }
+  }
+}
 /**
  * Implements hook_civicrm_buildForm
  *
@@ -14,7 +27,6 @@ function nbrprojectvolunteerlist_civicrm_buildForm($formName, &$form) {  # jb2
     $nbrParticipation->emailBuildForm($form);
   }
 }
-
 
 /**
  * Implements hook_civicrm_searchTasks().
