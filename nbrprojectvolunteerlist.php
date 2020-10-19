@@ -4,6 +4,19 @@ require_once 'nbrprojectvolunteerlist.civix.php';
 use CRM_Nbrprojectvolunteerlist_ExtensionUtil as E;
 
 /**
+ * Implements hook_civicrm_buildForm
+ *
+ * @link https://docs.civicrm.org/dev/en/latest/hooks/hook_civicrm_buildForm
+ */
+function nbrprojectvolunteerlist_civicrm_buildForm($formName, &$form) {  # jb2
+  if ($form instanceof CRM_Contact_Form_Task_Email) {
+    $nbrParticipation = new CRM_Nbrprojectvolunteerlist_NbrParticipation();
+    $nbrParticipation->emailBuildForm($form);
+  }
+}
+
+
+/**
  * Implements hook_civicrm_searchTasks().
  *
  * @link https://docs.civicrm.org/dev/en/latest/hooks/hook_civicrm_searchTasks

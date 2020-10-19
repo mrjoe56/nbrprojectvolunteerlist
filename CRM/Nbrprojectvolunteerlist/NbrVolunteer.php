@@ -102,6 +102,5 @@ class CRM_Nbrprojectvolunteerlist_NbrVolunteer {
     return FALSE;
   }
 
-
 }
 
