@@ -29,28 +29,31 @@ class CRM_Nbrprojectvolunteerlist_NbrVolunteer {
     ];
     $eligibleStatus = implode(', ', CRM_Nihrbackbone_NbrVolunteerCase::getEligibleDescriptions($dao->eligible_status_id));
     $volunteer['eligible_status'] = $eligibleStatus;
-    // do not allow invite if participation status is excluded
-    if ($dao->study_participation_status == Civi::service('nbrBackbone')->getExcludedParticipationStatusValue()) {
-      $countInvalids++;
-      $volunteer['reason'] = E::ts("Excluded");
-      $invalids[$dao->contact_id] = $volunteer;
+    $inviteType = substr($type,0,6);
+    if ($inviteType == "invite") {
+      // do not allow invite if participation status is excluded
+      if ($dao->study_participation_status == Civi::service('nbrBackbone')->getExcludedParticipationStatusValue()) {
+        $countInvalids++;
+        $volunteer['reason'] = E::ts("Excluded");
+        $invalids[$dao->contact_id] = $volunteer;
+      }
+      // only allow invite if eligible
+      elseif (!$this->isEligibleStatus($dao->eligible_status_id)) {
+        $countInvalids++;
+        $volunteer['reason'] = E::ts("Not eligible");
+        $invalids[$dao->contact_id] = $volunteer;
+      }
     }
-    // only allow invite if eligible
-    elseif (!$this->isEligibleStatus($dao->eligible_status_id)) {
+    // do not allow if email is empty
+    if (empty($dao->email)) {
       $countInvalids++;
-      $volunteer['reason'] = E::ts("Not eligible");
+      $volunteer['reason'] = E::ts("Does not have an active primary email address");
       $invalids[$dao->contact_id] = $volunteer;
     }
     // do not allow if deceased
-    elseif (CRM_Nihrbackbone_NihrVolunteer::isDeceased($dao->contact_id)) {
+    if (CRM_Nihrbackbone_NihrVolunteer::isDeceased($dao->contact_id)) {
       $countInvalids++;
       $volunteer['reason'] = E::ts("Deceased");
-      $invalids[$dao->contact_id] = $volunteer;
-    }
-    // do not allow if email is empty
-    elseif (empty($dao->email)) {
-      $countInvalids++;
-      $volunteer['reason'] = E::ts("Does not have an active primary email address");
       $invalids[$dao->contact_id] = $volunteer;
     }
     // do not allow if contact has no_email flag
@@ -65,8 +68,8 @@ class CRM_Nbrprojectvolunteerlist_NbrVolunteer {
       $volunteer['reason'] = E::ts("Invalid email address");
       $invalids[$dao->contact_id] = $volunteer;
     }
-    // do not allow more than 50 invitations if not bulk
-    elseif ($type == "email" && $countInvited >= 50) {
+    // do not allow more than 50 if not bulk
+    elseif ($type == "invite_email" && $countInvited >= 50) {
       $countInvalids++;
       $volunteer['reason'] = E::ts("Can not mail more than 50");
       $invalids[$dao->contact_id] = $volunteer;

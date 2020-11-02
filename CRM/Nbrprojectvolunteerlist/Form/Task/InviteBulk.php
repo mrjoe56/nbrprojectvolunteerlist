@@ -9,7 +9,7 @@ use CRM_Nbrprojectvolunteerlist_ExtensionUtil as E;
  * @date 7 Sep 2020
  * @license AGPL-3.0
  */
-class CRM_Nbrprojectvolunteerlist_Form_Task_InviteBulk extends CRM_Contact_Form_Task {
+class CRM_Nbrprojectvolunteerlist_Form_Task_BulkMail extends CRM_Contact_Form_Task {
 
   private $_countInvited = NULL;
   private $_countInvalid = NULL;
@@ -18,7 +18,7 @@ class CRM_Nbrprojectvolunteerlist_Form_Task_InviteBulk extends CRM_Contact_Form_
   private $_studyId = NULL;
 
   /**
-   * Method to get the invited data for the selected contact IDs
+   * Method to get the volunteer data for the selected contact IDs
    *
    */
   private function getInvitedData() {
@@ -29,7 +29,7 @@ class CRM_Nbrprojectvolunteerlist_Form_Task_InviteBulk extends CRM_Contact_Form_
     $dao = CRM_Nbrprojectvolunteerlist_Utils::getInvitedData($this->_studyId, $this->_contactIds);
     while ($dao->fetch()) {
       $volunteer = new CRM_Nbrprojectvolunteerlist_NbrVolunteer();
-      $volunteer->classifyVolunteer("mailing", $dao, $this->_invalids, $this->_countInvalid, $this->_invited, $this->_countInvited);
+      $volunteer->classifyVolunteer("invite_bulk", $dao, $this->_invalids, $this->_countInvalid, $this->_invited, $this->_countInvited);
     }
   }
 
@@ -120,7 +120,7 @@ class CRM_Nbrprojectvolunteerlist_Form_Task_InviteBulk extends CRM_Contact_Form_
    * @param $groupId
    */
   private function createMailing($groupId) {
-    $mailingParams = CRM_Nbrprojectvolunteerlist_Utils::createInviteMailingParams($this->_studyId, $groupId, $this->_submitValues);
+    $mailingParams = CRM_Nbrprojectvolunteerlist_Utils::createMailingParams($this->_studyId, $groupId, $this->_submitValues, 'invite');
     try {
       $mailing = civicrm_api3('Mailing', 'create', $mailingParams);
       // insert record to link mailing id and group id

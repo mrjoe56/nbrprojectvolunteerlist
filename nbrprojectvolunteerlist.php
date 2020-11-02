@@ -16,6 +16,7 @@ function nbrprojectvolunteerlist_civicrm_post($op, $objectName, $objectId, &$obj
     }
   }
 }
+
 /**
  * Implements hook_civicrm_buildForm
  *

@@ -91,6 +91,27 @@ class CRM_Nbrprojectvolunteerlist_Utils {
    * @param $studyId
    * @return array
    */
+  public static function createBulkGroupParams($studyId) {
+    $now = new DateTime();
+    $studyNumber = CRM_Nihrbackbone_NbrStudy::getStudyNumberWithId($studyId);
+    return [
+      'name' => "Nbr_BulkMailing_" . $now->format('Ymdhis'),
+      'title' => "Temp. Study Bulk Mailing " . $studyNumber . " group on " . $now->format('Y-m-d H:i:s'),
+      'description' => "This group is a temporary one used for bulk mailing study volunteers - do not update or use, will be removed automatically when mailing is completed.",
+      'is_active' => 1,
+      'visibility' => "User and User Admin Only",
+      'group_type' => "Mailing List",
+      'is_reserved' => 1,
+      'created_id' => CRM_Core_Session::getLoggedInContactID()
+    ];
+  }
+
+  /**
+   * Method to create the params for the temporary group used by Invite by Bulk
+   *
+   * @param $studyId
+   * @return array
+   */
   public static function createInviteBulkGroupParams($studyId) {
     $now = new DateTime();
     $studyNumber = CRM_Nihrbackbone_NbrStudy::getStudyNumberWithId($studyId);
@@ -112,9 +133,10 @@ class CRM_Nbrprojectvolunteerlist_Utils {
    * @param $studyId
    * @param $groupId
    * @param $formValues
+   * @param $type (default "")
    * @return array|false
    */
-  public static function createInviteMailingParams($studyId, $groupId, $formValues) {
+  public static function createMailingParams($studyId, $groupId, $formValues, $type = "") {
     if (empty($groupId) || empty($studyId) || empty($formValues)) {
       return FALSE;
     }
@@ -132,6 +154,9 @@ class CRM_Nbrprojectvolunteerlist_Utils {
       'resubscribe_id' => Civi::service('nbrBackbone')->getResubscribeId(),
       'template_options' => '{"nonce":"1"}',
     ];
+    if ($type == 'msp') {
+      $mailingParams['name'] = 'Study Bulk Mailing ' . CRM_Nihrbackbone_NbrStudy::getStudyNumberWithId($studyId) . ' (created ' . date('d-m-Y') . ")";
+    }
     $fromFormParams = ['subject', 'from_name', 'from_email'];
     foreach ($fromFormParams as $fromFormParam) {
       if (isset($formValues[$fromFormParam]) && !empty($formValues[$fromFormParam])) {

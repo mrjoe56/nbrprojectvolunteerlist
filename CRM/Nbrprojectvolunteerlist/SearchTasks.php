@@ -86,7 +86,7 @@ class CRM_Nbrprojectvolunteerlist_SearchTasks {
       }
     }
     // if one of specific actions, return TRUE
-    $taskClasses = ['InviteByEmail', 'ChangeStudyStatus', "InviteBulk"];
+    $taskClasses = ['InviteByEmail', 'ChangeStudyStatus', 'InviteBulk', 'BulkMailing'];
     foreach ($taskClasses as $taskClass) {
       $checkDisplay = CRM_Utils_Request::retrieveValue('_qf_' . $taskClass . '_display', 'String');
       $checkNext = CRM_Utils_Request::retrieveValue('_qf_' . $taskClass . '_next', 'String');
@@ -112,6 +112,10 @@ class CRM_Nbrprojectvolunteerlist_SearchTasks {
       [
         'title' => "Invite Volunteer(s) by Bulk Mail (50+)",
         'class' => "CRM_Nbrprojectvolunteerlist_Form_Task_InviteBulk",
+      ],
+      [
+        'title' => "Send bulk mailing to Volunteer(s) (50+)",
+        'class' => "CRM_Nbrprojectvolunteerlist_Form_Task_BulkMailing",
       ],
       [
         'title' => "Change Status on Study for Volunteer(s)",

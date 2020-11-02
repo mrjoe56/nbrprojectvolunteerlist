@@ -29,7 +29,7 @@ class CRM_Nbrprojectvolunteerlist_Form_Task_InviteByEmail extends CRM_Contact_Fo
     $dao = CRM_Nbrprojectvolunteerlist_Utils::getInvitedData($this->_studyId, $this->_contactIds);
     while ($dao->fetch()) {
       $volunteer = new CRM_Nbrprojectvolunteerlist_NbrVolunteer();
-      $volunteer->classifyVolunteer("email", $dao, $this->_invalids, $this->_countInvalid, $this->_invited, $this->_countInvited);
+      $volunteer->classifyVolunteer("invite_mail", $dao, $this->_invalids, $this->_countInvalid, $this->_invited, $this->_countInvited);
     }
   }
 
