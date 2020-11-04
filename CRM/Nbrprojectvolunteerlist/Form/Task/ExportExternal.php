@@ -40,7 +40,7 @@ class CRM_Nbrprojectvolunteerlist_Form_Task_ExportExternal extends CRM_Contact_F
       TIMESTAMPDIFF(YEAR, c.birth_date , CURDATE()) AS age, e.city, e.postal_code, f.name AS county,
       b.contact_id, c.birth_date, b.case_id, b.contact_id
       FROM " . $participantTable . " AS a
-      LEFT JOIN civicrm_case_contact AS b ON a.entity_id = b.id
+      LEFT JOIN civicrm_case_contact AS b ON a.entity_id = b.case_id
       LEFT JOIN civicrm_contact AS c ON b.contact_id = c.id
       LEFT JOIN civicrm_email AS d ON b.contact_id = d.contact_id AND d.is_primary = %1
       LEFT JOIN civicrm_address AS e ON b.contact_id = e.contact_id AND e.is_primary = %1
