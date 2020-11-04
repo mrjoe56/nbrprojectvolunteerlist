@@ -9,7 +9,7 @@ use CRM_Nbrprojectvolunteerlist_ExtensionUtil as E;
  * @date 7 Sep 2020
  * @license AGPL-3.0
  */
-class CRM_Nbrprojectvolunteerlist_Form_Task_BulkMail extends CRM_Contact_Form_Task {
+class CRM_Nbrprojectvolunteerlist_Form_Task_InviteBulk extends CRM_Contact_Form_Task {
 
   private $_countInvited = NULL;
   private $_countInvalid = NULL;
