@@ -89,10 +89,15 @@ class CRM_Nbrprojectvolunteerlist_NbrParticipation {
     if ($activityTypeId == Civi::service('nbrBackbone')->getEmailActivityTypeId()) {
       if (isset($session->nbr_activity_case_ids)) {
         $caseIds = $session->nbr_activity_case_ids;
+        unset($session->nbr_activity_case_ids);
       }
     }
     if ($activityTypeId == Civi::service('nbrBackbone')->getLetterActivityTypeId()) {
-      $caseIds = self::getPdfCases($activityId);
+      $caseId = self::getPdfCase($activityId);
+      if ($caseId) {
+        $caseIds[] = $caseId;
+        // todo process invitation!
+      }
     }
     if (!empty($caseIds)) {
       foreach ($caseIds as $caseId) {
@@ -101,9 +106,6 @@ class CRM_Nbrprojectvolunteerlist_NbrParticipation {
           1 => [(int) $caseId, "Integer"],
           2 => [(int) $activityId, "Integer"],
         ]);
-        if (isset($session->nbr_activity_case_ids)) {
-          unset($session->nbr_activity_case_ids);
-        }
       }
     }
   }
@@ -112,11 +114,10 @@ class CRM_Nbrprojectvolunteerlist_NbrParticipation {
    * Method to retrieve caseIds for PDF Letter
    *
    * @param int $activityId
-   * @return array
+   * @return int
    * @throws CRM_Core_Exception
    */
-  private static function getPdfCases($activityId) {
-    $caseIds = [];
+  private static function getPdfCase($activityId) {
     $isInvite = CRM_Utils_Request::retrieveValue('is_nbr_invite', 'Boolean');
     $studyId = CRM_Utils_Request::retrieveValue('study_id', 'Integer');
     if ($isInvite == TRUE && $studyId) {
@@ -127,10 +128,10 @@ class CRM_Nbrprojectvolunteerlist_NbrParticipation {
         2 => [Civi::service('nbrBackbone')->getTargetRecordTypeId(), "Integer"],
       ]);
       if ($contactId) {
-        $caseIds[] = CRM_Nihrbackbone_NbrVolunteerCase::getActiveParticipationCaseId($studyId, $contactId);
+        return CRM_Nihrbackbone_NbrVolunteerCase::getActiveParticipationCaseId($studyId, $contactId);
       }
     }
-    return $caseIds;
+    return FALSE;
   }
 }
 
