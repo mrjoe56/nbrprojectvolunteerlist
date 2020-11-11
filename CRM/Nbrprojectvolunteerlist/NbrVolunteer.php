@@ -30,51 +30,59 @@ class CRM_Nbrprojectvolunteerlist_NbrVolunteer {
     $eligibleStatus = implode(', ', CRM_Nihrbackbone_NbrVolunteerCase::getEligibleDescriptions($dao->eligible_status_id));
     $volunteer['eligible_status'] = $eligibleStatus;
     $inviteType = substr($type,0,6);
+    $valid = TRUE;
     if ($inviteType == "invite") {
       // do not allow invite if participation status is excluded
       if ($dao->study_participation_status == Civi::service('nbrBackbone')->getExcludedParticipationStatusValue()) {
         $countInvalids++;
         $volunteer['reason'] = E::ts("Excluded");
         $invalids[$dao->contact_id] = $volunteer;
+        $valid = FALSE;
       }
       // only allow invite if eligible
       elseif (!$this->isEligibleStatus($dao->eligible_status_id)) {
         $countInvalids++;
         $volunteer['reason'] = E::ts("Not eligible");
         $invalids[$dao->contact_id] = $volunteer;
+        $valid = FALSE;
       }
     }
-    // do not allow if email is empty
-    if (empty($dao->email)) {
+    // do not allow if email is empty unless invite pdf
+    if (empty($dao->email) && $type != "invite_pdf") {
       $countInvalids++;
       $volunteer['reason'] = E::ts("Does not have an active primary email address");
       $invalids[$dao->contact_id] = $volunteer;
+      $valid = FALSE;
     }
     // do not allow if deceased
     if (CRM_Nihrbackbone_NihrVolunteer::isDeceased($dao->contact_id)) {
       $countInvalids++;
       $volunteer['reason'] = E::ts("Deceased");
       $invalids[$dao->contact_id] = $volunteer;
+      $valid = FALSE;
     }
-    // do not allow if contact has no_email flag
-    elseif (!CRM_Nihrbackbone_NihrVolunteer::allowsEmail($dao->contact_id)) {
+    // do not allow if contact has no_email flag (if no invite pdf)
+    if (!CRM_Nihrbackbone_NihrVolunteer::allowsEmail($dao->contact_id) && $type != "invite_pdf") {
       $countInvalids++;
       $volunteer['reason'] = E::ts("Does not want to be emailed");
       $invalids[$dao->contact_id] = $volunteer;
+      $valid = FALSE;
     }
-    // do not allow if invalid email
-    elseif (!filter_var($dao->email, FILTER_VALIDATE_EMAIL)) {
+    // do not allow if invalid email (if not invite_pdf)
+    if (!filter_var($dao->email, FILTER_VALIDATE_EMAIL) && $type != "invite_pdf") {
       $countInvalids++;
       $volunteer['reason'] = E::ts("Invalid email address");
       $invalids[$dao->contact_id] = $volunteer;
+      $valid = FALSE;
     }
-    // do not allow more than 50 if not bulk
-    elseif ($type == "invite_email" && $countInvited >= 50) {
+    // do not allow more than 50 if not bulk or not invite_pdf
+    if ($type == "invite_email" && $countInvited >= 50) {
       $countInvalids++;
       $volunteer['reason'] = E::ts("Can not mail more than 50");
       $invalids[$dao->contact_id] = $volunteer;
+      $valid = FALSE;
     }
-    else {
+    if ($valid) {
       $countInvited++;
       $invited[$dao->contact_id] = $volunteer;
     }

@@ -3,15 +3,22 @@
 require_once 'nbrprojectvolunteerlist.civix.php';
 use CRM_Nbrprojectvolunteerlist_ExtensionUtil as E;
 
+/**
+ * Implements hook_civicrm_post
+ *
+ * @link https://docs.civicrm.org/dev/en/latest/hooks/hook_civicrm_post
+ */
 function nbrprojectvolunteerlist_civicrm_post($op, $objectName, $objectId, &$objectRef) {
   if ($objectName == "Activity" && $op == "create") {
-    // only if email activity type id
-    if ($objectRef->activity_type_id == Civi::service('nbrBackbone')->getEmailActivityTypeId()) {
+    // only if email or PDF activity type id
+    $emailType = Civi::service('nbrBackbone')->getEmailActivityTypeId();
+    $pdfType = Civi::service('nbrBackbone')->getLetterActivityTypeId();
+    if ($objectRef->activity_type_id == $emailType || $objectRef->activity_type_id == $pdfType) {
       if (CRM_Core_Transaction::isActive()) {
-        CRM_Core_Transaction::addCallback(CRM_Core_Transaction::PHASE_POST_COMMIT, 'CRM_Nbrprojectvolunteerlist_NbrParticipation::fileEmailOnCases', [$objectId]);
+        CRM_Core_Transaction::addCallback(CRM_Core_Transaction::PHASE_POST_COMMIT, 'CRM_Nbrprojectvolunteerlist_NbrParticipation::fileActivityOnCases', [$objectId, $objectRef->activity_type_id]);
       }
       else {
-        CRM_Nbrprojectvolunteerlist_NbrParticipation::fileEmailOnCases($objectId);
+        CRM_Nbrprojectvolunteerlist_NbrParticipation::fileActivityOnCases($objectId, $objectRef->activity_type_id);
       }
     }
   }
@@ -26,6 +33,10 @@ function nbrprojectvolunteerlist_civicrm_buildForm($formName, &$form) {  # jb2
   if ($form instanceof CRM_Contact_Form_Task_Email) {
     $nbrParticipation = new CRM_Nbrprojectvolunteerlist_NbrParticipation();
     $nbrParticipation->emailBuildForm($form);
+  }
+  if ($form instanceof CRM_Contact_Form_Task_PDF) {
+    $nbrParticipation = new CRM_Nbrprojectvolunteerlist_NbrParticipation();
+    $nbrParticipation->pdfBuildForm($form);
   }
 }
 

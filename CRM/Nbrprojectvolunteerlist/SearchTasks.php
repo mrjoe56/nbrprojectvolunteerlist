@@ -131,10 +131,10 @@ class CRM_Nbrprojectvolunteerlist_SearchTasks {
     }
     $keepTasks = [
       "CRM_Contact_Form_Task_AddToGroup",
-      "CRM_Contact_Form_Task_Email",
       "CRM_Contact_Form_Task_RemoveFromGroup",
       "CRM_Contact_Form_Task_AddToTag",
       "CRM_Contact_Form_Task_RemoveFromTag",
+      "CRM_Contact_Form_Task_PDF",
     ];
     foreach ($tasks as $taskId => $task) {
       if (isset($task['class'])) {
