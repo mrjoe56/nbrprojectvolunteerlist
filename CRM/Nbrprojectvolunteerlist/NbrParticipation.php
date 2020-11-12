@@ -56,6 +56,7 @@ class CRM_Nbrprojectvolunteerlist_NbrParticipation {
     if (isset($searchFormValues['csid']) && (int) $searchFormValues['csid'] == $mspCsId) {
       // add invite flag
       $form->add('advcheckbox', 'is_nbr_invite', E::ts('Is this a study invite PDF?'), [], FALSE);
+      $form->removeElement('campaign_id');
       CRM_Core_Region::instance('page-body')->add(['template' => 'CRM/Nbrprojectvolunteerlist/Form/Task/InviteByPdf.tpl',]);
       if (isset($searchFormValues['study_id'])) {
         $studyId = (int) $searchFormValues['study_id'];
@@ -93,10 +94,9 @@ class CRM_Nbrprojectvolunteerlist_NbrParticipation {
       }
     }
     if ($activityTypeId == Civi::service('nbrBackbone')->getLetterActivityTypeId()) {
-      $caseId = self::getPdfCase($activityId);
+      $caseId = self::getPdfCaseAndInvite($activityId);
       if ($caseId) {
         $caseIds[] = $caseId;
-        // todo process invitation!
       }
     }
     if (!empty($caseIds)) {
@@ -117,7 +117,7 @@ class CRM_Nbrprojectvolunteerlist_NbrParticipation {
    * @return int
    * @throws CRM_Core_Exception
    */
-  private static function getPdfCase($activityId) {
+  private static function getPdfCaseAndInvite($activityId) {
     $isInvite = CRM_Utils_Request::retrieveValue('is_nbr_invite', 'Boolean');
     $studyId = CRM_Utils_Request::retrieveValue('study_id', 'Integer');
     if ($isInvite == TRUE && $studyId) {
@@ -128,7 +128,9 @@ class CRM_Nbrprojectvolunteerlist_NbrParticipation {
         2 => [Civi::service('nbrBackbone')->getTargetRecordTypeId(), "Integer"],
       ]);
       if ($contactId) {
-        return CRM_Nihrbackbone_NbrVolunteerCase::getActiveParticipationCaseId($studyId, $contactId);
+        $caseId = CRM_Nihrbackbone_NbrVolunteerCase::getActiveParticipationCaseId($studyId, $contactId);
+        CRM_Nihrbackbone_NbrInvitation::addInviteActivity($caseId, $contactId, $studyId, "invite by letter");
+        return $caseId;
       }
     }
     return FALSE;
