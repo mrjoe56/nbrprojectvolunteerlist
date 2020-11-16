@@ -88,7 +88,7 @@
         cj(".nbr_invalids").show();
       }
       else {
-        cj(".nbr_invited").show();
+        cj(".nbr_invited").hide();
         cj(".nbr_invalids").hide();
       }
     });
