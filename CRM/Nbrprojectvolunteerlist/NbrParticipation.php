@@ -68,9 +68,15 @@ class CRM_Nbrprojectvolunteerlist_NbrParticipation {
           $caseIds = [];
           foreach ($contactIds as $contactId) {
             $caseId = CRM_Nihrbackbone_NbrVolunteerCase::getActiveParticipationCaseId($studyId, $contactId);
-            $caseIds[] = $caseId;
-            $this->addInvalidVolunteer($contactId, $caseId, $invitedIds, $invalidIds);
+            $this->addInvalidVolunteer($contactId, $caseId, $invitedIds, $invalidIds, $caseIds);
           }
+          // remove all invalids from _contactIds and _componentIds in form object
+          $resultIds = [];
+          foreach ($invitedIds as $invitedId => $invitedData) {
+            $resultIds[] = (string) $invitedId;
+          }
+          $form->setVar("_contactIds", $resultIds);
+          $form->setVar("_componentIds", $resultIds);
           $form->assign('invalid_ids', $invalidIds);
           $form->assign('invited_ids', $invitedIds);
           if (!empty($caseIds)) {
@@ -90,8 +96,9 @@ class CRM_Nbrprojectvolunteerlist_NbrParticipation {
    * @param $caseId
    * @param $invitedIds
    * @param $invalidIds
+   * @param $caseIds
    */
-  private function addInvalidVolunteer($contactId, $caseId, &$invitedIds, &$invalidIds) {
+  private function addInvalidVolunteer($contactId, $caseId, &$invitedIds, &$invalidIds, &$caseIds) {
     $eligible = CRM_Nihrbackbone_NbrVolunteerCase::getCurrentEligibleStatus($caseId);
     $status = CRM_Nihrbackbone_NbrVolunteerCase::getCurrentStudyStatus($caseId);
     if ($eligible[0] == Civi::service('nbrBackbone')->getEligibleEligibilityStatusValue() &&
@@ -101,6 +108,7 @@ class CRM_Nbrprojectvolunteerlist_NbrParticipation {
         'study_status' => CRM_Nihrbackbone_Utils::getOptionValueLabel($status, CRM_Nihrbackbone_BackboneConfig::singleton()->getStudyParticipationStatusOptionGroupId()),
         'eligible_status' => CRM_Nihrbackbone_Utils::getOptionValueLabel($eligible[0], CRM_Nihrbackbone_BackboneConfig::singleton()->getEligibleStatusOptionGroupId()),
       ];
+      $caseIds[] = $caseId;
     }
     else {
       $invalidIds[$contactId] = [
@@ -117,7 +125,7 @@ class CRM_Nbrprojectvolunteerlist_NbrParticipation {
    * @param $activityId
    * @param $activityTypeId
    */
-  public static function fileActivityOnCases($activityId, $activityTypeId) {
+  public static function fileActivityOnCases($activityId, $activityTypeId, $invite = FALSE) {
     $caseIds = [];
     $session = CRM_Core_Session::singleton();
     // only if case ids in session (put there in buildForm of email task if initiated from MSP screen
@@ -128,7 +136,7 @@ class CRM_Nbrprojectvolunteerlist_NbrParticipation {
       }
     }
     if ($activityTypeId == Civi::service('nbrBackbone')->getLetterActivityTypeId()) {
-      $caseId = self::getPdfCaseAndInvite($activityId);
+      $caseId = self::getPdfCaseAndInvite($activityId, $invite);
       if ($caseId) {
         $caseIds[] = $caseId;
       }
