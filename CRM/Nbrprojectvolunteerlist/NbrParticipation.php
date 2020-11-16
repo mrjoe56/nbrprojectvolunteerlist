@@ -54,26 +54,60 @@ class CRM_Nbrprojectvolunteerlist_NbrParticipation {
     $msp = new CRM_Nbrprojectvolunteerlist_SearchTasks();
     $mspCsId = $msp->getCsId();
     if (isset($searchFormValues['csid']) && (int) $searchFormValues['csid'] == $mspCsId) {
-      // add invite flag
-      $form->add('advcheckbox', 'is_nbr_invite', E::ts('Is this a study invite PDF?'), [], FALSE);
-      $form->removeElement('campaign_id');
       CRM_Core_Region::instance('page-body')->add(['template' => 'CRM/Nbrprojectvolunteerlist/Form/Task/InviteByPdf.tpl',]);
       if (isset($searchFormValues['study_id'])) {
         $studyId = (int) $searchFormValues['study_id'];
+        $contactIds = $form->getVar('_contactIds');
+        $invalidIds = [];
+        $invitedIds = [];
+        $form->add('advcheckbox', 'is_nbr_invite', E::ts('Is this a study invite PDF?'), [], FALSE);
+        $form->removeElement('campaign_id');
         $form->add('hidden', 'study_id');
         $form->setDefaults(['study_id' => $studyId]);
         if ($studyId) {
-          $contactIds = $form->getVar('_contactIds');
           $caseIds = [];
           foreach ($contactIds as $contactId) {
-            $caseIds[] = CRM_Nihrbackbone_NbrVolunteerCase::getActiveParticipationCaseId($studyId, $contactId);
+            $caseId = CRM_Nihrbackbone_NbrVolunteerCase::getActiveParticipationCaseId($studyId, $contactId);
+            $caseIds[] = $caseId;
+            $this->addInvalidVolunteer($contactId, $caseId, $invitedIds, $invalidIds);
           }
+          $form->assign('invalid_ids', $invalidIds);
+          $form->assign('invited_ids', $invitedIds);
           if (!empty($caseIds)) {
             $session = CRM_Core_Session::singleton();
             $session->nbr_activity_case_ids = $caseIds;
           }
         }
       }
+    }
+  }
+
+  /**
+   * Method to check if volunteer is invalid for invite
+   * (not eligible or status is not selected)
+   *
+   * @param $contactId
+   * @param $caseId
+   * @param $invitedIds
+   * @param $invalidIds
+   */
+  private function addInvalidVolunteer($contactId, $caseId, &$invitedIds, &$invalidIds) {
+    $eligible = CRM_Nihrbackbone_NbrVolunteerCase::getCurrentEligibleStatus($caseId);
+    $status = CRM_Nihrbackbone_NbrVolunteerCase::getCurrentStudyStatus($caseId);
+    if ($eligible[0] == Civi::service('nbrBackbone')->getEligibleEligibilityStatusValue() &&
+      $status == Civi::service('nbrBackbone')->getSelectedParticipationStatusValue()) {
+      $invitedIds[$contactId] = [
+        'display_name' => CRM_Nihrbackbone_Utils::getContactName($contactId, 'display_name'),
+        'study_status' => CRM_Nihrbackbone_Utils::getOptionValueLabel($status, CRM_Nihrbackbone_BackboneConfig::singleton()->getStudyParticipationStatusOptionGroupId()),
+        'eligible_status' => CRM_Nihrbackbone_Utils::getOptionValueLabel($eligible[0], CRM_Nihrbackbone_BackboneConfig::singleton()->getEligibleStatusOptionGroupId()),
+      ];
+    }
+    else {
+      $invalidIds[$contactId] = [
+        'display_name' => CRM_Nihrbackbone_Utils::getContactName($contactId, 'display_name'),
+        'study_status' => CRM_Nihrbackbone_Utils::getOptionValueLabel($status, CRM_Nihrbackbone_BackboneConfig::singleton()->getStudyParticipationStatusOptionGroupId()),
+        'eligible_status' => CRM_Nihrbackbone_Utils::getOptionValueLabel($eligible[0], CRM_Nihrbackbone_BackboneConfig::singleton()->getEligibleStatusOptionGroupId()),
+      ];
     }
   }
 
@@ -120,7 +154,7 @@ class CRM_Nbrprojectvolunteerlist_NbrParticipation {
   private static function getPdfCaseAndInvite($activityId) {
     $isInvite = CRM_Utils_Request::retrieveValue('is_nbr_invite', 'Boolean');
     $studyId = CRM_Utils_Request::retrieveValue('study_id', 'Integer');
-    if ($isInvite == TRUE && $studyId) {
+    if ($studyId) {
       // get target contact for activity
       $query = "SELECT contact_id FROM civicrm_activity_contact WHERE activity_id = %1 AND record_type_id = %2";
       $contactId = (int) CRM_Core_DAO::singleValueQuery($query, [
@@ -129,7 +163,9 @@ class CRM_Nbrprojectvolunteerlist_NbrParticipation {
       ]);
       if ($contactId) {
         $caseId = CRM_Nihrbackbone_NbrVolunteerCase::getActiveParticipationCaseId($studyId, $contactId);
-        CRM_Nihrbackbone_NbrInvitation::addInviteActivity($caseId, $contactId, $studyId, "invite by letter");
+        if ($isInvite == TRUE) {
+          CRM_Nihrbackbone_NbrInvitation::addInviteActivity($caseId, $contactId, $studyId, "invite by letter");
+        }
         return $caseId;
       }
     }
