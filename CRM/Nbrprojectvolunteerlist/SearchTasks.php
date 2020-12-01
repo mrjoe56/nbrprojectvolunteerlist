@@ -114,6 +114,10 @@ class CRM_Nbrprojectvolunteerlist_SearchTasks {
         'class' => "CRM_Nbrprojectvolunteerlist_Form_Task_InviteBulk",
       ],
       [
+        'title' => "Invite Volunteer(s) by PDF",
+        'class' => "CRM_Nbrprojectvolunteerlist_Form_Task_InviteByPdf",
+      ],
+      [
         'title' => "Send bulk mailing to Volunteer(s) (50+)",
         'class' => "CRM_Nbrprojectvolunteerlist_Form_Task_BulkMailing",
       ],
@@ -135,6 +139,7 @@ class CRM_Nbrprojectvolunteerlist_SearchTasks {
       "CRM_Contact_Form_Task_AddToTag",
       "CRM_Contact_Form_Task_RemoveFromTag",
       "CRM_Contact_Form_Task_PDF",
+      "CRM_Contact_Form_Task_Email",
     ];
     foreach ($tasks as $taskId => $task) {
       if (isset($task['class'])) {

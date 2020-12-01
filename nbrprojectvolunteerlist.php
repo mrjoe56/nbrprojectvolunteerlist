@@ -38,7 +38,12 @@ function nbrprojectvolunteerlist_civicrm_buildForm($formName, &$form) {  # jb2
     $nbrParticipation = new CRM_Nbrprojectvolunteerlist_NbrParticipation();
     $nbrParticipation->pdfBuildForm($form);
   }
+  if ($form instanceof CRM_Nbrprojectvolunteerlist_Form_Task_InviteByPdf) {
+    $nbrParticipation = new CRM_Nbrprojectvolunteerlist_NbrParticipation();
+    $nbrParticipation->pdfInviteBuildForm($form);
+  }
 }
+
 
 /**
  * Implements hook_civicrm_searchTasks().
