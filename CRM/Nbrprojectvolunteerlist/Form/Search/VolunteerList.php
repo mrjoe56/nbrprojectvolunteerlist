@@ -18,9 +18,7 @@ class CRM_Nbrprojectvolunteerlist_Form_Search_VolunteerList extends CRM_Contact_
   function __construct(&$formValues) {
     $this->_force = CRM_Utils_Request::retrieve('force', 'Boolean');
     if ($this->_force) {
-      foreach (array_keys($this->getSearchFieldMetadata()) as $entity) {
-        $formValues = array_merge($this->getEntityDefaults($entity), $formValues);
-      }
+      $formValues = array_merge($this->getEntityDefaults('study'), $formValues);
     }
     parent::__construct($formValues);
   }
@@ -33,6 +31,8 @@ class CRM_Nbrprojectvolunteerlist_Form_Search_VolunteerList extends CRM_Contact_
    */
   function buildForm(&$form) {
     CRM_Utils_System::setTitle(E::ts('Manage Study Participation'));
+    $selectedIds = $this->getSelectedIds();
+    $form->assign_by_ref('selectedIds', $selectedIds);
     $form->add('select','study_id', E::ts('Study'), $this->getStudyList(), TRUE,
       ['class' => 'crm-select2', 'placeholder' => '- select study -']);
     $form->add('select','gender_id', E::ts('Gender is one of'), CRM_Nihrbackbone_Utils::getOptionValueList('gender'), FALSE,
@@ -460,46 +460,6 @@ class CRM_Nbrprojectvolunteerlist_Form_Search_VolunteerList extends CRM_Contact_
       }
     }
   }
-  /**
-   * @return array
-   */
-  public function getSearchFieldMetadata() {
-    $searchFieldMetadata['contact'] = [
-      'sort_name' => [
-        'title' => ts('Sort Name'),
-        'type' => CRM_Utils_Type::T_STRING,
-      ]
-    ];
-    return $searchFieldMetadata;
-  }
-
-  /**
-   * Get the validation rule to apply to a function.
-   *
-   * Alphanumeric is designed to always be safe & for now we just return
-   * that but in future we can use tighter rules for types like int, bool etc.
-   *
-   * @param string $entity
-   * @param string $fieldName
-   *
-   * @return string
-   */
-  protected function getValidationTypeForField($entity, $fieldName) {
-    switch ($this->getSearchFieldMetadata()[$entity][$fieldName]['type']) {
-      case CRM_Utils_Type::T_BOOLEAN:
-        return 'Boolean';
-
-      case CRM_Utils_Type::T_INT:
-        return 'CommaSeparatedIntegers';
-
-      case CRM_Utils_Type::T_DATE:
-      case CRM_Utils_Type::T_DATE + CRM_Utils_Type::T_TIME:
-        return 'Timestamp';
-
-      default:
-        return 'Alphanumeric';
-    }
-  }
 
   /**
    * Get the defaults for the entity for any fields described in metadata.
@@ -512,40 +472,30 @@ class CRM_Nbrprojectvolunteerlist_Form_Search_VolunteerList extends CRM_Contact_
    */
   protected function getEntityDefaults($entity) {
     $defaults = [];
-    foreach (CRM_Utils_Array::value($entity, $this->getSearchFieldMetadata(), []) as $fieldName => $fieldSpec) {
-      if (empty($_POST[$fieldName])) {
-        $value = CRM_Utils_Request::retrieveValue($fieldName, $this->getValidationTypeForField($entity, $fieldName), NULL, NULL, 'GET');
-        if ($value !== NULL) {
-          $defaults[$fieldName] = $value;
-        }
-        if ($fieldSpec['type'] === CRM_Utils_Type::T_DATE || ($fieldSpec['type'] === CRM_Utils_Type::T_DATE + CRM_Utils_Type::T_TIME)) {
-          $low = CRM_Utils_Request::retrieveValue($fieldName . '_low', 'Timestamp', NULL, NULL, 'GET');
-          $high = CRM_Utils_Request::retrieveValue($fieldName . '_high', 'Timestamp', NULL, NULL, 'GET');
-          if ($low !== NULL || $high !== NULL) {
-            $defaults[$fieldName . '_relative'] = 0;
-            $defaults[$fieldName . '_low'] = $low ? date('Y-m-d H:i:s', strtotime($low)) : NULL;
-            $defaults[$fieldName . '_high'] = $high ? date('Y-m-d H:i:s', strtotime($high)) : NULL;
-          }
-          else {
-            $relative = CRM_Utils_Request::retrieveValue($fieldName . '_relative', 'String', NULL, NULL, 'GET');
-            if (!empty($relative) && isset(CRM_Core_OptionGroup::values('relative_date_filters')[$relative])) {
-              $defaults[$fieldName . '_relative'] = $relative;
-            }
-          }
-        }
-      }
-    }
     // if the study id is in the request, start the search with this study
     if ($this->_force) {
       $this->_studyId = CRM_Utils_Request::retrieveValue('sid', 'Integer');
       if ($this->_studyId) {
         $defaults['study_id'] = $this->_studyId;
       }
-      // if qfKey in request, clear prevnext (ugly hack)
-
-
     }
     return $defaults;
+  }
+
+  /**
+   * Method to get the selectedIds if necessary
+   */
+  public function getSelectedIds() {
+    $selectedIds = [];
+    $qfKeyParam = CRM_Utils_Array::value('qfKey', $this->_formValues);
+    if ($qfKeyParam) {
+      $qfKeyParam = "civicrm search {$qfKeyParam}";
+      $selectedIdsArr = Civi::service('prevnext')->getSelection($qfKeyParam, 'get');
+      if (isset($selectedIdsArr[$qfKeyParam]) && is_array($selectedIdsArr[$qfKeyParam])) {
+        $selectedIds = array_keys($selectedIdsArr[$qfKeyParam]);
+      }
+    }
+    return $selectedIds;
   }
 
 }
