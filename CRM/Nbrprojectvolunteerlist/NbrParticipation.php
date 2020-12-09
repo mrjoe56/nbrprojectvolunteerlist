@@ -55,7 +55,13 @@ class CRM_Nbrprojectvolunteerlist_NbrParticipation {
     $mspCsId = $msp->getCsId();
     if (isset($searchFormValues['csid']) && (int) $searchFormValues['csid'] == $mspCsId) {
       if (isset($searchFormValues['study_id'])) {
+        $caseIds = [];
         $studyId = (int) $searchFormValues['study_id'];
+        foreach ($form->_contactIds as $contactId) {
+          $caseIds[$contactId] = CRM_Nihrbackbone_NbrVolunteerCase::getActiveParticipationCaseId($studyId, $contactId);
+        }
+        $session = CRM_Core_Session::singleton();
+        $session->nbr_email_pdf_case_ids = $caseIds;
         $form->removeElement('campaign_id');
         $form->add('hidden', 'study_id');
         $form->setDefaults(['study_id' => $studyId]);
@@ -145,8 +151,9 @@ class CRM_Nbrprojectvolunteerlist_NbrParticipation {
    * @param $activityId
    * @param $activityTypeId
    */
-  public static function fileActivityOnCases($activityId, $activityTypeId, $invite = FALSE) {
+  public static function fileActivityOnCases($activityId, $activityTypeId) {
     $caseIds = [];
+    $fileOnCase = TRUE;
     $session = CRM_Core_Session::singleton();
     if ($activityTypeId == Civi::service('nbrBackbone')->getEmailActivityTypeId() || $activityTypeId == Civi::service('nbrBackbone')->getLetterActivityTypeId()) {
       if (isset($session->nbr_email_pdf_case_ids)) {
@@ -155,17 +162,31 @@ class CRM_Nbrprojectvolunteerlist_NbrParticipation {
     }
     if (!empty($caseIds)) {
       foreach ($caseIds as $caseContactId => $caseId) {
-        $insert = "INSERT INTO civicrm_case_activity (case_id, activity_id) VALUES(%1, %2)";
-        CRM_Core_DAO::executeQuery($insert, [
-          1 => [(int) $caseId, "Integer"],
-          2 => [(int) $activityId, "Integer"],
-        ]);
-        // if PPF, check if invite processing required
+        // only if contact is OK for PDF activity!
         if ($activityTypeId == Civi::service('nbrBackbone')->getLetterActivityTypeId()) {
-          $studyId = CRM_Utils_Request::retrieveValue('study_id', 'Integer');
-          $isInvite = CRM_Utils_Request::retrieveValue('is_nbr_invite', 'Boolean');
-          if ($studyId && $isInvite) {
-            CRM_Nihrbackbone_NbrInvitation::addInviteActivity($caseId, $caseContactId, $studyId, "invite by letter");
+          $fileOnCase = FALSE;
+          $query = "SELECT contact_id FROM civicrm_activity_contact WHERE activity_id = %1 AND record_type_id = %2";
+          $activityTargetId = CRM_Core_DAO::singleValueQuery($query, [
+            1 => [(int) $activityId, 'Integer'],
+            2 => [Civi::service('nbrBackbone')->getTargetRecordTypeId(), 'Integer'],
+          ]);
+          if ($activityTargetId == $caseContactId) {
+            $fileOnCase = TRUE;
+          }
+        }
+        if ($fileOnCase) {
+          $insert = "INSERT INTO civicrm_case_activity (case_id, activity_id) VALUES(%1, %2)";
+          CRM_Core_DAO::executeQuery($insert, [
+            1 => [(int) $caseId, "Integer"],
+            2 => [(int) $activityId, "Integer"],
+          ]);
+          // if PPF, check if invite processing required
+          if ($activityTypeId == Civi::service('nbrBackbone')->getLetterActivityTypeId()) {
+            $studyId = CRM_Utils_Request::retrieveValue('study_id', 'Integer');
+            $isInvite = CRM_Utils_Request::retrieveValue('is_nbr_invite', 'Boolean');
+            if ($studyId && $isInvite) {
+              CRM_Nihrbackbone_NbrInvitation::addInviteActivity($caseId, $caseContactId, $studyId, "invite by letter");
+            }
           }
         }
       }

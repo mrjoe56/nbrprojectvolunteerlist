@@ -55,14 +55,6 @@ class CRM_Nbrprojectvolunteerlist_Utils {
   }
 
   /**
-   * Method to get the filter setting name for the logged in user
-   * @return string
-   */
-  public static function getFilterSettingName() {
-    return "nbr_cs_volunteerlist_filters_" . CRM_Core_Session::getLoggedInContactID();
-  }
-
-  /**
    * Method to get all non-workflow active message templates
    *
    * @return array
