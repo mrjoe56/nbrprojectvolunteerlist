@@ -10,6 +10,26 @@ use CRM_Nbrprojectvolunteerlist_ExtensionUtil as E;
  * @license AGPL-3.0
  */
 class CRM_Nbrprojectvolunteerlist_NbrParticipation {
+  /**
+   * Method to process the build form hook for caseview
+   * - when participation, remove email and pdf actions from list
+   *
+   * @param $form
+   */
+  public function caseViewBuildForm(&$form) {
+    $caseId = $form->getVar('_caseID');
+    $participationType = Civi::service('nbrBackbone')->getParticipationCaseTypeName();
+    $caseType = $form->getVar('_caseType');
+    if ($caseType == $participationType) {
+      $activityList = $form->getElement('add_activity_type_id');
+      $options = &$activityList->_options;
+      foreach($options as $optionKey => $optionValues) {
+        if ($optionValues['text'] == "Email" || $optionValues['text'] == "Print/Merge Document") {
+          unset($options[$optionKey]);
+        }
+      }
+    }
+  }
 
   /**
    * Method to process the build form hook for email
