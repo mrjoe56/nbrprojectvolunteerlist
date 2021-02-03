@@ -32,11 +32,13 @@ class CRM_Nbrprojectvolunteerlist_Form_Search_VolunteerList extends CRM_Contact_
   function buildForm(&$form) {
     CRM_Utils_System::setTitle(E::ts('Manage Study Participation'));
     $selectedIds = $this->getSelectedIds();
+    $this->getTagList();
     $form->assign_by_ref('selectedIds', $selectedIds);
     $form->add('select','study_id', E::ts('Study'), $this->getStudyList(), TRUE,
       ['class' => 'crm-select2', 'placeholder' => '- select study -']);
     $form->add('select','gender_id', E::ts('Gender is one of'), CRM_Nihrbackbone_Utils::getOptionValueList('gender'), FALSE,
       ['class' => 'crm-select2', 'placeholder' => ' - select gender(s) -', 'multiple' => TRUE]);
+    $form->add('text', 'study_participant_id', E::ts('Study Participant ID contains'), [], FALSE);
     $form->add('text', 'first_name', E::ts('First Name contains'), [], FALSE);
     $form->add('text', 'last_name', E::ts('Last Name contains'), [], FALSE);
     if ($this->_studyId) {
@@ -49,6 +51,12 @@ class CRM_Nbrprojectvolunteerlist_Form_Search_VolunteerList extends CRM_Contact_
     }
     $form->add('select', 'study_status_id', E::ts('Status'), CRM_Nihrbackbone_Utils::getOptionValueList(CRM_Nihrbackbone_BackboneConfig::singleton()->getStudyParticipationStatusOptionGroupId()), FALSE,
     ['class' => 'crm-select2', 'placeholder' => '- select status -', 'multiple' => TRUE]);
+    $form->add('select', 'eligibility_status_id', E::ts('Eligibility'), CRM_Nihrbackbone_Utils::getOptionValueList(CRM_Nihrbackbone_BackboneConfig::singleton()->getEligibleStatusOptionGroupId()), FALSE,
+    ['class' => 'crm-select2', 'placeholder' => '- select eligibility -', 'multiple' => TRUE]);
+    $form->add('select', 'tags', E::ts('Tags'), $this->getTagList(), FALSE,
+    ['class' => 'crm-select2', 'placeholder' => '- select tag(s) -', 'multiple' => TRUE]);
+    $form->add('datepicker', 'invite_date_from', E::ts('Invite date from'), [],FALSE, ['time' => FALSE]);
+    $form->add('datepicker', 'invite_date_to', E::ts('Invite date to'), [],FALSE, ['time' => FALSE]);
     $form->add('select', 'age_from', E::ts('Age From'), CRM_Nihrbackbone_Utils::getAgeList(), FALSE,
     ['class' => 'crm-select2', 'placeholder' => '- select age from -']);
     $form->add('select', 'age_to', E::ts('Age To'), CRM_Nihrbackbone_Utils::getAgeList(), FALSE,
@@ -68,13 +76,36 @@ class CRM_Nbrprojectvolunteerlist_Form_Search_VolunteerList extends CRM_Contact_
   private function assignFilters(&$form) {
     $form->assign('elements', [
       'study_id',
+      'study_participant_id',
       'first_name',
       'last_name',
       'gender_id',
       'recall_group',
+      'tags',
       'study_status_id',
+      'eligibility_status_id',
+      'invite_date_from',
+      'invite_date_to',
       'age_from',
       'age_to']);
+  }
+
+  /**
+   * Method to build the list of tags
+   * @return array
+   * @throws API_Exception
+   * @throws \Civi\API\Exception\UnauthorizedException
+   */
+  private function getTagList() {
+    $result = [];
+    $tags = \Civi\Api4\Tag::get()
+      ->addSelect('id', 'name')
+      ->addWhere('is_selectable', '=', TRUE)
+      ->execute();
+    foreach ($tags as $tag) {
+      $result[$tag['id']] = $tag['name'];
+    }
+    return $result;
   }
 
   /**
@@ -112,11 +143,16 @@ class CRM_Nbrprojectvolunteerlist_Form_Search_VolunteerList extends CRM_Contact_
   function summary() {
     $searchFilters = [
       'study_id' => 'Study ',
+      'study_participant_id' => 'Study Participant ID contains ',
       'first_name' => 'First name contains ',
       'last_name' => 'Last name contains ',
       'gender_id' => 'Gender is one of ',
       'recall_group' => 'Recall Group is one of ',
+      'tags' => 'has Tag(s) ',
       'study_status_id' => 'Status is one of ',
+      'eligibility_status_id' => 'Eligibility is one of ',
+      'invite_date_from' => 'Invite Date from ',
+      'invite_date_to' => 'Invite Date to ',
       'age_from' => 'Age from ',
       'age_to' => 'Age to ',
     ];
@@ -126,6 +162,14 @@ class CRM_Nbrprojectvolunteerlist_Form_Search_VolunteerList extends CRM_Contact_
         switch ($searchFilter) {
           case "study_id":
             $filters[] = $searchTxt . CRM_Nihrbackbone_NbrStudy::getStudyNumberWithId($this->_formValues[$searchFilter]);
+            break;
+          case "tags":
+            $tagLabels = [];
+            $tagList = $this->getTagList();
+            foreach ($this->_formValues[$searchFilter] as $key => $tag) {
+              $tagLabels[] = $tagList[$tag];
+            }
+            $filters[] = $searchTxt . implode(",", $tagLabels);
             break;
           case "gender_id":
             $genderLabels = [];
@@ -140,6 +184,13 @@ class CRM_Nbrprojectvolunteerlist_Form_Search_VolunteerList extends CRM_Contact_
               $statusLabels[] = CRM_Nihrbackbone_Utils::getOptionValueLabel($status, CRM_Nihrbackbone_BackboneConfig::singleton()->getStudyParticipationStatusOptionGroupId());
             }
             $filters[] = $searchTxt . implode(", ", $statusLabels);
+            break;
+          case "eligibility_status_id":
+            $eligibilityLabels = [];
+            foreach ($this->_formValues[$searchFilter] as $eligibilityStatus) {
+              $eligibilityLabels[] = CRM_Nihrbackbone_Utils::getOptionValueLabel($eligibilityStatus, CRM_Nihrbackbone_BackboneConfig::singleton()->getEligibleStatusOptionGroupId());
+            }
+            $filters[] = $searchTxt . implode(", ", $eligibilityLabels);
             break;
           default:
             if (is_array($this->_formValues[$searchFilter])) {
@@ -173,6 +224,7 @@ class CRM_Nbrprojectvolunteerlist_Form_Search_VolunteerList extends CRM_Contact_
       E::ts('Age') => 'birth_date',
       E::ts('Ethn.') => 'ethnicity',
       E::ts('Loc.') => 'volunteer_address',
+      E::ts('Tag(s)') => 'volunteer_tags',
       E::ts('Distance') => 'nvpd_distance_volunteer_to_study_centre',
       E::ts('Eligibility') => 'nvpd_eligible_status_id',
       E::ts('Recall Group') => 'nvpd_recall_group',
@@ -215,7 +267,8 @@ class CRM_Nbrprojectvolunteerlist_Form_Search_VolunteerList extends CRM_Contact_
       DISTINCT(contact_a.id) AS contact_id, cas.id AS case_id, contact_a.sort_name, contact_a.birth_date, genderov.label AS gender,
       ethnicov.label AS ethnicity, adr.city AS volunteer_address, nvpd." . $eligibleColumn . ", nvpd.". $studyParticipantIDColumn
       . ", nvpd." . $recallColumn . ", stustatus.label AS study_status, nvpd."
-      . $dateInvitedColumn . ", nvpd." . $distanceColumn . ", '' AS date_researcher, '' AS latest_visit_date";
+      . $dateInvitedColumn . ", nvpd." . $distanceColumn . ", '' AS date_researcher, '' AS latest_visit_date,
+      '' AS volunteer_tags";
   }
 
   /**
@@ -274,7 +327,7 @@ class CRM_Nbrprojectvolunteerlist_Form_Search_VolunteerList extends CRM_Contact_
    * @param $params
    */
   private function addMultipleClauses(&$index, &$where, &$params) {
-    $multipleFields = ['gender_id', 'recall_group', 'study_status_id'];
+    $multipleFields = ['gender_id', 'recall_group', 'study_status_id', 'eligibility_status_id', 'tags'];
     foreach ($multipleFields as $multipleField) {
       $clauses = [];
       if (isset($this->_formValues[$multipleField]) && !empty($this->_formValues[$multipleField])) {
@@ -313,6 +366,28 @@ class CRM_Nbrprojectvolunteerlist_Form_Search_VolunteerList extends CRM_Contact_
               $where .= " AND (" . implode(" OR ", $clauses) . ")";
             }
             break;
+
+          case 'eligibility_status_id':
+            $eligibleColumn = CRM_Nihrbackbone_BackboneConfig::singleton()->getParticipationCustomField('nvpd_eligible_status_id', 'column_name');
+            foreach ($this->_formValues[$multipleField] as $multipleValue) {
+              $index++;
+              $clauses[] = "nvpd." . $eligibleColumn . " = %" . $index;
+              $params[$index] = [$multipleValue, "String"];
+            }
+            if (!empty($clauses)) {
+              $where .= " AND (" . implode(" OR ", $clauses) . ")";
+            }
+            break;
+
+          case 'tags':
+            $tagIds = [];
+            foreach ($this->_formValues['tags'] as $key => $tagId) {
+              $tagIds[] = $tagId;
+            }
+            if (!empty($tagIds)) {
+              $where .= " AND ccc.contact_id IN (SELECT entity_id FROM civicrm_entity_tag WHERE entity_table = 'civicrm_contact' AND tag_id  IN(" . implode(",", $tagIds) ."))";
+            }
+            break;
         }
       }
     }
@@ -348,7 +423,8 @@ class CRM_Nbrprojectvolunteerlist_Form_Search_VolunteerList extends CRM_Contact_
    * @param $params
    */
   private function addDateRangeClauses(&$index, &$clauses, &$params) {
-    $rangeFields = ['age'];
+    $inviteDateColumn = CRM_Nihrbackbone_BackboneConfig::singleton()->getParticipationCustomField('nvpd_date_invited', 'column_name');
+    $rangeFields = ['age', 'invite_date'];
     foreach ($rangeFields as $rangeField) {
       $fromField = $rangeField . "_from";
       $toField = $rangeField . "_to";
@@ -365,6 +441,19 @@ class CRM_Nbrprojectvolunteerlist_Form_Search_VolunteerList extends CRM_Contact_
             $params[$index] = [$this->_formValues[$toField], "String"];
           }
           break;
+
+        case 'invite_date':
+          if (isset($this->_formValues[$fromField]) && !empty($this->_formValues[$fromField])) {
+            $index++;
+            $clauses[] = "nvpd." . $inviteDateColumn . " >= %" . $index;
+            $params[$index] = [$this->_formValues[$fromField], "String"];
+          }
+          if (isset($this->_formValues[$toField]) && !empty($this->_formValues[$toField])) {
+            $index++;
+            $clauses[] = "nvpd." . $inviteDateColumn . " <= %" . $index;
+            $params[$index] = [$this->_formValues[$toField], "String"];
+          }
+          break;
       }
     }
   }
@@ -377,12 +466,20 @@ class CRM_Nbrprojectvolunteerlist_Form_Search_VolunteerList extends CRM_Contact_
    * @param array $params
    */
   private function addLikeClauses(&$index, &$clauses, &$params) {
-    $likeFields = ['first_name', 'last_name'];
+    $likeFields = ['first_name', 'last_name', 'study_participant_id'];
+    $studyPartColumn = CRM_Nihrbackbone_BackboneConfig::singleton()->getParticipationCustomField('nvpd_study_participant_id', 'column_name');
     foreach ($likeFields as $likeField) {
       if (isset($this->_formValues[$likeField]) && !empty($this->_formValues[$likeField])) {
         $index++;
         $params[$index] = ["%" . $this->_formValues[$likeField] . "%", "String"];
-        $clauses[] = "contact_a." . $likeField . " LIKE %" . $index;
+        switch ($likeField) {
+          case 'study_participant_id':
+            $clauses[] = "nvpd." . $studyPartColumn . " LIKE %" . $index;
+            break;
+          default:
+            $clauses[] = "contact_a." . $likeField . " LIKE %" . $index;
+            break;
+        }
       }
     }
   }
@@ -457,8 +554,36 @@ class CRM_Nbrprojectvolunteerlist_Form_Search_VolunteerList extends CRM_Contact_
           }
           break;
 
+        case 'volunteer_tags':
+          $row['volunteer_tags'] = $this->getContactTags($row['contact_id']);
+          break;
       }
     }
+  }
+
+  /**
+   * Method to get tag names for volunteer (with max 80 chars)
+   *
+   * @param $contactId
+   * @return string
+   * @throws API_Exception
+   * @throws \Civi\API\Exception\UnauthorizedException
+   */
+  private function getContactTags($contactId) {
+    $result = [];
+    $entityTags = \Civi\Api4\EntityTag::get()
+      ->addSelect('tag.name')
+      ->addWhere('entity_table', '=', 'civicrm_contact')
+      ->addWhere('entity_id', '=', $contactId)
+      ->execute();
+    foreach ($entityTags as $entityTag) {
+      $result[] = $entityTag['tag.name'];
+    }
+    $text = implode(",", $result);
+    if (strlen($text) > 80) {
+      $text = substr($text,0,77) . '...';
+    }
+    return $text;
   }
 
   /**
