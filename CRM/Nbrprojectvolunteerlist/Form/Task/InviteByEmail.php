@@ -39,7 +39,7 @@ class CRM_Nbrprojectvolunteerlist_Form_Task_InviteByEmail extends CRM_Contact_Fo
    * Overridden parent method om formulier op te bouwen
    */
   public function buildQuickForm()   {
-    $this->getFromEmails();
+    $this->getFromEmailList();
     if (isset(self::$_searchFormValues['study_id'])) {
       $this->_studyId = self::$_searchFormValues['study_id'];
     }
@@ -60,8 +60,19 @@ class CRM_Nbrprojectvolunteerlist_Form_Task_InviteByEmail extends CRM_Contact_Fo
   /**
    * Method to set the from email addresses
    */
-  private function getFromEmails() {
+  private function getFromEmailList() {
+    $allowContact = Civi::settings()->get('allow_mail_from_logged_in_contact');
     try {
+      if ($allowContact) {
+        $userEmail = \Civi\Api4\Email::get()
+          ->addSelect('email', 'contact.display_name')
+          ->addWhere('contact_id', '=', CRM_Core_Session::getLoggedInContactID())
+          ->addWhere('is_primary', '=', TRUE)
+          ->setLimit(1)
+          ->execute();
+        $result = $userEmail->first();
+        $this->_fromEmails[0] = '"' . $result['contact.display_name']. '" <' . $result['email'] . ">";
+      }
       $optionValues = \Civi\Api4\OptionValue::get()
         ->addSelect('label', 'value')
         ->addWhere('option_group_id:name', '=', 'from_email_address')
