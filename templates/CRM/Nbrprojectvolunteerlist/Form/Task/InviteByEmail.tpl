@@ -10,6 +10,11 @@
       <div class="content">{$form.template_id.html}</div>
       <div class="clear"></div>
     </div>
+    <div class="crm-section">
+      <div class="label">{$form.from_email.label}</div>
+      <div class="content">{$form.from_email.html}</div>
+      <div class="clear"></div>
+    </div>
   </div>
   <h3>{$invited_txt}</h3>
     {if !empty($invited)}

@@ -16,6 +16,7 @@ class CRM_Nbrprojectvolunteerlist_Form_Task_InviteByEmail extends CRM_Contact_Fo
   private $_invited = [];
   private $_invalids = [];
   private $_studyId = NULL;
+  private $_fromEmails = [];
 
   /**
    * Method to get the invited data for the selected contact IDs
@@ -38,11 +39,13 @@ class CRM_Nbrprojectvolunteerlist_Form_Task_InviteByEmail extends CRM_Contact_Fo
    * Overridden parent method om formulier op te bouwen
    */
   public function buildQuickForm()   {
+    $this->getFromEmails();
     if (isset(self::$_searchFormValues['study_id'])) {
       $this->_studyId = self::$_searchFormValues['study_id'];
     }
     $this->add('select', 'template_id', E::ts('Message template for email'), CRM_Nbrprojectvolunteerlist_Utils::getTemplateList(),
       TRUE, ['class' => 'crm-select2']);
+    $this->add('select', 'from_email', E::ts('From email'), $this->_fromEmails, TRUE, ['class' => 'crm-select2']);
     $this->assign('template_txt', E::ts('Template used for invitation'));
     $this->assign('invited_txt', E::ts('Volunteers that will be invited by email:') . $this->_countInvited);
     $this->assign('invalid_txt', E::ts('Volunteers that will NOT be invited because their email is invalid or because they are not eligible:') . $this->_countInvalid);
@@ -55,26 +58,42 @@ class CRM_Nbrprojectvolunteerlist_Form_Task_InviteByEmail extends CRM_Contact_Fo
   }
 
   /**
-   * Method to get all non-workflow active message templates
-   *
-   * @return array
+   * Method to set the from email addresses
    */
-  private function getTemplateList() {
-    $templates = [];
+  private function getFromEmails() {
     try {
-      $result = civicrm_api3('MessageTemplate', 'get', [
-        'return' => ["id", "msg_title"],
-        'is_active' => 1,
-        'options' => ['limit' => 0],
-        'workflow_id' => ['IS NULL' => 1],
-      ]);
-      foreach ($result['values'] as $msgTemplateId => $msgTemplate) {
-        $templates[$msgTemplateId] = $msgTemplate['msg_title'];
+      $optionValues = \Civi\Api4\OptionValue::get()
+        ->addSelect('label', 'value')
+        ->addWhere('option_group_id:name', '=', 'from_email_address')
+        ->execute();
+      foreach ($optionValues as $optionValue) {
+        $this->_fromEmails[$optionValue['value']] = $optionValue['label'];
       }
     }
-    catch (CiviCRM_API3_Exception $ex) {
+    catch (API_Exception $ex) {
     }
-    return $templates;
+  }
+
+  /**
+   * Method to retrieve from name
+   *
+   * @return string
+   */
+  private function getFromName() {
+    $parts = explode('<', $this->_fromEmails[$this->_submitValues['from_email']]);
+    return str_replace('"', '', trim($parts[0]));
+  }
+
+  /**
+   * Method to get from email
+   *
+   * @return string
+   */
+  private function getFromEmail() {
+    $parts = explode('<', $this->_fromEmails[$this->_submitValues['from_email']]);
+    $email = str_replace('<', '', trim($parts[1]));
+    $email = str_replace('>', '', $email);
+    return $email;
   }
 
   /**
@@ -87,12 +106,15 @@ class CRM_Nbrprojectvolunteerlist_Form_Task_InviteByEmail extends CRM_Contact_Fo
       $caseIds = $this->getRelevantCaseIds();
       // then send email (include case_id so the activity is recorded) and add an invited activity
       foreach ($caseIds as $caseId => $contactId) {
+        $emailParams = [
+          'template_id' => $this->_submitValues['template_id'],
+          'contact_id' => $contactId,
+          'case_id' => $caseId,
+          'from_name' => $this->getFromName(),
+          'from_email' => $this->getFromEmail(),
+        ];
         try {
-          civicrm_api3('Email', 'send', [
-            'template_id' => $this->_submitValues['template_id'],
-            'contact_id' => $contactId,
-            'case_id' => $caseId,
-          ]);
+          civicrm_api3('Email', 'send', $emailParams);
           // now add the invite activity
           CRM_Nihrbackbone_NbrInvitation::addInviteActivity($caseId, $contactId, $this->_studyId, "Invite By Email Action");
         }
