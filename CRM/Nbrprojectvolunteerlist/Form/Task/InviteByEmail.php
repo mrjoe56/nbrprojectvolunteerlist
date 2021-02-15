@@ -17,6 +17,7 @@ class CRM_Nbrprojectvolunteerlist_Form_Task_InviteByEmail extends CRM_Contact_Fo
   private $_invalids = [];
   private $_studyId = NULL;
   private $_fromEmails = [];
+  private $_displayEmails = [];
 
   /**
    * Method to get the invited data for the selected contact IDs
@@ -44,8 +45,8 @@ class CRM_Nbrprojectvolunteerlist_Form_Task_InviteByEmail extends CRM_Contact_Fo
       $this->_studyId = self::$_searchFormValues['study_id'];
     }
     $this->add('select', 'template_id', E::ts('Message template for email'), CRM_Nbrprojectvolunteerlist_Utils::getTemplateList(),
-      TRUE, ['class' => 'crm-select2']);
-    $this->add('select', 'from_email', E::ts('From email'), $this->_fromEmails, TRUE, ['class' => 'crm-select2']);
+      TRUE, ['class' => 'crm-select2huge']);
+    $this->add('select', 'from_email', E::ts('From email'), $this->_displayEmails, TRUE, ['class' => 'crm-select2huge']);
     $this->assign('template_txt', E::ts('Template used for invitation'));
     $this->assign('invited_txt', E::ts('Volunteers that will be invited by email:') . $this->_countInvited);
     $this->assign('invalid_txt', E::ts('Volunteers that will NOT be invited because their email is invalid or because they are not eligible:') . $this->_countInvalid);
@@ -79,6 +80,7 @@ class CRM_Nbrprojectvolunteerlist_Form_Task_InviteByEmail extends CRM_Contact_Fo
         ->execute();
       foreach ($optionValues as $optionValue) {
         $this->_fromEmails[$optionValue['value']] = $optionValue['label'];
+        $this->_displayEmails[$optionValue['value']] = htmlspecialchars($optionValue['label']);
       }
     }
     catch (API_Exception $ex) {
@@ -101,9 +103,11 @@ class CRM_Nbrprojectvolunteerlist_Form_Task_InviteByEmail extends CRM_Contact_Fo
    * @return string
    */
   private function getFromEmail() {
-    $parts = explode('<', $this->_fromEmails[$this->_submitValues['from_email']]);
-    $email = str_replace('<', '', trim($parts[1]));
-    $email = str_replace('>', '', $email);
+    $parts = explode('<', htmlspecialchars_decode($this->_fromEmails[$this->_submitValues['from_email']]));
+    if (isset($parts[1])) {
+      $email = str_replace('<', '', trim($parts[1]));
+      $email = str_replace('>', '', $email);
+    }
     return $email;
   }
 
