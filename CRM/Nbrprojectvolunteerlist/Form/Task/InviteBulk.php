@@ -56,7 +56,7 @@ class CRM_Nbrprojectvolunteerlist_Form_Task_InviteBulk extends CRM_Contact_Form_
   public function postProcess() {
     // only if we have a study, invited ids and a template
     if (isset($this->_studyId) && !empty($this->_invited)) {
-      // change study status to invitation pending
+      // change study status to invitation pending AND generate study participation ID (issue 7505)
       $this->changeStatusInvitationPending();
       // first create temporary group
       try {
@@ -73,6 +73,7 @@ class CRM_Nbrprojectvolunteerlist_Form_Task_InviteBulk extends CRM_Contact_Form_
     }
   }
 
+
   /**
    * Method to change the invitation pending status for each invite
    */
@@ -81,8 +82,9 @@ class CRM_Nbrprojectvolunteerlist_Form_Task_InviteBulk extends CRM_Contact_Form_
     foreach ($this->_invited as $invitedContactId => $invitedData) {
       $caseId = CRM_Nihrbackbone_NbrVolunteerCase::getActiveParticipationCaseId($this->_studyId, $invitedContactId);
       if ($caseId) {
+        // issue 7505: generate the study participation ID because it might be required in the invite mail!
+        CRM_Nihrnumbergenerator_StudyParticipantNumberGenerator::createNewNumberForCase($caseId);
         CRM_Nihrbackbone_NbrVolunteerCase::updateStudyStatus($caseId, $invitedContactId, $status);
-
       }
       else {
         Civi::log()->warning("Could not find a case ID for volunteer with ID " . $invitedContactId . " in study "

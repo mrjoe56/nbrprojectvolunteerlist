@@ -1,3 +1,6 @@
+## Version 1.31
+* issue 7505: generate study participation ID in the invite task before sending out the actual email.
+
 ## Version 1.30
 * issue 7314: add from email to MSP and process in invite by email (less than 50)
 

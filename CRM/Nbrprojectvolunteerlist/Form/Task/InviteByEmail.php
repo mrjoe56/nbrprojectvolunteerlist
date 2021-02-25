@@ -121,6 +121,8 @@ class CRM_Nbrprojectvolunteerlist_Form_Task_InviteByEmail extends CRM_Contact_Fo
       $caseIds = $this->getRelevantCaseIds();
       // then send email (include case_id so the activity is recorded) and add an invited activity
       foreach ($caseIds as $caseId => $contactId) {
+        // issue 7505: generate the study participation ID because it might be required in the invite mail!
+        CRM_Nihrnumbergenerator_StudyParticipantNumberGenerator::createNewNumberForCase($caseId);
         $emailParams = [
           'template_id' => $this->_submitValues['template_id'],
           'contact_id' => $contactId,
