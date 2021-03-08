@@ -129,6 +129,10 @@ class CRM_Nbrprojectvolunteerlist_SearchTasks {
         'title' => "Export CSV for External Researcher(s)",
         'class' => "CRM_Nbrprojectvolunteerlist_Form_Task_ExportExternal",
       ],
+      [
+        'title' => "Export CSV with Selected Fields",
+        'class' => "CRM_Nbrprojectvolunteerlist_Form_Task_ExportSelect",
+      ],
     ];
     foreach ($nbrTasks as $nbrTask) {
       $tasks[] = $nbrTask;

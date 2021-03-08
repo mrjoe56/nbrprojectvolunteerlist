@@ -200,7 +200,7 @@ class CRM_Nbrprojectvolunteerlist_NbrParticipation {
             1 => [(int) $caseId, "Integer"],
             2 => [(int) $activityId, "Integer"],
           ]);
-          // if PPF, check if invite processing required
+          // if PDF, check if invite processing required
           if ($activityTypeId == Civi::service('nbrBackbone')->getLetterActivityTypeId()) {
             $studyId = CRM_Utils_Request::retrieveValue('study_id', 'Integer');
             $isInvite = CRM_Utils_Request::retrieveValue('is_nbr_invite', 'Boolean');

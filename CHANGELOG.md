@@ -1,3 +1,6 @@
+## Version 1.32
+* issue 6563: export data from MSP
+
 ## Version 1.31
 * issue 7505: generate study participation ID in the invite task before sending out the actual email.
 
