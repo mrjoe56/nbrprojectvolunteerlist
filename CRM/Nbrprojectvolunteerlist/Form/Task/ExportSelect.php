@@ -36,10 +36,12 @@ class CRM_Nbrprojectvolunteerlist_Form_Task_ExportSelect extends CRM_Contact_For
     $query = "SELECT a." . $studyPartIdColumn . " AS study_participant_id , a." . $recallColumn
       . " AS recall_group, a." . $statusColumn . " AS study_status_id, a." . $inviteColumn
       . " AS date_invited, a. " . $distanceColumn . " AS distance, h.label AS study_status,
-      CONCAT(d.first_name, ' ', d.last_name) AS name, i.label AS gender, e.email, f.street_address,
-      k.phone, m.label AS ethnicity, TIMESTAMPDIFF(YEAR, d.birth_date , CURDATE()) AS age,
-      f.city, f.postal_code, g.name AS county, j." . $bioResourceIdColumn . " AS bioresource_id,
-      j." . $participantIdColumn . " AS participant_id, b.contact_id, b.case_id
+      CONCAT_WS(' ', d.first_name, d.last_name) AS name, i.label AS gender, e.email,
+      CONCAT_WS(', ', f.street_address, f.supplemental_address_1, f.supplemental_address_2,
+      f.supplemental_address_3, f.city, f.postal_code) AS address, f.city, k.phone,
+      m.label AS ethnicity, TIMESTAMPDIFF(YEAR, d.birth_date , CURDATE()) AS age, g.name AS county,
+      j." . $bioResourceIdColumn . " AS bioresource_id, j." . $participantIdColumn . " AS participant_id,
+      b.contact_id, b.case_id
       FROM " . $participantTable . " AS a
       LEFT JOIN civicrm_case_contact AS b ON a.entity_id = b.case_id
       JOIN civicrm_case AS c ON b.case_id = c.id
@@ -67,6 +69,27 @@ class CRM_Nbrprojectvolunteerlist_Form_Task_ExportSelect extends CRM_Contact_For
       $volunteers[] = CRM_Nihrbackbone_Utils::moveDaoToArray($dao);
     }
     return $volunteers;
+  }
+
+  /**
+   * Method to get the eligibilities for the case
+   *
+   * @param $caseId
+   * @return string
+   */
+  private function getEligibility($caseId) {
+    $result = [];
+    $eligibilities = CRM_Nihrbackbone_NbrVolunteerCase::getCurrentEligibleStatus($caseId);
+    foreach ($eligibilities as $eligibility) {
+      $description = CRM_Nihrbackbone_NbrVolunteerCase::getEligibleDescriptions($eligibility);
+      if (is_array($description)) {
+        $result[] = $description[0];
+      }
+      else {
+        $result[] = $description;
+      }
+    }
+    return implode(", ", $result);
   }
 
   /**
@@ -102,19 +125,36 @@ class CRM_Nbrprojectvolunteerlist_Form_Task_ExportSelect extends CRM_Contact_For
               $row[] = $volunteer['city'];
               break;
             case "eligibility":
-              $row[] = $this->addEligibility($volunteer['case_id']);
+              $row[] = $this->getEligibility($volunteer['case_id']);
               break;
             case "researcher_date":
-              $row[] = $this->fixDate($this->getResearcherDate($volunteer['case_id']));
+              $exportDate = CRM_Nihrbackbone_NbrVolunteerCase::getLatestExportDate($row['case_id']);
+              if ($exportDate) {
+                $row[] = $this->fixDate($exportDate);
+              }
+              else {
+                $row[] = "";
+              }
               break;
             case "invite_date":
               $row[] = $this->fixDate($volunteer[$exportField]);
               break;
             case "visit_date":
-              $row[] = $this->fixDate($this->getVisitDate($volunteer['case_id']));
+              $latestVisitDate = CRM_Nihrbackbone_NbrVolunteerCase::getNearestVisit($row['case_id']);
+              if ($latestVisitDate) {
+                $row[] = $this->fixDate($latestVisitDate);
+              }
+              else {
+                $row[] = "";
+              }
               break;
             default:
-              $row[] = $volunteer[$exportField];
+              if ($volunteer[$exportField]) {
+                $row[] = $volunteer[$exportField];
+              }
+              else {
+                $row[] = "";
+              }
               break;
           }
         }
