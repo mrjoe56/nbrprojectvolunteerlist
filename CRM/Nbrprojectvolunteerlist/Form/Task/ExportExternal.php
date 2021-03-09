@@ -36,7 +36,8 @@ class CRM_Nbrprojectvolunteerlist_Form_Task_ExportExternal extends CRM_Contact_F
     $genderOptionGroupId = CRM_Nihrbackbone_BackboneConfig::singleton()->getGenderOptionGroupId();
     $query = "SELECT a." . $studyPartIdColumn . " AS study_participant_id , a." . $recallColumn
       . " AS recall_group, a." . $statusColumn . " AS study_status_id, a. " . $inviteColumn . " AS date_invited,
-      h.label AS study_status, d.first_name, d.last_name, i.label AS gender, e.email, f.street_address,
+      h.label AS study_status, d.first_name, d.last_name, i.label AS gender, e.email,
+      CONCAT_WS(', ', f.street_address, f.supplemental_address_1, f.supplemental_address_2, supplemental_address_3) AS address,
       TIMESTAMPDIFF(YEAR, d.birth_date , CURDATE()) AS age, f.city, f.postal_code, g.name AS county,
       b.contact_id, d.birth_date, b.case_id
       FROM " . $participantTable . " AS a
@@ -68,7 +69,7 @@ class CRM_Nbrprojectvolunteerlist_Form_Task_ExportExternal extends CRM_Contact_F
         'age' => $dao->age,
         'gender' => $dao->gender,
         'email' => $dao->email,
-        'street_address' => $dao->street_address,
+        'street_address' => $dao->address,
         'city' => $dao->city,
         'county' => $dao->county,
         'postal_code' => $dao->postal_code,

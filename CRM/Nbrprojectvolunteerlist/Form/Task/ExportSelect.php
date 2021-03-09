@@ -34,10 +34,9 @@ class CRM_Nbrprojectvolunteerlist_Form_Task_ExportSelect extends CRM_Contact_For
     $statusOptionGroupId = CRM_Nihrbackbone_BackboneConfig::singleton()->getStudyParticipationStatusOptionGroupId();
     $genderOptionGroupId = CRM_Nihrbackbone_BackboneConfig::singleton()->getGenderOptionGroupId();
     $query = "SELECT a." . $studyPartIdColumn . " AS study_participant_id , a." . $recallColumn
-      . " AS recall_group, a." . $statusColumn . " AS study_status_id, a." . $inviteColumn
-      . " AS date_invited, a. " . $distanceColumn . " AS distance, h.label AS study_status,
-      CONCAT_WS(' ', d.first_name, d.last_name) AS name, i.label AS gender, e.email,
-      CONCAT_WS(', ', f.street_address, f.supplemental_address_1, f.supplemental_address_2,
+      . " AS recall, a." . $inviteColumn . " AS date_invited, a. " . $distanceColumn
+      . " AS distance, h.label AS status, CONCAT_WS(' ', d.first_name, d.last_name) AS name,
+      i.label AS gender, e.email, CONCAT_WS(', ', f.street_address, f.supplemental_address_1, f.supplemental_address_2,
       f.supplemental_address_3, f.city, f.postal_code) AS address, f.city, k.phone,
       m.label AS ethnicity, TIMESTAMPDIFF(YEAR, d.birth_date , CURDATE()) AS age, g.name AS county,
       j." . $bioResourceIdColumn . " AS bioresource_id, j." . $participantIdColumn . " AS participant_id,
@@ -148,8 +147,13 @@ class CRM_Nbrprojectvolunteerlist_Form_Task_ExportSelect extends CRM_Contact_For
                 $row[] = "";
               }
               break;
+            case "tags":
+              $vol = new CRM_Nbrprojectvolunteerlist_NbrVolunteer();
+              $row[] = $vol->getContactTags($volunteer['contact_id']);
+              break;
+
             default:
-              if ($volunteer[$exportField]) {
+              if (isset($volunteer[$exportField]) && !empty($volunteer[$exportField])) {
                 $row[] = $volunteer[$exportField];
               }
               else {

@@ -554,35 +554,15 @@ class CRM_Nbrprojectvolunteerlist_Form_Search_VolunteerList extends CRM_Contact_
           break;
 
         case 'volunteer_tags':
-          $row['volunteer_tags'] = $this->getContactTags($row['contact_id']);
+          $vol = new CRM_Nbrprojectvolunteerlist_NbrVolunteer();
+          $tags = $vol->getContactTags($row['contact_id']);
+          if (strlen($tags) > 80) {
+            $tags = substr($tags,0,77) . '...';
+          }
+          $row['volunteer_tags'] = $tags;
           break;
       }
     }
-  }
-
-  /**
-   * Method to get tag names for volunteer (with max 80 chars)
-   *
-   * @param $contactId
-   * @return string
-   * @throws API_Exception
-   * @throws \Civi\API\Exception\UnauthorizedException
-   */
-  private function getContactTags($contactId) {
-    $result = [];
-    $entityTags = \Civi\Api4\EntityTag::get()
-      ->addSelect('tag.name')
-      ->addWhere('entity_table', '=', 'civicrm_contact')
-      ->addWhere('entity_id', '=', $contactId)
-      ->execute();
-    foreach ($entityTags as $entityTag) {
-      $result[] = $entityTag['tag.name'];
-    }
-    $text = implode(",", $result);
-    if (strlen($text) > 80) {
-      $text = substr($text,0,77) . '...';
-    }
-    return $text;
   }
 
   /**
