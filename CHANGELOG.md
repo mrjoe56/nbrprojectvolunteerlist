@@ -1,3 +1,6 @@
+## Version 1.33
+* issue 6563: add conditions and medication
+
 ## Version 1.32
 * issue 6563: export data from MSP and fix address on export for external researcher
 

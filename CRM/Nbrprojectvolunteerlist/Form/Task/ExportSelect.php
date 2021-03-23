@@ -48,7 +48,7 @@ class CRM_Nbrprojectvolunteerlist_Form_Task_ExportSelect extends CRM_Contact_For
       LEFT JOIN civicrm_email AS e ON b.contact_id = e.contact_id AND e.is_primary = %1
       LEFT JOIN civicrm_address AS f ON b.contact_id = f.contact_id AND f.is_primary = %1
       LEFT JOIN civicrm_state_province AS g ON f.state_province_id = g.id
-      LEFT JOIN civicrm_option_value AS h ON a.nvpd_study_participation_status = h.value AND h.option_group_id = %2
+      LEFT JOIN civicrm_option_value AS h ON a." . $statusColumn . " = h.value AND h.option_group_id = %2
       LEFT JOIN civicrm_option_value AS i ON d.gender_id = i.value AND i.option_group_id = %3
       LEFT JOIN " . $volunteerIdsTable . " AS j ON d.id = j.entity_id
       LEFT JOIN civicrm_phone AS k ON d.id = k.contact_id AND k.is_primary = %1
@@ -224,6 +224,14 @@ class CRM_Nbrprojectvolunteerlist_Form_Task_ExportSelect extends CRM_Contact_For
       "visit_date" => "Latest Visit Date",
       "participant_id" => "Participant ID",
       "bioresource_id" => "BioResource ID",
+      "medication_name" => "Medication Name",
+      "drug_family" => "Drug Family",
+      "medication_date" => "Date medication reported",
+      "disease" => "Disease",
+      "family_member" => "Family Member",
+      "diagnosis_year" => "Diagnosis Year",
+      "diagnosis_age" => "Diagnosis Age",
+      "condition_notes" => "Condition Notes",
     ];
   }
 
