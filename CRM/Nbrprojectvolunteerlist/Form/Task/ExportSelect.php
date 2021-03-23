@@ -14,11 +14,10 @@ class CRM_Nbrprojectvolunteerlist_Form_Task_ExportSelect extends CRM_Contact_For
   private $_studyId = NULL;
 
   /**
-   * Method to get the export data for the selected contact IDs
-   *
+   * Method to build the basic query
+   * @return string
    */
-  private function getExportData() {
-    $volunteers = [];
+  private function buildQuery() {
     $studyPartIdColumn = CRM_Nihrbackbone_BackboneConfig::singleton()->getParticipationCustomField('nvpd_study_participant_id', 'column_name');
     $recallColumn = CRM_Nihrbackbone_BackboneConfig::singleton()->getParticipationCustomField('nvpd_recall_group', 'column_name');
     $statusColumn = CRM_Nihrbackbone_BackboneConfig::singleton()->getParticipationCustomField('nvpd_study_participation_status', 'column_name');
@@ -31,9 +30,7 @@ class CRM_Nbrprojectvolunteerlist_Form_Task_ExportSelect extends CRM_Contact_For
     $participantTable = CRM_Nihrbackbone_BackboneConfig::singleton()->getParticipationDataCustomGroup('table_name');
     $volunteerIdsTable = CRM_Nihrbackbone_BackboneConfig::singleton()->getVolunteerIdsCustomGroup("table_name");
     $generalTable = CRM_Nihrbackbone_BackboneConfig::singleton()->getVolunteerGeneralObservationsCustomGroup('table_name');
-    $statusOptionGroupId = CRM_Nihrbackbone_BackboneConfig::singleton()->getStudyParticipationStatusOptionGroupId();
-    $genderOptionGroupId = CRM_Nihrbackbone_BackboneConfig::singleton()->getGenderOptionGroupId();
-    $query = "SELECT a." . $studyPartIdColumn . " AS study_participant_id , a." . $recallColumn
+    return "SELECT a." . $studyPartIdColumn . " AS study_participant_id , a." . $recallColumn
       . " AS recall, a." . $inviteColumn . " AS date_invited, a. " . $distanceColumn
       . " AS distance, h.label AS status, CONCAT_WS(' ', d.first_name, d.last_name) AS name,
       i.label AS gender, e.email, CONCAT_WS(', ', f.street_address, f.supplemental_address_1, f.supplemental_address_2,
@@ -53,19 +50,189 @@ class CRM_Nbrprojectvolunteerlist_Form_Task_ExportSelect extends CRM_Contact_For
       LEFT JOIN " . $volunteerIdsTable . " AS j ON d.id = j.entity_id
       LEFT JOIN civicrm_phone AS k ON d.id = k.contact_id AND k.is_primary = %1
       LEFT JOIN " . $generalTable . " AS l ON d.id = l.entity_id
-      LEFT JOIN civicrm_option_value AS m ON l." .$ethnicityColumn . " = m.value AND m.option_group_id = 106      WHERE a." . $studyColumn . " = %4 AND c.is_deleted = %5 AND d.id IN (";
-    $queryParams = [
+      LEFT JOIN civicrm_option_value AS m ON l." .$ethnicityColumn . " = m.value AND m.option_group_id = %4
+      WHERE a." . $studyColumn . " = %5 AND c.is_deleted = %6 AND d.id IN (";
+  }
+
+  /**
+   * Method to build medication query
+   * @return string
+   */
+  private function buildMedicationQuery() {
+    $medicationTable = Civi::service('nbrBackbone')->getMedicationTableName();
+    $medicationNameColumn = Civi::service('nbrBackbone')->getMedicationNameColumnName();
+    $drugFamilyColumn = Civi::service('nbrBackbone')->getDrugFamilyColumnName();
+    return "SELECT b.label AS medication_name, c.label AS drug_family
+        FROM " . $medicationTable . " AS a
+        LEFT JOIN civicrm_option_value AS b ON a." . $medicationNameColumn . " = b.value AND b.option_group_id = %1
+        LEFT JOIN civicrm_option_value AS c ON a." . $drugFamilyColumn . " = c.value AND c.option_group_id = %2
+        WHERE entity_id = %3";
+  }
+
+  /**
+   * Method to build medication query parameters
+   *
+   * @param $contactId
+   * @return array[]
+   */
+  private function buildMedicationQueryParams($contactId) {
+    $medicationNameOptionGroupId = Civi::service('nbrBackbone')->getMedicationOptionGroupId();
+    $drugFamilyOptionGroupId = Civi::service('nbrBackbone')->getDrugFamilyOptionGroupId();
+    return [
+      1 => [$medicationNameOptionGroupId, "Integer"],
+      2 => [$drugFamilyOptionGroupId, "Integer"],
+      3 => [(int) $contactId, "Integer"],
+    ];
+  }
+
+  /**
+   * Method to add the medication data to the volunteer row
+   *
+   * @param $volunteer
+   */
+  private function addMedicationData(&$volunteer) {
+    $volunteer['medication_name'] = "";
+    $volunteer['drug_family'] = "";
+    $query = $this->buildMedicationQuery();
+    $queryParams = $this->buildMedicationQueryParams($volunteer['contact_id']);
+    $medications = [];
+    $families = [];
+    $dao = CRM_Core_DAO::executeQuery($query, $queryParams);
+    while ($dao->fetch()) {
+      if (!empty($dao->medication_name)) {
+        $medications[] = $dao->medication_name;
+      }
+      else {
+        $medications[] = "";
+      }
+      if (!empty($dao->drug_family)) {
+        $families[] = $dao->drug_family;
+      }
+      else {
+        $families[] = "";
+      }
+    }
+    if (!empty($medications)) {
+      $volunteer['medication_name'] = implode("-", $medications);
+    }
+    if (!empty($families)) {
+      $volunteer['drug_family'] = implode("-", $families);
+    }
+  }
+
+  /**
+   * Method to build the disease query
+   *
+   * @return string
+   */
+  private function buildDiseaseQuery() {
+    $diseaseTable = Civi::service('nbrBackbone')->getDiseaseTableName();
+    $diseaseColumn = Civi::service('nbrBackbone')->getDiseaseColumnName();
+    $familyMemberColumn = Civi::service('nbrBackbone')->getFamilyMemberColumnName();
+    $diseaseNotesColumn = Civi::service('nbrBackbone')->getDiseaseNotesColumnName();
+    return "SELECT b.label AS disease, c.label AS family_member, a. " . $diseaseNotesColumn
+      . " AS condition_notes
+      FROM " . $diseaseTable . " AS a
+        LEFT JOIN civicrm_option_value AS b ON a." . $diseaseColumn . " = b.value AND b.option_group_id = %1
+        LEFT JOIN civicrm_option_value AS c ON a." . $familyMemberColumn . " = c.value AND c.option_group_id = %2
+        WHERE entity_id = %3";
+  }
+
+  /**
+   * Method to build disease query parameters
+   *
+   * @param $contactId
+   * @return array[]
+   */
+  private function buildDiseaseQueryParams($contactId) {
+    $diseaseOptionGroupId = Civi::service('nbrBackbone')->getDiseaseOptionGroupId();
+    $familyMemberOptionGroupId = Civi::service('nbrBackbone')->getFamilyMemberOptionGroupId();
+    return [
+      1 => [$diseaseOptionGroupId, "Integer"],
+      2 => [$familyMemberOptionGroupId, "Integer"],
+      3 => [(int) $contactId, "Integer"],
+    ];
+  }
+
+  /**
+   * Method to add the disease data for the volunteer
+   * @param $volunteer
+   */
+  private function addDiseaseData(&$volunteer) {
+    $volunteer['disease'] = "";
+    $volunteer['family_member'] = "";
+    $volunteer['condition_notes'] = "";
+    $query = $this->buildDiseaseQuery();
+    $queryParams = $this->buildDiseaseQueryParams($volunteer['contact_id']);
+    $diseases = [];
+    $families = [];
+    $notes = [];
+    $dao = CRM_Core_DAO::executeQuery($query, $queryParams);
+    while ($dao->fetch()) {
+      if (!empty($dao->disease)) {
+        $diseases[] = $dao->disease;
+      }
+      else {
+        $diseases[] = "";
+      }
+      if (!empty($dao->family_member)) {
+        $families[] = $dao->family_member;
+      }
+      else {
+        $families[] = "";
+      }
+      if (!empty($dao->condition_notes)) {
+        $notes[] = $dao->condition_notes;
+      }
+      else {
+        $notes[] = "";
+      }
+    }
+    if (!empty($diseases)) {
+      $volunteer['disease'] = implode("-", $diseases);
+    }
+    if (!empty($families)) {
+      $volunteer['family_member'] = implode("-", $families);
+    }
+    if (!empty($notes)) {
+      $volunteer['condition_notes'] = implode("-", $notes);
+    }
+  }
+
+  /**
+   * Method to build the query parameters
+   * @return array[]
+   */
+  private function buildQueryParams() {
+    $statusOptionGroupId = CRM_Nihrbackbone_BackboneConfig::singleton()->getStudyParticipationStatusOptionGroupId();
+    $genderOptionGroupId = CRM_Nihrbackbone_BackboneConfig::singleton()->getGenderOptionGroupId();
+    $ethnicityOptionGroupId = Civi::service('nbrBackbone')->getEthnicityOptionGroupId();
+    return [
       1 => [1, "Integer"],
       2 => [(int) $statusOptionGroupId, "Integer"],
       3 => [(int) $genderOptionGroupId, "Integer"],
-      4 => [(int) $this->_studyId, "Integer"],
-      5 => [0, "Integer"],
+      4 => [(int) $ethnicityOptionGroupId, "Integer"],
+      5 => [(int) $this->_studyId, "Integer"],
+      6 => [0, "Integer"],
     ];
-    $i = 5;
+  }
+
+  /**
+   * Method to get the export data for the selected contact IDs
+   *
+   */
+  private function getExportData() {
+    $volunteers = [];
+    $query = $this->buildQuery();
+    $queryParams = $this->buildQueryParams();
+    $i = 8;
     CRM_Nbrprojectvolunteerlist_Utils::addContactIdsToQuery($i, $this->_contactIds, $query, $queryParams);
     $dao = CRM_Core_DAO::executeQuery($query, $queryParams);
     while ($dao->fetch()) {
-      $volunteers[] = CRM_Nihrbackbone_Utils::moveDaoToArray($dao);
+      $volunteer = CRM_Nihrbackbone_Utils::moveDaoToArray($dao);
+      $this->addMedicationData($volunteer);
+      $this->addDiseaseData($volunteer);
+      $volunteers[] = $volunteer;
     }
     return $volunteers;
   }
@@ -215,6 +382,11 @@ class CRM_Nbrprojectvolunteerlist_Form_Task_ExportSelect extends CRM_Contact_For
       "email" => "Email",
       "phone" => "Phone",
       "tags" => "Tag(s)",
+      "medication_name" => "Medication Name",
+      "drug_family" => "Drug Family",
+      "disease" => "Disease",
+      "family_member" => "Family Member",
+      "condition_notes" => "Condition Notes",
       "distance" => "Distance",
       "eligibility" => "Eligibility",
       "recall" => "Recall Group",
@@ -224,14 +396,6 @@ class CRM_Nbrprojectvolunteerlist_Form_Task_ExportSelect extends CRM_Contact_For
       "visit_date" => "Latest Visit Date",
       "participant_id" => "Participant ID",
       "bioresource_id" => "BioResource ID",
-      "medication_name" => "Medication Name",
-      "drug_family" => "Drug Family",
-      "medication_date" => "Date medication reported",
-      "disease" => "Disease",
-      "family_member" => "Family Member",
-      "diagnosis_year" => "Diagnosis Year",
-      "diagnosis_age" => "Diagnosis Age",
-      "condition_notes" => "Condition Notes",
     ];
   }
 
