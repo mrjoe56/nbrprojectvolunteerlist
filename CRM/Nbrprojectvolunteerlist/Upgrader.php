@@ -22,6 +22,52 @@ class CRM_Nbrprojectvolunteerlist_Upgrader extends CRM_Nbrprojectvolunteerlist_U
     return TRUE;
   }
 
+  /**
+   * Upgrade 1010 remove unwanted max invites eligibility statuses
+   *
+   * @return bool
+   * @throws Exception
+   */
+  public function upgrade_1010() {
+    $this->ctx->log->info('Applying update 1010 - remove unwanted max invites eligibility statuses');
+    $oldOptionValues = [];
+    $remainingOptionValue = NULL;
+    $ovQuery = "SELECT id, name, value FROM civicrm_option_value WHERE option_group_id = %1 AND name IN(%2, %3, %4)";
+    $ovQueryParams = [
+      1 => [(int) CRM_Nihrbackbone_BackboneConfig::singleton()->getEligibleStatusOptionGroupId(), "Integer"],
+      2 => ["nihr_max_invites", "String"],
+      3 => ["nihr_reached_max", "String"],
+      4 => ["nihr_maximum_reached", "String"]
+    ];
+    $optionValue = CRM_Core_DAO::executeQuery($ovQuery, $ovQueryParams);
+    while ($optionValue->fetch()) {
+      if ($optionValue->name == "nihr_max_invites" && !$remainingOptionValue) {
+        $remainingOptionValue = CRM_Core_DAO::VALUE_SEPARATOR . $optionValue->value . CRM_Core_DAO::VALUE_SEPARATOR;
+      }
+      else {
+        $oldOptionValues[] = CRM_Core_DAO::VALUE_SEPARATOR . $optionValue->value . CRM_Core_DAO::VALUE_SEPARATOR;
+        $delete = "DELETE FROM civicrm_option_value WHERE id = %1";
+        $deleteParams = [1 => [$optionValue->id, "Integer"]];
+        CRM_Core_DAO::executeQuery($delete, $deleteParams);
+      }
+    }
+    foreach ($oldOptionValues as $oldOptionValue) {
+      $pdQuery = "SELECT id, nvpd_eligible_status_id FROM civicrm_value_nbr_participation_data WHERE nvpd_eligible_status_id LIKE %1";
+      $pdQueryParams = [1 => ["%" . $oldOptionValue . "%", "String"]];
+      $partData = CRM_Core_DAO::executeQuery($pdQuery, $pdQueryParams);
+      while ($partData->fetch()) {
+        $eligible = str_replace($oldOptionValue, $remainingOptionValue, $partData->nvpd_eligible_status_id);
+        $update = "UPDATE civicrm_value_nbr_participation_data SET nvpd_eligible_status_id = %1 WHERE id = %2";
+        $updateParams = [
+          1 => [$eligible, "String"],
+          2 => [$partData->id, "Integer"],
+        ];
+        CRM_Core_DAO::executeQuery($update, $updateParams);
+      }
+    }
+    return TRUE;
+  }
+
 
   // By convention, functions that look like "function upgrade_NNNN()" are
   // upgrade tasks. They are executed in order (like Drupal's hook_update_N).
