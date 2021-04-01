@@ -1,3 +1,6 @@
+## Version 1.34
+* issue 7756: phase 2 MSP improvements
+
 ## Version 1.33
 * issue 6563: add conditions and medication
 

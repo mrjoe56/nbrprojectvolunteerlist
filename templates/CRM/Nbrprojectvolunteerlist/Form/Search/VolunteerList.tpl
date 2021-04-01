@@ -39,6 +39,42 @@
           <tr class="crm-contact-custom-search-form-row-{$element}">
             <td class="label">{$form.$element.label}</td>
             <td>{$form.$element.html}</td>
+            {if $form.$element.name == "gender_id"}
+              <td>{$form.inex_gender_id.html}</td>
+            {/if}
+            {if $form.$element.name == "study_participant_id"}
+              <td>{$form.inex_study_participant_id.html}</td>
+            {/if}
+            {if $form.$element.name == "first_name"}
+              <td>{$form.inex_first_name.html}</td>
+            {/if}
+            {if $form.$element.name == "last_name"}
+              <td>{$form.inex_last_name.html}</td>
+            {/if}
+            {if $form.$element.name == "participant_id"}
+              <td>{$form.inex_participant_id.html}</td>
+            {/if}
+            {if $form.$element.name == "bioresource_id"}
+              <td>{$form.inex_bioresource_id.html}</td>
+            {/if}
+            {if $form.$element.name == "recall_group"}
+              <td>{$form.inex_recall_group.html}</td>
+            {/if}
+            {if $form.$element.name == "study_status_id"}
+              <td>{$form.inex_study_status_id.html}</td>
+            {/if}
+            {if $form.$element.name == "eligibility_status_id"}
+              <td>{$form.inex_eligibility_status_id.html}</td>
+            {/if}
+            {if $form.$element.name == "tags"}
+              <td>{$form.inex_tags.html}</td>
+            {/if}
+            {if $form.$element.name == "invite_date_to"}
+              <td>{$form.inex_invite_date.html}</td>
+            {/if}
+            {if $form.$element.name == "age_to"}
+              <td>{$form.inex_age.html}</td>
+            {/if}
           </tr>
         {/foreach}
       </table>

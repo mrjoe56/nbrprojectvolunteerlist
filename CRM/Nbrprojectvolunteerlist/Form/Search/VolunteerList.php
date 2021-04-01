@@ -38,9 +38,23 @@ class CRM_Nbrprojectvolunteerlist_Form_Search_VolunteerList extends CRM_Contact_
       ['class' => 'crm-select2', 'placeholder' => '- select study -']);
     $form->add('select','gender_id', E::ts('Gender is one of'), CRM_Nihrbackbone_Utils::getOptionValueList('gender'), FALSE,
       ['class' => 'crm-select2', 'placeholder' => ' - select gender(s) -', 'multiple' => TRUE]);
+    $form->addRadio('inex_gender_id', "", ['incl', 'excl'], [], " ", TRUE);
+    $defaults['inex_gender_id'] = 0;
     $form->add('text', 'study_participant_id', E::ts('Study Participant ID contains'), [], FALSE);
+    $form->addRadio('inex_study_participant_id', "", ['incl', 'excl'], [], " ", TRUE);
+    $defaults['inex_study_participant_id'] = 0;
     $form->add('text', 'first_name', E::ts('First Name contains'), [], FALSE);
+    $form->addRadio('inex_first_name', "", ['incl', 'excl'], [], " ", TRUE);
+    $defaults['inex_first_name'] = 0;
     $form->add('text', 'last_name', E::ts('Last Name contains'), [], FALSE);
+    $form->addRadio('inex_last_name', "", ['incl', 'excl'], [], " ", TRUE);
+    $defaults['inex_last_name'] = 0;
+    $form->add('text', 'participant_id', E::ts('Participant ID contains'), [], FALSE);
+    $form->addRadio('inex_participant_id', "", ['incl', 'excl'], [], " ", TRUE);
+    $defaults['inex_participant_id'] = 0;
+    $form->add('text', 'bioresource_id', E::ts('BioResource ID contains'), [], FALSE);
+    $form->addRadio('inex_bioresource_id', "", ['incl', 'excl'], [], " ", TRUE);
+    $defaults['inex_bioresource_id'] = 0;
     if ($this->_studyId) {
       $form->add('select', 'recall_group', E::ts('Recall Group'), CRM_Nihrbackbone_NbrStudy::getRecallGroupList($this->_studyId), FALSE,
         ['class' => 'crm-select2', 'placeholder' => '- select recall group -', 'multiple' => TRUE]);
@@ -49,22 +63,33 @@ class CRM_Nbrprojectvolunteerlist_Form_Search_VolunteerList extends CRM_Contact_
       $form->add('select', 'recall_group', E::ts('Recall Group'), CRM_Nihrbackbone_NbrStudy::getRecallGroupList(), FALSE,
         ['class' => 'crm-select2', 'placeholder' => '- select recall group -', 'multiple' => TRUE]);
     }
+    $form->addRadio('inex_recall_group', "", ['incl', 'excl'], [], " ", TRUE);
+    $defaults['inex_recall_group'] = 0;
     $form->add('select', 'study_status_id', E::ts('Status'), CRM_Nihrbackbone_Utils::getOptionValueList(CRM_Nihrbackbone_BackboneConfig::singleton()->getStudyParticipationStatusOptionGroupId()), FALSE,
     ['class' => 'crm-select2', 'placeholder' => '- select status -', 'multiple' => TRUE]);
+    $form->addRadio('inex_study_status_id', "", ['incl', 'excl'], [], " ", TRUE);
+    $defaults['inex_study_status_id'] = 0;
     $form->add('select', 'eligibility_status_id', E::ts('Eligibility'), CRM_Nihrbackbone_Utils::getOptionValueList(CRM_Nihrbackbone_BackboneConfig::singleton()->getEligibleStatusOptionGroupId()), FALSE,
     ['class' => 'crm-select2', 'placeholder' => '- select eligibility -', 'multiple' => TRUE]);
+    $form->addRadio('inex_eligibility_status_id', "", ['incl', 'excl'], [], " ", TRUE);
+    $defaults['inex_eligibility_status_id'] = 0;
     $form->add('select', 'tags', E::ts('Tags'), $this->getTagList(), FALSE,
     ['class' => 'crm-select2', 'placeholder' => '- select tag(s) -', 'multiple' => TRUE]);
+    $form->addRadio('inex_tags', "", ['incl', 'excl'], [], " ", TRUE);
+    $defaults['inex_tags'] = 0;
     $form->add('datepicker', 'invite_date_from', E::ts('Invite date from'), [],FALSE, ['time' => FALSE]);
     $form->add('datepicker', 'invite_date_to', E::ts('Invite date to'), [],FALSE, ['time' => FALSE]);
+    $form->addRadio('inex_invite_date', "", ['incl', 'excl'], [], " ", TRUE);
+    $defaults['inex_invite_date'] = 0;
     $form->add('select', 'age_from', E::ts('Age From'), CRM_Nihrbackbone_Utils::getAgeList(), FALSE,
     ['class' => 'crm-select2', 'placeholder' => '- select age from -']);
     $form->add('select', 'age_to', E::ts('Age To'), CRM_Nihrbackbone_Utils::getAgeList(), FALSE,
     ['class' => 'crm-select2', 'placeholder' => '- select age to -']);
+    $form->addRadio('inex_age', "", ['incl', 'excl'], [], " ", TRUE);
+    $defaults['inex_age'] = 0;
     // Optionally define default search values
-    $form->setDefaults([
-      'study_id' => NULL,
-    ]);
+    $defaults['study_id'] = NULL;
+    $form->setDefaults($defaults);
     $this->assignFilters($form);
   }
 
@@ -79,6 +104,8 @@ class CRM_Nbrprojectvolunteerlist_Form_Search_VolunteerList extends CRM_Contact_
       'study_participant_id',
       'first_name',
       'last_name',
+      'participant_id',
+      'bioresource_id',
       'gender_id',
       'recall_group',
       'tags',
@@ -142,18 +169,20 @@ class CRM_Nbrprojectvolunteerlist_Form_Search_VolunteerList extends CRM_Contact_
   function summary() {
     $searchFilters = [
       'study_id' => 'Study ',
-      'study_participant_id' => 'Study Participant ID contains ',
-      'first_name' => 'First name contains ',
-      'last_name' => 'Last name contains ',
-      'gender_id' => 'Gender is one of ',
-      'recall_group' => 'Recall Group is one of ',
-      'tags' => 'has Tag(s) ',
-      'study_status_id' => 'Status is one of ',
-      'eligibility_status_id' => 'Eligibility is one of ',
-      'invite_date_from' => 'Invite Date from ',
-      'invite_date_to' => 'Invite Date to ',
-      'age_from' => 'Age from ',
-      'age_to' => 'Age to ',
+      'study_participant_id' => 'Study Participant ID ',
+      'first_name' => 'First name ',
+      'last_name' => 'Last name ',
+      'gender_id' => 'Gender is ',
+      'participant_id' => 'Participant ID ',
+      'bioresource_id' => 'BioResource ID ',
+      'recall_group' => 'Recall Group is ',
+      'tags' => ' Tag(s) ',
+      'study_status_id' => 'Status is ',
+      'eligibility_status_id' => 'Eligibility is ',
+      'invite_date_from' => 'Invite Date ',
+      'invite_date_to' => 'Invite Date ',
+      'age_from' => 'Age ',
+      'age_to' => 'Age ',
     ];
     $filters = [];
     foreach ($searchFilters as $searchFilter => $searchTxt) {
@@ -168,39 +197,100 @@ class CRM_Nbrprojectvolunteerlist_Form_Search_VolunteerList extends CRM_Contact_
             foreach ($this->_formValues[$searchFilter] as $key => $tag) {
               $tagLabels[] = $tagList[$tag];
             }
-            $filters[] = $searchTxt . implode(",", $tagLabels);
+            if (isset($this->_formValues['inex_tags']) && $this->_formValues['inex_tags'] == 1) {
+              $filters[] = "does not have " . $searchTxt . implode(",", $tagLabels);
+            }
+            $filters[] = "has " . $searchTxt . implode(",", $tagLabels);
             break;
           case "gender_id":
             $genderLabels = [];
             foreach ($this->_formValues[$searchFilter] as $gender) {
               $genderLabels[] = CRM_Nihrbackbone_Utils::getOptionValueLabel($gender, 'gender');
             }
-            $filters[] = $searchTxt . implode(", ", $genderLabels);
+            if (isset($this->_formValues['inex_gender_id']) && $this->_formValues['inex_gender_id'] == 1) {
+              $filters[] = $searchTxt . " not ". implode(", ", $genderLabels);
+            }
+            else {
+              $filters[] = $searchTxt . implode(", ", $genderLabels);
+            }
             break;
           case "study_status_id":
             $statusLabels = [];
             foreach ($this->_formValues[$searchFilter] as $status) {
               $statusLabels[] = CRM_Nihrbackbone_Utils::getOptionValueLabel($status, CRM_Nihrbackbone_BackboneConfig::singleton()->getStudyParticipationStatusOptionGroupId());
             }
-            $filters[] = $searchTxt . implode(", ", $statusLabels);
+            if (isset($this->_formValues['inex_study_status_id']) && $this->_formValues['inex_study_status_id'] == 1) {
+              $filters[] = $searchTxt . "not one of " . implode(", ", $statusLabels);
+            }
+            else {
+              $filters[] = $searchTxt . "one of ". implode(", ", $statusLabels);
+            }
             break;
           case "eligibility_status_id":
             $eligibilityLabels = [];
             foreach ($this->_formValues[$searchFilter] as $eligibilityStatus) {
               $eligibilityLabels[] = CRM_Nihrbackbone_Utils::getOptionValueLabel($eligibilityStatus, CRM_Nihrbackbone_BackboneConfig::singleton()->getEligibleStatusOptionGroupId());
             }
-            $filters[] = $searchTxt . implode(", ", $eligibilityLabels);
+            if (isset($this->_formValues['inex_eligibility_status_id']) && $this->_formValues['inex_eligibility_status_id'] == 1) {
+              $filters[] = $searchTxt . "not one of ". implode(", ", $eligibilityLabels);
+            }
+            else {
+              $filters[] = $searchTxt . "one of " . implode(", ", $eligibilityLabels);
+            }
+            break;
+          case "age_from":
+            if (isset($this->_formValues['inex_age']) && $this->_formValues['inex_age'] == 1) {
+              $filters[] = $searchTxt . "is less than " . $this->_formValues["age_from"];
+            }
+            else {
+              $filters[] = $searchTxt . "is greater than or equal to " . $this->_formValues["age_from"];
+            }
+            break;
+          case "age_to":
+            if (isset($this->_formValues['inex_age']) && $this->_formValues['inex_age'] == 1) {
+              $filters[] = $searchTxt . "is greater than " . $this->_formValues["age_to"];
+            }
+            else {
+              $filters[] = $searchTxt . "is less than or equal to " . $this->_formValues["age_to"];
+            }
+            break;
+          case "invite_date_from":
+            if (isset($this->_formValues['inex_invite_date']) && $this->_formValues['inex_invite_date'] == 1) {
+              $filters[] = $searchTxt . "is less than " . $this->_formValues["invite_date_from"];
+            }
+            else {
+              $filters[] = $searchTxt . "is greater than or equal to " . $this->_formValues["invite_date_from"];
+            }
+            break;
+          case "invite_date_to":
+            if (isset($this->_formValues['inex_invite_date']) && $this->_formValues['inex_invite_date'] == 1) {
+              $filters[] = $searchTxt . "is greater than " . $this->_formValues["invite_date_to"];
+            }
+            else {
+              $filters[] = $searchTxt . "is less than or equal to " . $this->_formValues["invite_date_to"];
+            }
             break;
           default:
+            $inex = "inex_" . $searchFilter;
             if (is_array($this->_formValues[$searchFilter])) {
               $textLabels = [];
               foreach ($this->_formValues[$searchFilter] as $value) {
                 $textLabels[] = $value;
               }
-              $filters[] = $searchTxt . implode(", ", $textLabels);
+              if (isset($this->_formValues[$inex]) && $this->_formValues[$inex] == 1) {
+                $filters[] = $searchTxt . "not one of " . implode(", ", $textLabels);
+              }
+              else {
+                $filters[] = $searchTxt . "one of " . implode(", ", $textLabels);
+              }
             }
             else {
-              $filters[] = $searchTxt . $this->_formValues[$searchFilter];
+              if (isset($this->_formValues[$inex]) && $this->_formValues[$inex] == 1) {
+                $filters[] = $searchTxt . "is not ". $this->_formValues[$searchFilter];
+              }
+              else {
+                $filters[] = $searchTxt . "is ". $this->_formValues[$searchFilter];
+              }
             }
             break;
         }
@@ -219,6 +309,8 @@ class CRM_Nbrprojectvolunteerlist_Form_Search_VolunteerList extends CRM_Contact_
     $columns = [
       E::ts('Name') => 'sort_name',
       E::ts('Study/Part ID') => 'nvpd_study_participant_id',
+      E::ts('Part. ID') => 'participant_id',
+      E::ts("BioResource ID") => 'bioresource_id',
       E::ts('Gndr') => 'gender',
       E::ts('Age') => 'birth_date',
       E::ts('Ethn.') => 'ethnicity',
@@ -257,17 +349,21 @@ class CRM_Nbrprojectvolunteerlist_Form_Search_VolunteerList extends CRM_Contact_
    * @return string, sql fragment with SELECT arguments
    */
   function select() {
+    // todo add participant and bioresource ID
     $eligibleColumn = CRM_Nihrbackbone_BackboneConfig::singleton()->getParticipationCustomField('nvpd_eligible_status_id', 'column_name');
     $studyParticipantIDColumn = CRM_Nihrbackbone_BackboneConfig::singleton()->getParticipationCustomField('nvpd_study_participant_id', 'column_name');
     $dateInvitedColumn = CRM_Nihrbackbone_BackboneConfig::singleton()->getParticipationCustomField('nvpd_date_invited', 'column_name');
     $distanceColumn = CRM_Nihrbackbone_BackboneConfig::singleton()->getParticipationCustomField('nvpd_distance_volunteer_to_study_centre', 'column_name');
     $recallColumn = CRM_Nihrbackbone_BackboneConfig::singleton()->getParticipationCustomField('nvpd_recall_group', 'column_name');
+    $participantIdColumn = CRM_Nihrbackbone_BackboneConfig::singleton()->getVolunteerIdsCustomField('nva_participant_id', 'column_name');
+    $bioresourceIdColumn = CRM_Nihrbackbone_BackboneConfig::singleton()->getVolunteerIdsCustomField('nva_bioresource_id', 'column_name');
     return "
       DISTINCT(contact_a.id) AS contact_id, cas.id AS case_id, contact_a.sort_name, contact_a.birth_date, genderov.label AS gender,
       ethnicov.label AS ethnicity, adr.city AS volunteer_address, nvpd." . $eligibleColumn . ", nvpd.". $studyParticipantIDColumn
       . ", nvpd." . $recallColumn . ", stustatus.label AS study_status, nvpd."
       . $dateInvitedColumn . ", nvpd." . $distanceColumn . ", '' AS date_researcher, '' AS latest_visit_date,
-      '' AS volunteer_tags";
+      '' AS volunteer_tags, nvi." . $participantIdColumn . " AS participant_id, nvi." . $bioresourceIdColumn
+      . " AS bioresource_id";
   }
 
   /**
@@ -330,15 +426,21 @@ class CRM_Nbrprojectvolunteerlist_Form_Search_VolunteerList extends CRM_Contact_
     foreach ($multipleFields as $multipleField) {
       $clauses = [];
       if (isset($this->_formValues[$multipleField]) && !empty($this->_formValues[$multipleField])) {
+        $operator = $this->getOperator($multipleField, "=");
         switch ($multipleField) {
           case 'gender_id':
             foreach ($this->_formValues[$multipleField] as $multipleValue) {
               $index++;
-              $clauses[] = "contact_a.gender_id = %" . $index;
+              $clauses[] = "contact_a.gender_id " . $operator . " %" . $index;
               $params[$index] = [(int) $multipleValue, "Integer"];
             }
             if (!empty($clauses)) {
-              $where .= " AND (" . implode(" OR ", $clauses) . ")";
+              if ($operator == "=") {
+                $where .= " AND (" . implode(" OR ", $clauses) . ")";
+              }
+              else {
+                $where .= " AND (" . implode(" AND ", $clauses) . ")";
+              }
             }
             break;
 
@@ -346,11 +448,16 @@ class CRM_Nbrprojectvolunteerlist_Form_Search_VolunteerList extends CRM_Contact_
             $recallColumn = CRM_Nihrbackbone_BackboneConfig::singleton()->getParticipationCustomField('nvpd_recall_group', 'column_name');
             foreach ($this->_formValues[$multipleField] as $multipleValue) {
               $index++;
-              $clauses[] = "nvpd." . $recallColumn . " = %" . $index;
+              $clauses[] = "nvpd." . $recallColumn . " " . $operator . " %". $index;
               $params[$index] = [$multipleValue, "String"];
             }
             if (!empty($clauses)) {
-              $where .= " AND (" . implode(" OR ", $clauses) . ")";
+              if ($operator == "=") {
+                $where .= " AND (" . implode(" OR ", $clauses) . ")";
+              }
+              else {
+                $where .= " AND (" . implode(" AND ", $clauses) . ")";
+              }
             }
             break;
 
@@ -358,11 +465,16 @@ class CRM_Nbrprojectvolunteerlist_Form_Search_VolunteerList extends CRM_Contact_
             $statusColumn = CRM_Nihrbackbone_BackboneConfig::singleton()->getParticipationCustomField('nvpd_study_participation_status', 'column_name');
             foreach ($this->_formValues[$multipleField] as $multipleValue) {
               $index++;
-              $clauses[] = "nvpd." . $statusColumn . " = %" . $index;
+              $clauses[] = "nvpd." . $statusColumn . " " . $operator . " %". $index;
               $params[$index] = [$multipleValue, "String"];
             }
             if (!empty($clauses)) {
-              $where .= " AND (" . implode(" OR ", $clauses) . ")";
+              if ($operator == "=") {
+                $where .= " AND (" . implode(" OR ", $clauses) . ")";
+              }
+              else {
+                $where .= " AND (" . implode(" AND ", $clauses) . ")";
+              }
             }
             break;
 
@@ -370,11 +482,16 @@ class CRM_Nbrprojectvolunteerlist_Form_Search_VolunteerList extends CRM_Contact_
             $eligibleColumn = CRM_Nihrbackbone_BackboneConfig::singleton()->getParticipationCustomField('nvpd_eligible_status_id', 'column_name');
             foreach ($this->_formValues[$multipleField] as $multipleValue) {
               $index++;
-              $clauses[] = "nvpd." . $eligibleColumn . " = %" . $index;
+              $clauses[] = "nvpd." . $eligibleColumn . " " . $operator . " %". $index;
               $params[$index] = [$multipleValue, "String"];
             }
             if (!empty($clauses)) {
-              $where .= " AND (" . implode(" OR ", $clauses) . ")";
+              if ($operator == "=") {
+                $where .= " AND (" . implode(" OR ", $clauses) . ")";
+              }
+              else {
+                $where .= " AND (" . implode(" AND ", $clauses) . ")";
+              }
             }
             break;
 
@@ -384,7 +501,7 @@ class CRM_Nbrprojectvolunteerlist_Form_Search_VolunteerList extends CRM_Contact_
               $tagIds[] = $tagId;
             }
             if (!empty($tagIds)) {
-              $where .= " AND ccc.contact_id IN (SELECT entity_id FROM civicrm_entity_tag WHERE entity_table = 'civicrm_contact' AND tag_id  IN(" . implode(",", $tagIds) ."))";
+                $where .= " AND ccc.contact_id ". $this->getOperator('tags', 'IN') . " (SELECT entity_id FROM civicrm_entity_tag WHERE entity_table = 'civicrm_contact' AND tag_id IN(" . implode(",", $tagIds) ."))";
             }
             break;
         }
@@ -429,28 +546,76 @@ class CRM_Nbrprojectvolunteerlist_Form_Search_VolunteerList extends CRM_Contact_
       $toField = $rangeField . "_to";
       switch ($rangeField) {
         case 'age':
-          if (isset($this->_formValues[$fromField]) && !empty($this->_formValues[$fromField])) {
+          // if both filled and operator is exclude, add one clause
+          if (isset($this->_formValues[$fromField]) && !empty($this->_formValues[$fromField])
+            && isset($this->_formValues[$toField]) && !empty($this->_formValues[$toField]
+            && $this->_formValues['inex_age'] == 1)) {
             $index++;
-            $clauses[] = "TIMESTAMPDIFF(YEAR, contact_a.birth_date, CURDATE()) >= %" . $index;
+            $clause = "(TIMESTAMPDIFF(YEAR, contact_a.birth_date, CURDATE()) < %" . $index;
             $params[$index] = [$this->_formValues[$fromField], "String"];
-          }
-          if (isset($this->_formValues[$toField]) && !empty($this->_formValues[$toField])) {
             $index++;
-            $clauses[] = "TIMESTAMPDIFF(YEAR, contact_a.birth_date, CURDATE()) <= %" . $index;
+            $clause .= " OR TIMESTAMPDIFF(YEAR, contact_a.birth_date, CURDATE()) > %" . $index . ")";
             $params[$index] = [$this->_formValues[$toField], "String"];
+            $clauses[] = $clause;
+          }
+          else {
+            if (isset($this->_formValues[$fromField]) && !empty($this->_formValues[$fromField])) {
+              $index++;
+              if (isset($this->_formValues['inex_age']) && $this->_formValues['inex_age'] == 1) {
+                $clauses[] = "TIMESTAMPDIFF(YEAR, contact_a.birth_date, CURDATE()) < %" . $index;
+              }
+              else {
+                $clauses[] = "TIMESTAMPDIFF(YEAR, contact_a.birth_date, CURDATE()) >= %" . $index;
+              }
+              $params[$index] = [$this->_formValues[$fromField], "String"];
+            }
+            if (isset($this->_formValues[$toField]) && !empty($this->_formValues[$toField])) {
+              $index++;
+              if (isset($this->_formValues['inex_age']) && $this->_formValues['inex_age'] == 1) {
+                $clauses[] = "TIMESTAMPDIFF(YEAR, contact_a.birth_date, CURDATE()) > %" . $index;
+              }
+              else {
+                $clauses[] = "TIMESTAMPDIFF(YEAR, contact_a.birth_date, CURDATE()) <= %" . $index;
+              }
+              $params[$index] = [$this->_formValues[$toField], "String"];
+            }
           }
           break;
 
         case 'invite_date':
-          if (isset($this->_formValues[$fromField]) && !empty($this->_formValues[$fromField])) {
+          // if both filled and operator is exclude, add one clause
+          if (isset($this->_formValues[$fromField]) && !empty($this->_formValues[$fromField])
+            && isset($this->_formValues[$toField]) && !empty($this->_formValues[$toField]
+              && $this->_formValues['inex_invite_date'] == 1)) {
             $index++;
-            $clauses[] = "nvpd." . $inviteDateColumn . " >= %" . $index;
+            $clause = "(nvpd." . $inviteDateColumn . " < %" . $index;
             $params[$index] = [$this->_formValues[$fromField], "String"];
-          }
-          if (isset($this->_formValues[$toField]) && !empty($this->_formValues[$toField])) {
             $index++;
-            $clauses[] = "nvpd." . $inviteDateColumn . " <= %" . $index;
+            $clause .= " OR nvpd." . $inviteDateColumn . " > %" . $index . ")";
             $params[$index] = [$this->_formValues[$toField], "String"];
+            $clauses[] = $clause;
+          }
+          else {
+            if (isset($this->_formValues[$fromField]) && !empty($this->_formValues[$fromField])) {
+              $index++;
+              if (isset($this->_formValues['inex_invite_date']) && $this->_formValues['inex_invite_date'] == 1) {
+                $clauses[] = "nvpd." . $inviteDateColumn . " < %" . $index;
+              }
+              else {
+                $clauses[] = "nvpd." . $inviteDateColumn . " >= %" . $index;
+              }
+              $params[$index] = [$this->_formValues[$fromField], "String"];
+            }
+            if (isset($this->_formValues[$toField]) && !empty($this->_formValues[$toField])) {
+              $index++;
+              if (isset($this->_formValues['inex_invite_date']) && $this->_formValues['inex_invite_date'] == 1) {
+                $clauses[] = "nvpd." . $inviteDateColumn . " > %" . $index;
+              }
+              else {
+                $clauses[] = "nvpd." . $inviteDateColumn . " <= %" . $index;
+              }
+              $params[$index] = [$this->_formValues[$toField], "String"];
+            }
           }
           break;
       }
@@ -465,22 +630,56 @@ class CRM_Nbrprojectvolunteerlist_Form_Search_VolunteerList extends CRM_Contact_
    * @param array $params
    */
   private function addLikeClauses(&$index, &$clauses, &$params) {
-    $likeFields = ['first_name', 'last_name', 'study_participant_id'];
+    $likeFields = ['first_name', 'last_name', 'study_participant_id', 'participant_id', 'bioresource_id'];
     $studyPartColumn = CRM_Nihrbackbone_BackboneConfig::singleton()->getParticipationCustomField('nvpd_study_participant_id', 'column_name');
+    $participantIdColumn = CRM_Nihrbackbone_BackboneConfig::singleton()->getVolunteerIdsCustomField('nva_participant_id', 'column_name');
+    $bioresourceIdColumn = CRM_Nihrbackbone_BackboneConfig::singleton()->getVolunteerIdsCustomField('nva_bioresource_id', 'column_name');
     foreach ($likeFields as $likeField) {
       if (isset($this->_formValues[$likeField]) && !empty($this->_formValues[$likeField])) {
         $index++;
         $params[$index] = ["%" . $this->_formValues[$likeField] . "%", "String"];
         switch ($likeField) {
-          case 'study_participant_id':
-            $clauses[] = "nvpd." . $studyPartColumn . " LIKE %" . $index;
+          case 'bioresource_id':
+            $clauses[] = "nvi." . $bioresourceIdColumn . " " . $this->getOperator($likeField, "LIKE") . " %" . $index;
             break;
+
+          case 'participant_id':
+            $clauses[] = "nvi." . $participantIdColumn . " " . $this->getOperator($likeField, "LIKE") . " %" . $index;
+            break;
+
+          case 'study_participant_id':
+            $clauses[] = "nvpd." . $studyPartColumn . " " . $this->getOperator($likeField, "LIKE") . " %" . $index;
+            break;
+
           default:
-            $clauses[] = "contact_a." . $likeField . " LIKE %" . $index;
+            $clauses[] = "contact_a." . $likeField . " " . $this->getOperator($likeField, "LIKE") . " %" . $index;
             break;
         }
       }
     }
+  }
+
+  /**
+   * Method to determine operator -> include or exclude
+   * @param $fieldName
+   * @param $operatorBase
+   * @return string
+   */
+  private function getOperator($fieldName, $operatorBase) {
+    $operatorField = "inex_" . $fieldName;
+    switch ($operatorBase) {
+      case "IN":
+      case "LIKE":
+        if (isset($this->_formValues[$operatorField]) && $this->_formValues[$operatorField] == 1) {
+          return " NOT " . $operatorBase;
+        }
+        break;
+      case "=":
+        if (isset($this->_formValues[$operatorField]) && $this->_formValues[$operatorField] == 1) {
+          return "<>";
+        }
+    }
+    return $operatorBase;
   }
 
   /**
