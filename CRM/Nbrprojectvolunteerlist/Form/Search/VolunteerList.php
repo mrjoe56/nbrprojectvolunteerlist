@@ -41,20 +41,10 @@ class CRM_Nbrprojectvolunteerlist_Form_Search_VolunteerList extends CRM_Contact_
     $form->addRadio('inex_gender_id', "", ['incl', 'excl'], [], " ", TRUE);
     $defaults['inex_gender_id'] = 0;
     $form->add('text', 'study_participant_id', E::ts('Study Participant ID contains'), [], FALSE);
-    $form->addRadio('inex_study_participant_id', "", ['incl', 'excl'], [], " ", TRUE);
-    $defaults['inex_study_participant_id'] = 0;
     $form->add('text', 'first_name', E::ts('First Name contains'), [], FALSE);
-    $form->addRadio('inex_first_name', "", ['incl', 'excl'], [], " ", TRUE);
-    $defaults['inex_first_name'] = 0;
     $form->add('text', 'last_name', E::ts('Last Name contains'), [], FALSE);
-    $form->addRadio('inex_last_name', "", ['incl', 'excl'], [], " ", TRUE);
-    $defaults['inex_last_name'] = 0;
     $form->add('text', 'participant_id', E::ts('Participant ID contains'), [], FALSE);
-    $form->addRadio('inex_participant_id', "", ['incl', 'excl'], [], " ", TRUE);
-    $defaults['inex_participant_id'] = 0;
     $form->add('text', 'bioresource_id', E::ts('BioResource ID contains'), [], FALSE);
-    $form->addRadio('inex_bioresource_id', "", ['incl', 'excl'], [], " ", TRUE);
-    $defaults['inex_bioresource_id'] = 0;
     if ($this->_studyId) {
       $form->add('select', 'recall_group', E::ts('Recall Group'), CRM_Nihrbackbone_NbrStudy::getRecallGroupList($this->_studyId), FALSE,
         ['class' => 'crm-select2', 'placeholder' => '- select recall group -', 'multiple' => TRUE]);

@@ -42,21 +42,6 @@
             {if $form.$element.name == "gender_id"}
               <td>{$form.inex_gender_id.html}</td>
             {/if}
-            {if $form.$element.name == "study_participant_id"}
-              <td>{$form.inex_study_participant_id.html}</td>
-            {/if}
-            {if $form.$element.name == "first_name"}
-              <td>{$form.inex_first_name.html}</td>
-            {/if}
-            {if $form.$element.name == "last_name"}
-              <td>{$form.inex_last_name.html}</td>
-            {/if}
-            {if $form.$element.name == "participant_id"}
-              <td>{$form.inex_participant_id.html}</td>
-            {/if}
-            {if $form.$element.name == "bioresource_id"}
-              <td>{$form.inex_bioresource_id.html}</td>
-            {/if}
             {if $form.$element.name == "recall_group"}
               <td>{$form.inex_recall_group.html}</td>
             {/if}
