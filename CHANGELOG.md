@@ -1,3 +1,6 @@
+## Version 1.35
+* issue 6563: test comment to use ; as separator in data
+
 ## Version 1.34
 * issue 7756: phase 2 MSP improvements
 

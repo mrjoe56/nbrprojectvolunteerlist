@@ -113,10 +113,10 @@ class CRM_Nbrprojectvolunteerlist_Form_Task_ExportSelect extends CRM_Contact_For
       }
     }
     if (!empty($medications)) {
-      $volunteer['medication_name'] = implode("-", $medications);
+      $volunteer['medication_name'] = implode(";", $medications);
     }
     if (!empty($families)) {
-      $volunteer['drug_family'] = implode("-", $families);
+      $volunteer['drug_family'] = implode(";", $families);
     }
   }
 
@@ -181,21 +181,21 @@ class CRM_Nbrprojectvolunteerlist_Form_Task_ExportSelect extends CRM_Contact_For
       else {
         $families[] = "";
       }
-      if (!empty($dao->condition_notes)) {
+      if (!empty(trim($dao->condition_notes))) {
         $notes[] = $dao->condition_notes;
-      }
-      else {
-        $notes[] = "";
       }
     }
     if (!empty($diseases)) {
-      $volunteer['disease'] = implode("-", $diseases);
+      $volunteer['disease'] = implode(";", $diseases);
     }
     if (!empty($families)) {
-      $volunteer['family_member'] = implode("-", $families);
+      $volunteer['family_member'] = implode(";", $families);
     }
     if (!empty($notes)) {
-      $volunteer['condition_notes'] = implode("-", $notes);
+      $volunteer['condition_notes'] = implode(";", $notes);
+    }
+    else {
+      $volunteer['condition_notes'] = "";
     }
   }
 
@@ -255,7 +255,7 @@ class CRM_Nbrprojectvolunteerlist_Form_Task_ExportSelect extends CRM_Contact_For
         $result[] = $description;
       }
     }
-    return implode(", ", $result);
+    return implode("; ", $result);
   }
 
   /**
