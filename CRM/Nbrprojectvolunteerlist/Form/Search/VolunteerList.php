@@ -734,11 +734,16 @@ class CRM_Nbrprojectvolunteerlist_Form_Search_VolunteerList extends CRM_Contact_
           break;
 
         case 'nvpd_eligible_status_id':
-          if (empty($row[$fieldName])) {
-            $row[$fieldName] = "Eligible";
+          if ($row['study_status'] == "Selected") {
+            if (empty($row[$fieldName])) {
+              $row[$fieldName] = "Eligible";
+            }
+            else {
+              $row[$fieldName] = implode(', ', CRM_Nihrbackbone_NbrVolunteerCase::getEligibleDescriptions($row[$fieldName]));
+            }
           }
           else {
-            $row[$fieldName] = implode(', ', CRM_Nihrbackbone_NbrVolunteerCase::getEligibleDescriptions($row[$fieldName]));
+            $row[$fieldName] = "";
           }
           break;
 
