@@ -8,6 +8,7 @@ class CRM_Nbrprojectvolunteerlist_Form_Search_VolunteerList extends CRM_Contact_
 
   private $_force = NULL;
   private $_studyId = NULL;
+  private $_eligibleParticipationStatus = [];
 
   /**
    * CRM_Nbrprojectvolunteerlist_Form_Search_VolunteerList constructor.
@@ -19,6 +20,14 @@ class CRM_Nbrprojectvolunteerlist_Form_Search_VolunteerList extends CRM_Contact_
     $this->_force = CRM_Utils_Request::retrieve('force', 'Boolean');
     if ($this->_force) {
       $formValues = array_merge($this->getEntityDefaults('study'), $formValues);
+    }
+    $eligibleParticipationStatus = Civi::settings()->get('nbr_eligible_calc_study_status');
+    if ($eligibleParticipationStatus) {
+      $optionGroupId = CRM_Nihrbackbone_BackboneConfig::singleton()->getStudyParticipationStatusOptionGroupId();
+      $parts = explode(',', $eligibleParticipationStatus);
+      foreach ($parts as $part) {
+        $this->_eligibleParticipationStatus[] = CRM_Nihrbackbone_Utils::getOptionValueLabel($part, $optionGroupId);
+      }
     }
     parent::__construct($formValues);
   }
@@ -734,7 +743,7 @@ class CRM_Nbrprojectvolunteerlist_Form_Search_VolunteerList extends CRM_Contact_
           break;
 
         case 'nvpd_eligible_status_id':
-          if ($row['study_status'] == "Selected") {
+          if (in_array($row['study_status'], $this->_eligibleParticipationStatus)) {
             if (empty($row[$fieldName])) {
               $row[$fieldName] = "Eligible";
             }
