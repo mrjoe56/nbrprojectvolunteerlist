@@ -22,7 +22,7 @@ class CRM_Nbrprojectvolunteerlist_Form_Search_VolunteerList extends CRM_Contact_
       $formValues = array_merge($this->getEntityDefaults('study'), $formValues);
     }
     $eligibleParticipationStatus = Civi::settings()->get('nbr_eligible_calc_study_status');
-    if ($eligibleParticipationStatus) {
+    if (!empty($eligibleParticipationStatus)) {
       $optionGroupId = CRM_Nihrbackbone_BackboneConfig::singleton()->getStudyParticipationStatusOptionGroupId();
       $parts = explode(',', $eligibleParticipationStatus);
       foreach ($parts as $part) {
