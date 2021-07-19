@@ -1,3 +1,6 @@
+## Version 1.37
+* wrike issue https://www.wrike.com/open.htm?id=712317179 : check for guardian email
+
 ## Version 1.36
 * issue 7983: show eligibility only if status in one of the calculation statuses setting
 

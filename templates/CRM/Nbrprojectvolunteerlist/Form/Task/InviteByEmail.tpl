@@ -26,6 +26,7 @@
           <th>{ts}Study/Participant ID{/ts}</th>
           <th>{ts}Eligibility{/ts}</th>
           <th>{ts}Email{/ts}</th>
+          <th>Remarks</th>
         </tr>
           {foreach from=$invited key=contact_id item=invite}
             <tr id='contactid{$contact_id}' class="{cycle values="odd-row,even-row"}">
@@ -35,6 +36,7 @@
               <td>{$invite.study_participant_id}</td>
               <td>{$invite.eligible_status}</td>
               <td>{$invite.email}</td>
+              <td>{$invite.remarks}</td>
             </tr>
           {/foreach}
       </table>

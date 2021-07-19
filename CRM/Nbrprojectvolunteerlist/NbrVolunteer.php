@@ -47,33 +47,20 @@ class CRM_Nbrprojectvolunteerlist_NbrVolunteer {
         $valid = FALSE;
       }
     }
-    // do not allow if email is empty unless invite pdf
-    if (empty($dao->email) && $type != "invite_pdf") {
-      $countInvalids++;
-      $volunteer['reason'] = E::ts("Does not have an active primary email address");
-      $invalids[$dao->contact_id] = $volunteer;
-      $valid = FALSE;
-    }
-    // do not allow if deceased
-    if (CRM_Nihrbackbone_NihrVolunteer::isDeceased($dao->contact_id)) {
-      $countInvalids++;
-      $volunteer['reason'] = E::ts("Deceased");
-      $invalids[$dao->contact_id] = $volunteer;
-      $valid = FALSE;
-    }
-    // do not allow if contact has no_email flag (if no invite pdf)
-    if (!CRM_Nihrbackbone_NihrVolunteer::allowsEmail($dao->contact_id) && $type != "invite_pdf") {
-      $countInvalids++;
-      $volunteer['reason'] = E::ts("Does not want to be emailed");
-      $invalids[$dao->contact_id] = $volunteer;
-      $valid = FALSE;
-    }
-    // do not allow if invalid email (if not invite_pdf)
-    if (!filter_var($dao->email, FILTER_VALIDATE_EMAIL) && $type != "invite_pdf") {
-      $countInvalids++;
-      $volunteer['reason'] = E::ts("Invalid email address");
-      $invalids[$dao->contact_id] = $volunteer;
-      $valid = FALSE;
+    // do not allow if email is invalid (or guardian email is empty!) unless invite pdf
+    if ($type != "invite_pdf") {
+      $invalidReason = CRM_Nbrprojectvolunteerlist_Utils::checkEmailValidity($dao);
+      if ($invalidReason) {
+        $countInvalids++;
+        $volunteer['reason'] = $invalidReason;
+        $invalids[$dao->contact_id] = $volunteer;
+        $valid = FALSE;
+      }
+      // if guardian, add remark
+      if (!empty($dao->guardian_email)) {
+        $volunteer['email'] = $dao->guardian_email;
+        $volunteer['remark'] = "Volunteer has active guardian " . $dao->guardian_name . ', email of guardian is used.';
+      }
     }
     // do not allow more than 50 if not bulk or not invite_pdf
     if ($type == "invite_email" && $countInvited >= 50) {

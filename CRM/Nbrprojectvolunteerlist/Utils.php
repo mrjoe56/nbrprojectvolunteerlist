@@ -174,21 +174,66 @@ class CRM_Nbrprojectvolunteerlist_Utils {
     $query = "
         SELECT vol.id AS contact_id, vol.display_name, cvnpd." . $studyParticipantColumn
       . " AS study_participant_id, cvnpd." . $eligiblesColumn. " AS eligible_status_id,
-        ce.email, cvnpd." . $studyStatusColumn . " AS study_participation_status
+        ce.email, cvnpd." . $studyStatusColumn . " AS study_participation_status, cg.id as guardian_id,
+        cg.display_name AS guardian_name, ge.email AS guardian_email
         FROM " . $participantTable . " AS cvnpd
         JOIN civicrm_case_contact AS ccc ON cvnpd.entity_id = ccc.case_id
         JOIN civicrm_case AS cas ON ccc.case_id = cas.id
         JOIN civicrm_contact AS vol ON ccc.contact_id = vol.id
-        LEFT JOIN civicrm_email AS ce ON vol.id = ce.contact_id AND ce.is_primary = %1 AND ce.on_hold = 0
+        LEFT JOIN civicrm_email AS ce ON vol.id = ce.contact_id AND ce.is_primary = %1 AND ce.on_hold = %3
+        LEFT JOIN civicrm_relationship AS cr ON vol.id = cr.contact_id_a AND cr.relationship_type_id = %4 AND cr.is_active = %1
+          AND (cr.end_date >= CURDATE() OR cr.end_date IS NULL)
+        LEFT JOIN civicrm_contact AS cg ON cr.contact_id_b = cg.id
+        LEFT JOIN civicrm_email AS ge ON cg.id = ge.contact_id AND ge.is_primary = %1
         WHERE cvnpd." . $studyColumn . " = %2 AND cas.is_deleted = %3 AND vol.id IN (";
     $queryParams = [
       1 => [1, "Integer"],
       2 => [(int) $studyId, "Integer"],
       3 => [0, "Integer"],
+      4 => [Civi::service('nbrBackbone')->getGuardianRelationshipTypeId(), "Integer"],
     ];
-    $i = 3;
+    $i = 4;
     CRM_Nbrprojectvolunteerlist_Utils::addContactIdsToQuery($i, $contactIds, $query, $queryParams);
     return CRM_Core_DAO::executeQuery($query, $queryParams);
+  }
+
+  /**
+   * Method to check email or guardian email validity
+   *
+   * @param $dao
+   * @return false|string
+   */
+  public static function checkEmailValidity($dao) {
+    // if contact has guardian guardian email has to be valid, can not be empty and has to allow email
+    if (isset($dao->guardian_id) && !empty($dao->guardian_id)) {
+      if (empty($dao->guardian_email)) {
+        return "Volunteer has active guardian (" . $dao->guardian_name . ") without email address";
+      }
+      if (!filter_var($dao->guardian_email, FILTER_VALIDATE_EMAIL)) {
+        return "Volunteer has active guardian (" . $dao->guardian_name . ") but email address of guardian is invalid";
+      }
+      if (!CRM_Nihrbackbone_NihrVolunteer::allowsEmail($dao->guardian_id)) {
+        return "Volunteer has active guardian (" . $dao->guardian_name . ") but guardian does not want to be emailed";
+      }
+      if (CRM_Nihrbackbone_NihrVolunteer::isDeceased($dao->guardian_id)) {
+        return "Volunteer has active guardian (" . $dao->guardian_name . ") but guardian is deceased";
+      }
+    }
+    else {
+      if (empty($dao->email)) {
+        return "Volunteer has no email address";
+      }
+      if (!filter_var($dao->email, FILTER_VALIDATE_EMAIL)) {
+        return "Volunteer email address is invalid";
+      }
+      if (!CRM_Nihrbackbone_NihrVolunteer::allowsEmail($dao->contact_id)) {
+        return "Volunteer does not want to be emailed";
+      }
+      if (CRM_Nihrbackbone_NihrVolunteer::isDeceased($dao->contact_id)) {
+        return "Volunteer is deceased";
+      }
+    }
+    return FALSE;
   }
 
 }
