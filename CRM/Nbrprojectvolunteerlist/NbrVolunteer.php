@@ -59,7 +59,7 @@ class CRM_Nbrprojectvolunteerlist_NbrVolunteer {
       // if guardian, add remark
       if (!empty($dao->guardian_email)) {
         $volunteer['email'] = $dao->guardian_email;
-        $volunteer['remark'] = "Volunteer has active guardian " . $dao->guardian_name . ', email of guardian is used.';
+        $volunteer['remark'] = "Volunteer has active guardian " . $dao->guardian_name . ', email of guardian will be used.';
       }
     }
     // do not allow more than 50 if not bulk or not invite_pdf

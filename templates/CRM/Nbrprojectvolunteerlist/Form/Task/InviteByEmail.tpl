@@ -36,7 +36,7 @@
               <td>{$invite.study_participant_id}</td>
               <td>{$invite.eligible_status}</td>
               <td>{$invite.email}</td>
-              <td>{$invite.remarks}</td>
+              <td>{$invite.remark}</td>
             </tr>
           {/foreach}
       </table>
