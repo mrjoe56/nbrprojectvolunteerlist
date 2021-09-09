@@ -17,12 +17,23 @@ class CRM_Nbrprojectvolunteerlist_NbrParticipation {
    * @param $form
    */
   public function caseViewBuildForm(&$form) {
-    $caseId = $form->getVar('_caseID');
     $participationType = Civi::service('nbrBackbone')->getParticipationCaseTypeName();
     $caseType = $form->getVar('_caseType');
     if ($caseType == $participationType) {
       $activityList = $form->getElement('add_activity_type_id');
       $options = &$activityList->_options;
+      // if study status allows no actions, empty all options
+      $caseId = $form->getVar("_caseID");
+      if ($caseId) {
+        $studyId = CRM_Nihrbackbone_NbrVolunteerCase::getStudyId((int) $caseId);
+        if ($studyId) {
+          if (CRM_Nihrbackbone_NbrStudy::hasNoActionStatus((int) $studyId)) {
+            $options = [];
+            CRM_Core_Session::setStatus("No actions for participation case because study status does not allow volunteer actions.", "No actions possible");
+            return;
+          }
+        }
+      }
       foreach($options as $optionKey => $optionValues) {
         if ($optionValues['text'] == "Email" || $optionValues['text'] == "Print/Merge Document") {
           unset($options[$optionKey]);

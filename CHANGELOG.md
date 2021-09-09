@@ -1,3 +1,6 @@
+## Version 1.38
+* wrike issue: https://www.wrike.com/open.htm?id=753669660 Make sure volunteer actions not allowed when study status closed or on hold
+
 ## Version 1.37
 * wrike issue https://www.wrike.com/open.htm?id=712317179 : check for guardian email
 

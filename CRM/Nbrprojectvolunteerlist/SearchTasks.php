@@ -34,9 +34,18 @@ class CRM_Nbrprojectvolunteerlist_SearchTasks {
    *
    * @param $tasks
    * @throws CRM_Core_Exception
-   * @return array $tasks
    */
   public static function processSearchTasksHook(&$tasks) {
+    // no actions possible if study status does not allow it
+    $studyId = CRM_Utils_Request::retrieveValue('sid', "Integer");
+    if ($studyId) {
+      if (CRM_Nihrbackbone_NbrStudy::hasNoActionStatus((int) $studyId)) {
+        $tasks = [];
+        Civi::settings()->set(CRM_Nbrprojectvolunteerlist_Utils::getQfKeySettingName(), "");
+        CRM_Core_Session::setStatus("No actions in the MSP for this study as the status does not allow volunteer actions.", "No actions on MSP");
+        return;
+      }
+    }
     $loadNbrTaskList = self::loadNbrTaskList();
     if ($loadNbrTaskList) {
       self::setProjectVolunteerListTasks($tasks);
