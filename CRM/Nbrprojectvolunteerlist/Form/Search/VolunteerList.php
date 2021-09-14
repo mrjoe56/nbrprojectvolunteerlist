@@ -302,6 +302,11 @@ class CRM_Nbrprojectvolunteerlist_Form_Search_VolunteerList extends CRM_Contact_
         }
       }
     }
+    if ($this->_studyId) {
+      if (CRM_Nihrbackbone_NbrStudy::hasNoActionStatus((int) $this->_studyId)) {
+        return ['summary' => "Filter(s) " . implode(" and " , $filters) . ", no volunteer actions allowed based on study status."];
+      }
+    }
     return ['summary' => "Filter(s) " . implode(" and " , $filters)];
   }
 

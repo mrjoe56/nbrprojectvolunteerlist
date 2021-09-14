@@ -46,6 +46,10 @@ function nbrprojectvolunteerlist_civicrm_buildForm($formName, &$form) {  # jb2
     $nbrParticipation = new CRM_Nbrprojectvolunteerlist_NbrParticipation();
     $nbrParticipation->caseViewBuildForm($form);
   }
+  if ($form instanceof CRM_Contact_Form_Search_Custom) {
+    $nbrCustomSearch = new CRM_Nbrprojectvolunteerlist_NbrCustomSearch();
+    $nbrCustomSearch->mspBuildForm($form);
+  }
 }
 
 
