@@ -190,7 +190,7 @@ class CRM_Nbrprojectvolunteerlist_Utils {
       1 => [1, "Integer"],
       2 => [(int) $studyId, "Integer"],
       3 => [0, "Integer"],
-      4 => [Civi::service('nbrBackbone')->getGuardianRelationshipTypeId(), "Integer"],
+      4 => [Civi::service('nbrGuardian')->getGuardianRelationshipTypeId(), "Integer"],
     ];
     $i = 4;
     CRM_Nbrprojectvolunteerlist_Utils::addContactIdsToQuery($i, $contactIds, $query, $queryParams);
