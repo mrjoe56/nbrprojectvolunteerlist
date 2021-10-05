@@ -1,3 +1,6 @@
+## Version 1.39
+* wrike issue https://www.wrike.com/open.htm?id=742772096 (fix volunteer not on MSP if Volunteer and Guardian)
+
 ## Version 1.38
 * wrike issue: https://www.wrike.com/open.htm?id=753669660 Make sure volunteer actions not allowed when study status closed or on hold
 

@@ -412,9 +412,9 @@ class CRM_Nbrprojectvolunteerlist_Form_Search_VolunteerList extends CRM_Contact_
    */
   function where($includeContactIDs = FALSE) {
     $clauses = [];
-    $params = [1 => ["nihr_volunteer", "String"]];
+    $params = [1 => ["%nihr_volunteer%", "String"]];
     $index = 1;
-    $where = "contact_a.contact_sub_type   = %1";
+    $where = "contact_a.contact_sub_type LIKE %1";
     $this->addEqualsClauses($index, $clauses, $params);
     $this->addLikeClauses($index, $clauses, $params);
     $this->addDateRangeClauses($index, $clauses, $params);
