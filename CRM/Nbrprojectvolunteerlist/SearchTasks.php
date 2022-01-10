@@ -104,21 +104,28 @@ class CRM_Nbrprojectvolunteerlist_SearchTasks {
    */
   private static function setProjectVolunteerListTasks(&$tasks) {
     $formValues = self::getFormValues();
+    $studyId = 0;
     if (!isset($formValues['study_id']) || empty($formValues['study_id'])) {
-      CRM_Core_Session::setStatus(E::ts('No Study ID provided'), '', 'error');
+      $studyId = (int) CRM_Utils_Request::retrieveValue('sid', "Integer");
+    } else {
+      $studyId = $formValues['study_id'];
     }
     $includeInviteTasks = FALSE;
-    try {
-      $studyId = $formValues['study_id'];
-      $studyStatus = civicrm_api3('Campaign', 'getvalue', array(
-        'return' => 'status_id',
-        'id' => $studyId,
-      ));
-      if (in_array($studyStatus, Civi::settings()->get('nbr_invite_campaign_status'))) {
-        $includeInviteTasks = TRUE;
+    if (empty($studyId)) {
+      CRM_Core_Session::setStatus(E::ts('No Study ID provided'), '', 'error');
+    } else {
+      try {
+        $studyStatus = civicrm_api3('Campaign', 'getvalue', [
+          'return' => 'status_id',
+          'id' => $studyId,
+        ]);
+        $invitateStatuses = explode(",", Civi::settings()->get('nbr_invite_campaign_status'));
+        if (in_array($studyStatus, $invitateStatuses)) {
+          $includeInviteTasks = TRUE;
+        }
+      } catch (\Exception $e) {
+        CRM_Core_Session::setStatus(E::ts('No Study found'), '', 'error');
       }
-    } catch (\Exception $e) {
-      CRM_Core_Session::setStatus(E::ts('No Study found'), '', 'error');
     }
     $nbrTasks = [];
     if ($includeInviteTasks) {
