@@ -71,7 +71,14 @@ class CRM_Nbrprojectvolunteerlist_Form_Task_ChangeStudyStatus extends CRM_Contac
     if (isset(self::$_searchFormValues['study_id'])) {
       $this->_studyId = self::$_searchFormValues['study_id'];
     }
-    $this->add('select', 'nbr_study_status_id', E::ts('Change status on study to'), CRM_Nihrbackbone_Utils::getOptionValueList('nbr_study_participation_status'),
+
+    $studyStatuses = CRM_Nihrbackbone_Utils::getOptionValueList('nbr_study_participation_status');
+    // Remove Invitation Pending and Invited status.
+    // See https://issues.civicoop.org/issues/8922
+    // And https://www.wrike.com/open.htm?id=753781734
+    unset($studyStatuses['study_participation_status_invitation_pending']);
+    unset($studyStatuses['study_participation_status_invited']);
+    $this->add('select', 'nbr_study_status_id', E::ts('Change status on study to'), $studyStatuses,
       TRUE, ['class' => 'crm-select2']);
     $this->assign('status_txt', E::ts('New status for selected volunteers:'));
     $this->assign('selected_txt', E::ts('Volunteers for which the status will be changed:'));

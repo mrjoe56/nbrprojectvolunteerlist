@@ -103,35 +103,53 @@ class CRM_Nbrprojectvolunteerlist_SearchTasks {
    * @param $tasks
    */
   private static function setProjectVolunteerListTasks(&$tasks) {
-    $nbrTasks = [
-      [
+    $formValues = self::getFormValues();
+    if (!isset($formValues['study_id']) || empty($formValues['study_id'])) {
+      CRM_Core_Session::setStatus(E::ts('No Study ID provided'), '', 'error');
+    }
+    $includeInviteTasks = FALSE;
+    try {
+      $studyId = $formValues['study_id'];
+      $studyStatus = civicrm_api3('Campaign', 'getvalue', array(
+        'return' => 'status_id',
+        'id' => $studyId,
+      ));
+      if (in_array($studyStatus, Civi::settings()->get('nbr_invite_campaign_status'))) {
+        $includeInviteTasks = TRUE;
+      }
+    } catch (\Exception $e) {
+      CRM_Core_Session::setStatus(E::ts('No Study found'), '', 'error');
+    }
+    $nbrTasks = [];
+    if ($includeInviteTasks) {
+      $nbrTasks[] = [
         'title' => "Invite Volunteer(s) by Email (max. 50)",
         'class' => "CRM_Nbrprojectvolunteerlist_Form_Task_InviteByEmail",
-      ],
-      [
+      ];
+      $nbrTasks[] = [
         'title' => "Invite Volunteer(s) by Bulk Mail (50+)",
         'class' => "CRM_Nbrprojectvolunteerlist_Form_Task_InviteBulk",
-      ],
-      [
+      ];
+      $nbrTasks[] = [
         'title' => "Invite Volunteer(s) by PDF",
         'class' => "CRM_Nbrprojectvolunteerlist_Form_Task_InviteByPdf",
-      ],
-      [
-        'title' => "Send bulk mailing to Volunteer(s) (50+)",
-        'class' => "CRM_Nbrprojectvolunteerlist_Form_Task_BulkMailing",
-      ],
-      [
-        'title' => "Change Status on Study for Volunteer(s)",
-        'class' => "CRM_Nbrprojectvolunteerlist_Form_Task_ChangeStudyStatus",
-      ],
-      [
-        'title' => "Export CSV for External Researcher(s)",
-        'class' => "CRM_Nbrprojectvolunteerlist_Form_Task_ExportExternal",
-      ],
-      [
-        'title' => "Export CSV with Selected Fields",
-        'class' => "CRM_Nbrprojectvolunteerlist_Form_Task_ExportSelect",
-      ],
+      ];
+    }
+    $nbrTasks[] = [
+      'title' => "Send bulk mailing to Volunteer(s) (50+)",
+      'class' => "CRM_Nbrprojectvolunteerlist_Form_Task_BulkMailing",
+    ];
+    $nbrTasks[] = [
+      'title' => "Change Status on Study for Volunteer(s)",
+      'class' => "CRM_Nbrprojectvolunteerlist_Form_Task_ChangeStudyStatus",
+    ];
+    $nbrTasks[] = [
+      'title' => "Export CSV for External Researcher(s)",
+      'class' => "CRM_Nbrprojectvolunteerlist_Form_Task_ExportExternal",
+    ];
+    $nbrTasks[] = [
+      'title' => "Export CSV with Selected Fields",
+      'class' => "CRM_Nbrprojectvolunteerlist_Form_Task_ExportSelect",
     ];
     foreach ($nbrTasks as $nbrTask) {
       $tasks[] = $nbrTask;
@@ -160,6 +178,24 @@ class CRM_Nbrprojectvolunteerlist_SearchTasks {
         }
       }
     }
+  }
+
+  /**
+   * Returns the form values.
+   *
+   * This is a little hack, we have to retrieve it from the session and to do so
+   * we have to construct a name for the scope. Which consists of the Controller class name
+   * and the qfKey.
+   * The controller class name is assumed to be 'CRM_Contact_Controller_Search'. Not sure
+   * whether it is the right class name is all circumstances.
+   *
+   * @return mixed|null
+   * @throws \CRM_Core_Exception
+   */
+  private static function getFormValues() {
+    $qfKey = CRM_Utils_Request::retrieveValue('qfKey', "String");
+    $scope = 'CRM_Contact_Controller_Search_'.$qfKey;
+    return CRM_Core_Session::singleton()->get('formValues', $scope);
   }
 
   /**
