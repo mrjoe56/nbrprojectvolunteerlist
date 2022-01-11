@@ -1,3 +1,5 @@
+## Version 1.40
+* remove invited and invitation pending from change study status list and only allow invite actions if study status valid (see https://www.wrike.com/open.htm?id=753781734)
 ## Version 1.39
 * wrike issue https://www.wrike.com/open.htm?id=742772096 (fix volunteer not on MSP if Volunteer and Guardian)
 
