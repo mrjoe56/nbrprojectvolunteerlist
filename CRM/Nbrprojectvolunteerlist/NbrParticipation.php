@@ -125,7 +125,7 @@ class CRM_Nbrprojectvolunteerlist_NbrParticipation {
           $caseIds = [];
           foreach ($contactIds as $contactId) {
             $caseId = CRM_Nihrbackbone_NbrVolunteerCase::getActiveParticipationCaseId($studyId, $contactId);
-            $this->addInvalidVolunteer($contactId, $caseId, $invitedIds, $invalidIds, $caseIds);
+            $this->addInvalidVolunteer($contactId, $caseId, $invitedIds, $invalidIds, $caseIds, 'invite_pdf');
           }
           if (!empty($caseIds)) {
             $session = CRM_Core_Session::singleton();
@@ -154,11 +154,20 @@ class CRM_Nbrprojectvolunteerlist_NbrParticipation {
    * @param $invitedIds
    * @param $invalidIds
    * @param $caseIds
+   * @param $type
    */
-  private function addInvalidVolunteer($contactId, $caseId, &$invitedIds, &$invalidIds, &$caseIds) {
+  private function addInvalidVolunteer($contactId, $caseId, &$invitedIds, &$invalidIds, &$caseIds, $type) {
     $eligible = CRM_Nihrbackbone_NbrVolunteerCase::getCurrentEligibleStatus($caseId);
     $status = CRM_Nihrbackbone_NbrVolunteerCase::getCurrentStudyStatus($caseId);
-    if ($eligible[0] == Civi::service('nbrBackbone')->getEligibleEligibilityStatusValue() &&
+    if ($type == 'invite_pdf' && ($addressStatus = CRM_Nbrprojectvolunteerlist_Utils::checkAddressValidity($contactId))) {
+      $invalidIds[$contactId] = [
+        'display_name' => CRM_Nihrbackbone_Utils::getContactName($contactId, 'display_name'),
+        'study_status' => CRM_Nihrbackbone_Utils::getOptionValueLabel($status, CRM_Nihrbackbone_BackboneConfig::singleton()->getStudyParticipationStatusOptionGroupId()),
+        'eligible_status' => CRM_Nihrbackbone_Utils::getOptionValueLabel($eligible[0], CRM_Nihrbackbone_BackboneConfig::singleton()->getEligibleStatusOptionGroupId()),
+        'address_status' => $addressStatus,
+      ];
+    }
+    elseif ($eligible[0] == Civi::service('nbrBackbone')->getEligibleEligibilityStatusValue() &&
       $status == Civi::service('nbrBackbone')->getSelectedParticipationStatusValue()) {
       $invitedIds[$contactId] = [
         'display_name' => CRM_Nihrbackbone_Utils::getContactName($contactId, 'display_name'),
@@ -172,6 +181,7 @@ class CRM_Nbrprojectvolunteerlist_NbrParticipation {
         'display_name' => CRM_Nihrbackbone_Utils::getContactName($contactId, 'display_name'),
         'study_status' => CRM_Nihrbackbone_Utils::getOptionValueLabel($status, CRM_Nihrbackbone_BackboneConfig::singleton()->getStudyParticipationStatusOptionGroupId()),
         'eligible_status' => CRM_Nihrbackbone_Utils::getOptionValueLabel($eligible[0], CRM_Nihrbackbone_BackboneConfig::singleton()->getEligibleStatusOptionGroupId()),
+        'address_status' => '',
       ];
     }
   }

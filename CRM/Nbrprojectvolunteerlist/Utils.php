@@ -65,7 +65,7 @@ class CRM_Nbrprojectvolunteerlist_Utils {
       $result = civicrm_api3('MessageTemplate', 'get', [
         'return' => ["id", "msg_title"],
         'is_active' => 1,
-        'options' => ['limit' => 0],
+        'options' => ['limit' => 0, 'sort' => 'msg_title ASC'],
         'workflow_id' => ['IS NULL' => 1],
       ]);
       foreach ($result['values'] as $msgTemplateId => $msgTemplate) {
@@ -232,6 +232,30 @@ class CRM_Nbrprojectvolunteerlist_Utils {
       if (CRM_Nihrbackbone_NihrVolunteer::isDeceased($dao->contact_id)) {
         return "Volunteer is deceased";
       }
+    }
+    return FALSE;
+  }
+
+  /**
+   * Method to check address validaty
+   *
+   * @param $contact_id
+   * @return false|string
+   */
+  public static function checkAddressValidity($contact_id) {
+    try {
+      $address = civicrm_api3('Address', 'getsingle', [
+        'contact_id' => $contact_id,
+        'is_primary' => '1'
+      ]);
+    } catch (\CiviCRM_API3_Exception $API3_Exception) {
+      return "Volunteer has no postal address";
+    }
+    if (!CRM_Nihrbackbone_NihrVolunteer::allowsPostalMail($contact_id)) {
+      return "Volunteer does not want to receive postal mail";
+    }
+    if (CRM_Nihrbackbone_NihrVolunteer::isDeceased($contact_id)) {
+      return "Volunteer is deceased";
     }
     return FALSE;
   }
