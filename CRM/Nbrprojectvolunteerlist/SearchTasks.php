@@ -120,7 +120,7 @@ class CRM_Nbrprojectvolunteerlist_SearchTasks {
           'id' => $studyId,
         ]);
         $invitateStatuses = explode(",", Civi::settings()->get('nbr_invite_campaign_status'));
-        if (in_array($studyStatus, $invitateStatuses)) {
+        if (in_array($studyStatus, $invitateStatuses) && (CRM_Nihrbackbone_NbrStudy::isFaceToFace($studyId) || CRM_Nihrbackbone_NbrStudy::isOnline($studyId))) {
           $includeInviteTasks = TRUE;
         }
       } catch (\Exception $e) {
