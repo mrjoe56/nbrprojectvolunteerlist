@@ -1,3 +1,6 @@
+## Version 1.42
+* only allow invite if study type face-to-face or recall-online (see https://www.wrike.com/open.htm?id=837076881)
+
 ## Version 1.39
 * wrike issue https://www.wrike.com/open.htm?id=742772096 (fix volunteer not on MSP if Volunteer and Guardian)
 
