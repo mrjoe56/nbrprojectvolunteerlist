@@ -397,11 +397,11 @@ class CRM_Nbrprojectvolunteerlist_Form_Search_VolunteerList extends CRM_Contact_
       JOIN civicrm_case AS cas ON ccc.case_id = cas.id AND cas.is_deleted = 0
       LEFT JOIN " . $nvgoTable . " AS nvgo ON ccc.contact_id = nvgo.entity_id
       LEFT JOIN civicrm_address AS adr ON contact_a.id = adr.contact_id AND adr.is_primary = 1
-      LEFT JOIN " . $nvpdTable . " AS nvpd ON cas.id = nvpd.entity_id
-      LEFT JOIN " . $nviTable . " AS nvi ON contact_a.id = nvi.entity_id
+      JOIN " . $nvpdTable . " AS nvpd ON cas.id = nvpd.entity_id
+      JOIN " . $nviTable . " AS nvi ON contact_a.id = nvi.entity_id
       LEFT JOIN civicrm_option_value AS genderov ON contact_a.gender_id = genderov.value AND genderov.option_group_id = " . $genderOptionGroupId ."
       LEFT JOIN civicrm_option_value AS ethnicov ON nvgo." . $ethnicityColumn . " = ethnicov.value AND ethnicov.option_group_id = " . $ethnicityOptionGroupId . "
-      LEFT JOIN civicrm_option_value AS stustatus ON nvpd." . $studyStatusColumn . " = stustatus.value AND stustatus.option_group_id = " . $studyStatusOptionGroupId;
+      JOIN civicrm_option_value AS stustatus ON nvpd." . $studyStatusColumn . " = stustatus.value AND stustatus.option_group_id = " . $studyStatusOptionGroupId;
   }
 
   /**

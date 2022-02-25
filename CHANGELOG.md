@@ -1,3 +1,6 @@
+## Version 1.43
+* updated left joins to joins, where possible, in the query selecting all volunteers linked to the study to improve performance (see https://www.wrike.com/open.htm?id=808967658)
+
 ## Version 1.42
 * only allow invite if study type face-to-face or recall-online (see https://www.wrike.com/open.htm?id=837076881)
 
