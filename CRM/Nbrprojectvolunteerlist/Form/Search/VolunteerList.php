@@ -92,6 +92,8 @@ class CRM_Nbrprojectvolunteerlist_Form_Search_VolunteerList extends CRM_Contact_
     $form->add('select', 'age_to', E::ts('Age To'), CRM_Nihrbackbone_Utils::getAgeList(), FALSE,
     ['class' => 'crm-select2', 'placeholder' => '- select age to -']);
     $form->addRadio('inex_age', "", ['incl', 'excl'], [], " ", TRUE);
+    $form->add('advcheckbox', 'has_email', E::ts('Has Email?'), [], FALSE);
+
     $defaults['inex_age'] = 0;
     // Optionally define default search values
     $defaults['study_id'] = NULL;
@@ -120,7 +122,9 @@ class CRM_Nbrprojectvolunteerlist_Form_Search_VolunteerList extends CRM_Contact_
       'invite_date_from',
       'invite_date_to',
       'age_from',
-      'age_to']);
+      'age_to',
+      'has_email',
+      ]);
   }
 
   /**
@@ -322,6 +326,7 @@ class CRM_Nbrprojectvolunteerlist_Form_Search_VolunteerList extends CRM_Contact_
       E::ts('Study/Part ID') => 'nvpd_study_participant_id',
       E::ts('Part. ID') => 'participant_id',
       E::ts("BioResource ID") => 'bioresource_id',
+      E::ts('Email') => 'email',
       E::ts('Gndr') => 'gender',
       E::ts('Age') => 'birth_date',
       E::ts('Ethn.') => 'ethnicity',
@@ -334,7 +339,7 @@ class CRM_Nbrprojectvolunteerlist_Form_Search_VolunteerList extends CRM_Contact_
       E::ts('Inv. Date') => 'nvpd_date_invited',
       E::ts('Researcher Date') => 'date_researcher',
       E::ts('Latest Visit Date') => 'latest_visit_date',
-      E::ts('Case ID') => 'case_id'
+      E::ts('Case ID') => 'case_id',
     ];
     return $columns;
   }
@@ -374,7 +379,7 @@ class CRM_Nbrprojectvolunteerlist_Form_Search_VolunteerList extends CRM_Contact_
       . ", nvpd." . $recallColumn . ", stustatus.label AS study_status, nvpd."
       . $dateInvitedColumn . ", nvpd." . $distanceColumn . ", '' AS date_researcher, '' AS latest_visit_date,
       '' AS volunteer_tags, nvi." . $participantIdColumn . " AS participant_id, nvi." . $bioresourceIdColumn
-      . " AS bioresource_id";
+      . " AS bioresource_id, em.email AS email";
   }
 
   /**
@@ -391,8 +396,10 @@ class CRM_Nbrprojectvolunteerlist_Form_Search_VolunteerList extends CRM_Contact_
     $studyStatusOptionGroupId = CRM_Nihrbackbone_BackboneConfig::singleton()->getStudyParticipationStatusOptionGroupId();
     $ethnicityColumn = CRM_Nihrbackbone_BackboneConfig::singleton()->getGeneralObservationCustomField('nvgo_ethnicity_id', 'column_name');
     $studyStatusColumn = CRM_Nihrbackbone_BackboneConfig::singleton()->getParticipationCustomField('nvpd_study_participation_status', 'column_name');
-    return "
+    if (!$this->_formValues['has_email']) {
+      $from = "
       FROM civicrm_contact AS contact_a
+      LEFT JOIN civicrm_email AS em ON contact_a.id = em.contact_id AND em.is_primary = TRUE
       JOIN civicrm_case_contact AS ccc ON contact_a.id = ccc.contact_id
       JOIN civicrm_case AS cas ON ccc.case_id = cas.id AND cas.is_deleted = 0
       LEFT JOIN " . $nvgoTable . " AS nvgo ON ccc.contact_id = nvgo.entity_id
@@ -402,6 +409,22 @@ class CRM_Nbrprojectvolunteerlist_Form_Search_VolunteerList extends CRM_Contact_
       LEFT JOIN civicrm_option_value AS genderov ON contact_a.gender_id = genderov.value AND genderov.option_group_id = " . $genderOptionGroupId ."
       LEFT JOIN civicrm_option_value AS ethnicov ON nvgo." . $ethnicityColumn . " = ethnicov.value AND ethnicov.option_group_id = " . $ethnicityOptionGroupId . "
       JOIN civicrm_option_value AS stustatus ON nvpd." . $studyStatusColumn . " = stustatus.value AND stustatus.option_group_id = " . $studyStatusOptionGroupId;
+    }
+    else {
+      $from = "
+      FROM civicrm_contact AS contact_a
+      JOIN civicrm_email AS em ON contact_a.id = em.contact_id AND em.is_primary = TRUE
+      JOIN civicrm_case_contact AS ccc ON contact_a.id = ccc.contact_id
+      JOIN civicrm_case AS cas ON ccc.case_id = cas.id AND cas.is_deleted = 0
+      LEFT JOIN " . $nvgoTable . " AS nvgo ON ccc.contact_id = nvgo.entity_id
+      LEFT JOIN civicrm_address AS adr ON contact_a.id = adr.contact_id AND adr.is_primary = 1
+      JOIN " . $nvpdTable . " AS nvpd ON cas.id = nvpd.entity_id
+      JOIN " . $nviTable . " AS nvi ON contact_a.id = nvi.entity_id
+      LEFT JOIN civicrm_option_value AS genderov ON contact_a.gender_id = genderov.value AND genderov.option_group_id = " . $genderOptionGroupId ."
+      LEFT JOIN civicrm_option_value AS ethnicov ON nvgo." . $ethnicityColumn . " = ethnicov.value AND ethnicov.option_group_id = " . $ethnicityOptionGroupId . "
+      JOIN civicrm_option_value AS stustatus ON nvpd." . $studyStatusColumn . " = stustatus.value AND stustatus.option_group_id = " . $studyStatusOptionGroupId;
+    }
+    return $from;
   }
 
   /**
@@ -707,10 +730,10 @@ class CRM_Nbrprojectvolunteerlist_Form_Search_VolunteerList extends CRM_Contact_
    *
    * @param array $row modifiable SQL result row
    * @return void
+   * @throws
    */
   function alterRow(&$row) {
     foreach ($row as $fieldName => &$field) {
-      // add case url
       switch ($fieldName) {
         case 'birth_date':
           $birthDate = $row[$fieldName];
