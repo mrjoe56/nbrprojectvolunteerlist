@@ -182,6 +182,7 @@ class CRM_Nbrprojectvolunteerlist_Form_Search_VolunteerList extends CRM_Contact_
       'study_participant_id' => 'Study Participant ID ',
       'first_name' => 'First name ',
       'last_name' => 'Last name ',
+      'has_email' => 'Has Email',
       'gender_id' => 'Gender is ',
       'participant_id' => 'Participant ID ',
       'bioresource_id' => 'BioResource ID ',
@@ -262,6 +263,11 @@ class CRM_Nbrprojectvolunteerlist_Form_Search_VolunteerList extends CRM_Contact_
             }
             else {
               $filters[] = $searchTxt . "is less than or equal to " . $this->_formValues["age_to"];
+            }
+            break;
+          case "has_email":
+            if ($this->_formValues['has_email']) {
+              $filters[] = "has primary email";
             }
             break;
           case "invite_date_from":
