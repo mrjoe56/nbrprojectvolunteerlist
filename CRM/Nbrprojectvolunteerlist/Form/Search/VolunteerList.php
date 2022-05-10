@@ -92,9 +92,10 @@ class CRM_Nbrprojectvolunteerlist_Form_Search_VolunteerList extends CRM_Contact_
     $form->add('select', 'age_to', E::ts('Age To'), CRM_Nihrbackbone_Utils::getAgeList(), FALSE,
     ['class' => 'crm-select2', 'placeholder' => '- select age to -']);
     $form->addRadio('inex_age', "", ['incl', 'excl'], [], " ", TRUE);
-    $form->add('advcheckbox', 'has_email', E::ts('Has Email?'), [], FALSE);
+    $form->addRadio('has_email', E::ts('Has Email?'), ["Any", "Yes", "No"], ['value' => "0"], NULL, TRUE);
 
     $defaults['inex_age'] = 0;
+    $defaults['has_email'] = 0;
     // Optionally define default search values
     $defaults['study_id'] = NULL;
     $form->setDefaults($defaults);
@@ -402,24 +403,24 @@ class CRM_Nbrprojectvolunteerlist_Form_Search_VolunteerList extends CRM_Contact_
     $studyStatusOptionGroupId = CRM_Nihrbackbone_BackboneConfig::singleton()->getStudyParticipationStatusOptionGroupId();
     $ethnicityColumn = CRM_Nihrbackbone_BackboneConfig::singleton()->getGeneralObservationCustomField('nvgo_ethnicity_id', 'column_name');
     $studyStatusColumn = CRM_Nihrbackbone_BackboneConfig::singleton()->getParticipationCustomField('nvpd_study_participation_status', 'column_name');
-    if (!$this->_formValues['has_email']) {
+    if (isset($this->_formValues['has_email']) && $this->_formValues['has_email'] == "1") {
       $from = "
       FROM civicrm_contact AS contact_a
-      LEFT JOIN civicrm_email AS em ON contact_a.id = em.contact_id AND em.is_primary = TRUE
+      JOIN civicrm_email AS em ON contact_a.id = em.contact_id AND em.is_primary = TRUE
       JOIN civicrm_case_contact AS ccc ON contact_a.id = ccc.contact_id
       JOIN civicrm_case AS cas ON ccc.case_id = cas.id AND cas.is_deleted = 0
       LEFT JOIN " . $nvgoTable . " AS nvgo ON ccc.contact_id = nvgo.entity_id
       LEFT JOIN civicrm_address AS adr ON contact_a.id = adr.contact_id AND adr.is_primary = 1
       JOIN " . $nvpdTable . " AS nvpd ON cas.id = nvpd.entity_id
       JOIN " . $nviTable . " AS nvi ON contact_a.id = nvi.entity_id
-      LEFT JOIN civicrm_option_value AS genderov ON contact_a.gender_id = genderov.value AND genderov.option_group_id = " . $genderOptionGroupId ."
+      LEFT JOIN civicrm_option_value AS genderov ON contact_a.gender_id = genderov.value AND genderov.option_group_id = " . $genderOptionGroupId . "
       LEFT JOIN civicrm_option_value AS ethnicov ON nvgo." . $ethnicityColumn . " = ethnicov.value AND ethnicov.option_group_id = " . $ethnicityOptionGroupId . "
       JOIN civicrm_option_value AS stustatus ON nvpd." . $studyStatusColumn . " = stustatus.value AND stustatus.option_group_id = " . $studyStatusOptionGroupId;
     }
     else {
       $from = "
       FROM civicrm_contact AS contact_a
-      JOIN civicrm_email AS em ON contact_a.id = em.contact_id AND em.is_primary = TRUE
+      LEFT JOIN civicrm_email AS em ON contact_a.id = em.contact_id AND em.is_primary = TRUE
       JOIN civicrm_case_contact AS ccc ON contact_a.id = ccc.contact_id
       JOIN civicrm_case AS cas ON ccc.case_id = cas.id AND cas.is_deleted = 0
       LEFT JOIN " . $nvgoTable . " AS nvgo ON ccc.contact_id = nvgo.entity_id
@@ -451,6 +452,9 @@ class CRM_Nbrprojectvolunteerlist_Form_Search_VolunteerList extends CRM_Contact_
       $where .= ' AND ' . implode(' AND ', $clauses);
     }
     $this->addMultipleClauses($index, $where, $params);
+    if (isset($this->_formValues['has_email']) && $this->_formValues['has_email'] == "2") {
+      $where .= " AND em.email IS NULL";
+    }
     return $this->whereClause($where, $params);
   }
 
