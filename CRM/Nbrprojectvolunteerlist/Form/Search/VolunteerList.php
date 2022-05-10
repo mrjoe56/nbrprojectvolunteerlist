@@ -92,7 +92,7 @@ class CRM_Nbrprojectvolunteerlist_Form_Search_VolunteerList extends CRM_Contact_
     $form->add('select', 'age_to', E::ts('Age To'), CRM_Nihrbackbone_Utils::getAgeList(), FALSE,
     ['class' => 'crm-select2', 'placeholder' => '- select age to -']);
     $form->addRadio('inex_age', "", ['incl', 'excl'], [], " ", TRUE);
-    $form->addRadio('has_email', E::ts('Has Email?'), ["Any", "Yes", "No"], ['value' => "0"], NULL, TRUE);
+    $form->addRadio('has_email', E::ts('Has Email?'), ["All", "Yes", "No"], ['value' => "0"], NULL, TRUE);
 
     $defaults['inex_age'] = 0;
     $defaults['has_email'] = 0;
