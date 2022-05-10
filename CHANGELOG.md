@@ -1,5 +1,6 @@
 ## Version 1.44
 * added filter on email and column for email (see https://www.wrike.com/open.htm?id=869986982)
+* remove sort option for columns in MSP (see https://www.wrike.com/open.htm?id=885066313)
 
 ## Version 1.43
 * updated left joins to joins, where possible, in the query selecting all volunteers linked to the study to improve performance (see https://www.wrike.com/open.htm?id=808967658)
