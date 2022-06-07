@@ -42,6 +42,9 @@
             {if $form.$element.name == "gender_id"}
               <td>{$form.inex_gender_id.html}</td>
             {/if}
+            {if $form.$element.name == "ethncity_id"}
+              <td>{$form.inex_ethnicity_id.html}</td>
+            {/if}
             {if $form.$element.name == "recall_group"}
               <td>{$form.inex_recall_group.html}</td>
             {/if}
