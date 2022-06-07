@@ -1,3 +1,6 @@
+## Version 1.45
+* make ethnicity multi filter (see https://www.wrike.com/open.htm?id=897607184)
+
 ## Version 1.44
 * added filter on email and column for email (see https://www.wrike.com/open.htm?id=869986982)
 * remove sort option for columns in MSP (see https://www.wrike.com/open.htm?id=885066313)

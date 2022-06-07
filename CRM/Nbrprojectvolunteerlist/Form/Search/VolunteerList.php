@@ -50,12 +50,16 @@ class CRM_Nbrprojectvolunteerlist_Form_Search_VolunteerList extends CRM_Contact_
     $selectedIds = $this->getSelectedIds();
     $this->getTagList();
     $form->assign_by_ref('selectedIds', $selectedIds);
-    $form->add('select','study_id', E::ts('Study'), $this->getStudyList(), TRUE,
+    $form->add('select','study_id', E::ts('Study'), $this->getStudyList(), FALSE,
       ['class' => 'crm-select2', 'placeholder' => '- select study -']);
     $form->add('select','gender_id', E::ts('Gender is one of'), CRM_Nihrbackbone_Utils::getOptionValueList('gender'), FALSE,
       ['class' => 'crm-select2', 'placeholder' => ' - select gender(s) -', 'multiple' => TRUE]);
-    $form->addRadio('inex_gender_id', "", ['incl', 'excl'], [], " ", TRUE);
+    $form->addRadio('inex_gender_id', "", ['incl', 'excl'], [], " ");
     $defaults['inex_gender_id'] = 0;
+    $form->add('select','ethnicity_id', E::ts('Ethnicity is one of'), CRM_Nihrbackbone_Utils::getOptionValueList(CRM_Nihrbackbone_BackboneConfig::singleton()->getEthnicityOptionGroupId()), FALSE,
+      ['class' => 'crm-select2', 'placeholder' => ' - select ethnicit(y)(iess) -', 'multiple' => TRUE]);
+    $form->addRadio('inex_ethnicity_id', "", ['incl', 'excl'], [], " ");
+    $defaults['inex_ethnicity_id'] = 0;
     $form->add('text', 'study_participant_id', E::ts('Study Participant ID contains'), [], FALSE);
     $form->add('text', 'first_name', E::ts('First Name contains'), [], FALSE);
     $form->add('text', 'last_name', E::ts('Last Name contains'), [], FALSE);
@@ -69,11 +73,11 @@ class CRM_Nbrprojectvolunteerlist_Form_Search_VolunteerList extends CRM_Contact_
       $form->add('select', 'recall_group', E::ts('Recall Group'), CRM_Nihrbackbone_NbrStudy::getRecallGroupList(), FALSE,
         ['class' => 'crm-select2', 'placeholder' => '- select recall group -', 'multiple' => TRUE]);
     }
-    $form->addRadio('inex_recall_group', "", ['incl', 'excl'], [], " ", TRUE);
+    $form->addRadio('inex_recall_group', "", ['incl', 'excl'], [], " ");
     $defaults['inex_recall_group'] = 0;
     $form->add('select', 'study_status_id', E::ts('Status'), CRM_Nihrbackbone_Utils::getOptionValueList(CRM_Nihrbackbone_BackboneConfig::singleton()->getStudyParticipationStatusOptionGroupId()), FALSE,
     ['class' => 'crm-select2', 'placeholder' => '- select status -', 'multiple' => TRUE]);
-    $form->addRadio('inex_study_status_id', "", ['incl', 'excl'], [], " ", TRUE);
+    $form->addRadio('inex_study_status_id', "", ['incl', 'excl'], [], " ");
     $defaults['inex_study_status_id'] = 0;
     $form->add('select', 'eligibility_status_id', E::ts('Eligibility'), CRM_Nihrbackbone_Utils::getOptionValueList(CRM_Nihrbackbone_BackboneConfig::singleton()->getEligibleStatusOptionGroupId()), FALSE,
     ['class' => 'crm-select2', 'placeholder' => '- select eligibility -', 'multiple' => TRUE]);
@@ -81,17 +85,17 @@ class CRM_Nbrprojectvolunteerlist_Form_Search_VolunteerList extends CRM_Contact_
     $defaults['inex_eligibility_status_id'] = 0;
     $form->add('select', 'tags', E::ts('Tags'), $this->getTagList(), FALSE,
     ['class' => 'crm-select2', 'placeholder' => '- select tag(s) -', 'multiple' => TRUE]);
-    $form->addRadio('inex_tags', "", ['incl', 'excl'], [], " ", TRUE);
+    $form->addRadio('inex_tags', "", ['incl', 'excl'], [], " ");
     $defaults['inex_tags'] = 0;
     $form->add('datepicker', 'invite_date_from', E::ts('Invite date from'), [],FALSE, ['time' => FALSE]);
     $form->add('datepicker', 'invite_date_to', E::ts('Invite date to'), [],FALSE, ['time' => FALSE]);
-    $form->addRadio('inex_invite_date', "", ['incl', 'excl'], [], " ", TRUE);
+    $form->addRadio('inex_invite_date', "", ['incl', 'excl'], [], " ");
     $defaults['inex_invite_date'] = 0;
     $form->add('select', 'age_from', E::ts('Age From'), CRM_Nihrbackbone_Utils::getAgeList(), FALSE,
     ['class' => 'crm-select2', 'placeholder' => '- select age from -']);
     $form->add('select', 'age_to', E::ts('Age To'), CRM_Nihrbackbone_Utils::getAgeList(), FALSE,
     ['class' => 'crm-select2', 'placeholder' => '- select age to -']);
-    $form->addRadio('inex_age', "", ['incl', 'excl'], [], " ", TRUE);
+    $form->addRadio('inex_age', "", ['incl', 'excl'], [], " ");
     $form->addRadio('has_email', E::ts('Has Email?'), ["All", "Yes", "No"], ['value' => "0"], NULL, TRUE);
 
     $defaults['inex_age'] = 0;
@@ -116,6 +120,7 @@ class CRM_Nbrprojectvolunteerlist_Form_Search_VolunteerList extends CRM_Contact_
       'participant_id',
       'bioresource_id',
       'gender_id',
+      'ethnicity_id',
       'recall_group',
       'tags',
       'study_status_id',
@@ -185,6 +190,7 @@ class CRM_Nbrprojectvolunteerlist_Form_Search_VolunteerList extends CRM_Contact_
       'last_name' => 'Last name ',
       'has_email' => 'Has Email',
       'gender_id' => 'Gender is ',
+      'ethnicity_id' => 'Ethnicity is ',
       'participant_id' => 'Participant ID ',
       'bioresource_id' => 'BioResource ID ',
       'recall_group' => 'Recall Group is ',
@@ -224,6 +230,18 @@ class CRM_Nbrprojectvolunteerlist_Form_Search_VolunteerList extends CRM_Contact_
             }
             else {
               $filters[] = $searchTxt . implode(", ", $genderLabels);
+            }
+            break;
+          case "ethnicity_id":
+            $ethnicityLabels = [];
+            foreach ($this->_formValues[$searchFilter] as $ethnicity) {
+              $ethnicityLabels[] = CRM_Nihrbackbone_Utils::getOptionValueLabel($ethnicity, CRM_Nihrbackbone_BackboneConfig::singleton()->getEthnicityOptionGroupId());
+            }
+            if (isset($this->_formValues['inex_ethnicity_id']) && $this->_formValues['inex_ethnicity_id'] == 1) {
+              $filters[] = $searchTxt . " not ". implode(", ", $ethnicityLabels);
+            }
+            else {
+              $filters[] = $searchTxt . implode(", ", $ethnicityLabels);
             }
             break;
           case "study_status_id":
@@ -466,7 +484,7 @@ class CRM_Nbrprojectvolunteerlist_Form_Search_VolunteerList extends CRM_Contact_
    * @param $params
    */
   private function addMultipleClauses(&$index, &$where, &$params) {
-    $multipleFields = ['gender_id', 'recall_group', 'study_status_id', 'eligibility_status_id', 'tags'];
+    $multipleFields = ['gender_id', 'ethnicity_id', 'recall_group', 'study_status_id', 'eligibility_status_id', 'tags'];
     foreach ($multipleFields as $multipleField) {
       $clauses = [];
       if (isset($this->_formValues[$multipleField]) && !empty($this->_formValues[$multipleField])) {
@@ -477,6 +495,23 @@ class CRM_Nbrprojectvolunteerlist_Form_Search_VolunteerList extends CRM_Contact_
               $index++;
               $clauses[] = "contact_a.gender_id " . $operator . " %" . $index;
               $params[$index] = [(int) $multipleValue, "Integer"];
+            }
+            if (!empty($clauses)) {
+              if ($operator == "=") {
+                $where .= " AND (" . implode(" OR ", $clauses) . ")";
+              }
+              else {
+                $where .= " AND (" . implode(" AND ", $clauses) . ")";
+              }
+            }
+            break;
+
+          case 'ethnicity_id':
+            $ethnicityColumn = CRM_Nihrbackbone_BackboneConfig::singleton()->getGeneralObservationCustomField('nvgo_ethnicity_id', 'column_name');
+            foreach ($this->_formValues[$multipleField] as $multipleValue) {
+              $index++;
+              $clauses[] = "nvgo." . $ethnicityColumn . " " . $operator . " %". $index;
+              $params[$index] = [$multipleValue, "String"];
             }
             if (!empty($clauses)) {
               if ($operator == "=") {
