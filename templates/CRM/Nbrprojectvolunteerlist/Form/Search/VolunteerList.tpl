@@ -106,8 +106,15 @@
                 {foreach from=$columnHeaders item=header}
                   {if $header.name != "Case ID"}
                     <th scope="col">
-                      {$header.name}
-                    </th>
+                    {if $header.sort and $header.name ne "Gndr" and $header.name ne "Ethn." and $header.name ne "Loc."
+                      and $header.name ne "Status" and $header.name ne "Part. ID" and $header.name ne "Email" and $header.name ne "Tag(s)"
+                      and $header.name ne "Inv. Date" and $header.name ne "Researcher Date" and $header.name ne "Latest Visit Date"
+                      and $header.name ne "BioResource ID" and $header.name ne "Eligibility" and $header.name ne "Recall Group"}
+                          {assign var='key' value=$header.sort}
+                          {$sort->_response.$key.link}
+                      {else}
+                          {$header.name}
+                      {/if}
                   {/if}
                 {/foreach}
                 <th>&nbsp;</th>
