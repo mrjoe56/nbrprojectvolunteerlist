@@ -260,5 +260,28 @@ class CRM_Nbrprojectvolunteerlist_Utils {
     return FALSE;
   }
 
+  /**
+   * Method to find the relevant case ids for tasks change study status and add follow up activity
+   *
+   * @param int $studyId
+   * @param string $query
+   * @param array $queryParams
+   */
+  public static function getRelevantCaseIdsQuery(int $studyId, string &$query, array &$queryParams) {
+    $participationTable = CRM_Nihrbackbone_BackboneConfig::singleton()->getParticipationDataCustomGroup('table_name');
+    $studyStatusColumn = CRM_Nihrbackbone_BackboneConfig::singleton()->getParticipationCustomField('nvpd_study_participation_status', 'column_name');
+    $studyColumn = CRM_Nihrbackbone_BackboneConfig::singleton()->getParticipationCustomField('nvpd_study_id', 'column_name');
+    $query = "SELECT ccc.case_id, cvnpd. " . $studyStatusColumn . " AS study_status_id, ccc.contact_id
+        FROM " . $participationTable. " AS cvnpd
+            LEFT JOIN civicrm_case_contact AS ccc ON cvnpd.entity_id = ccc.case_id
+            LEFT JOIN civicrm_case AS cc ON ccc.case_id = cc.id
+        WHERE cvnpd." . $studyColumn . " = %1 AND cc.is_deleted = %2";
+    $queryParams = [
+      1 => [$studyId, "Integer"],
+      2 => [0, "Integer"]
+    ];
+  }
+
+
 }
 
