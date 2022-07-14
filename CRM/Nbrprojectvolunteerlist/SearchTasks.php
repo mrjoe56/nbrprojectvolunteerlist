@@ -85,7 +85,7 @@ class CRM_Nbrprojectvolunteerlist_SearchTasks {
       }
     }
     // if one of specific actions, return TRUE
-    $taskClasses = ['InviteByEmail', 'ChangeStudyStatus', 'InviteBulk', 'BulkMailing'];
+    $taskClasses = ['InviteByEmail', 'ChangeStudyStatus', 'InviteBulk', 'BulkMailing', 'AddFollowUp'];
     foreach ($taskClasses as $taskClass) {
       $checkDisplay = CRM_Utils_Request::retrieveValue('_qf_' . $taskClass . '_display', 'String');
       $checkNext = CRM_Utils_Request::retrieveValue('_qf_' . $taskClass . '_next', 'String');
@@ -157,6 +157,10 @@ class CRM_Nbrprojectvolunteerlist_SearchTasks {
     $nbrTasks[] = [
       'title' => "Export CSV with Selected Fields",
       'class' => "CRM_Nbrprojectvolunteerlist_Form_Task_ExportSelect",
+    ];
+    $nbrTasks[] = [
+      'title' => "Add Follow Up Activity",
+      'class' => "CRM_Nbrprojectvolunteerlist_Form_Task_AddFollowUp",
     ];
     foreach ($nbrTasks as $nbrTask) {
       $tasks[] = $nbrTask;
