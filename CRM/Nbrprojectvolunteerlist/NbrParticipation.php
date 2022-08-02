@@ -159,6 +159,8 @@ class CRM_Nbrprojectvolunteerlist_NbrParticipation {
   private function addInvalidVolunteer($contactId, $caseId, &$invitedIds, &$invalidIds, &$caseIds, $type) {
     $eligible = CRM_Nihrbackbone_NbrVolunteerCase::getCurrentEligibleStatus($caseId);
     $status = CRM_Nihrbackbone_NbrVolunteerCase::getCurrentStudyStatus($caseId);
+    $config = CRM_Nihrbackbone_BackboneConfig::singleton();
+    $invitationPendingStatus = $config->getStudyParticipationStatusInvitationPending();
     if ($type == 'invite_pdf' && ($addressStatus = CRM_Nbrprojectvolunteerlist_Utils::checkAddressValidity($contactId))) {
       $invalidIds[$contactId] = [
         'display_name' => CRM_Nihrbackbone_Utils::getContactName($contactId, 'display_name'),
@@ -166,6 +168,13 @@ class CRM_Nbrprojectvolunteerlist_NbrParticipation {
         'eligible_status' => CRM_Nihrbackbone_Utils::getOptionValueLabel($eligible[0], CRM_Nihrbackbone_BackboneConfig::singleton()->getEligibleStatusOptionGroupId()),
         'address_status' => $addressStatus,
       ];
+    } elseif ($type == 'invite_pdf' && ($status == $invitationPendingStatus)) {
+      $invitedIds[$contactId] = [
+        'display_name' => CRM_Nihrbackbone_Utils::getContactName($contactId, 'display_name'),
+        'study_status' => CRM_Nihrbackbone_Utils::getOptionValueLabel($status, CRM_Nihrbackbone_BackboneConfig::singleton()->getStudyParticipationStatusOptionGroupId()),
+        'eligible_status' => CRM_Nihrbackbone_Utils::getOptionValueLabel($eligible[0], CRM_Nihrbackbone_BackboneConfig::singleton()->getEligibleStatusOptionGroupId()),
+      ];
+      $caseIds[$contactId] = $caseId;
     }
     elseif ($eligible[0] == Civi::service('nbrBackbone')->getEligibleEligibilityStatusValue() &&
       $status == Civi::service('nbrBackbone')->getSelectedParticipationStatusValue()) {
