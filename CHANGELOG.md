@@ -1,3 +1,8 @@
+## Version 1.47
+
+* invite pending no longer an option on recruiting studies (see https://www.wrike.com/open.htm?id=957393273)
+* cannot send an invite via PDF to someone who has the status invite pending (see https://www.wrike.com/open.htm?id=918982877)
+
 ## Version 1.46
 * add follow up activity option to MSP (see https://www.wrike.com/open.htm?id=709984945)
 
