@@ -264,10 +264,10 @@ class CRM_Nbrprojectvolunteerlist_Utils {
    * Method to find the relevant case ids for tasks change study status and add follow up activity
    *
    * @param int $studyId
-   * @param string $query
+   * @param string|NULL $query
    * @param array $queryParams
    */
-  public static function getRelevantCaseIdsQuery(int $studyId, string &$query, array &$queryParams) {
+  public static function getRelevantCaseIdsQuery(int $studyId, ?string &$query, array &$queryParams) {
     $participationTable = CRM_Nihrbackbone_BackboneConfig::singleton()->getParticipationDataCustomGroup('table_name');
     $studyStatusColumn = CRM_Nihrbackbone_BackboneConfig::singleton()->getParticipationCustomField('nvpd_study_participation_status', 'column_name');
     $studyColumn = CRM_Nihrbackbone_BackboneConfig::singleton()->getParticipationCustomField('nvpd_study_id', 'column_name');
