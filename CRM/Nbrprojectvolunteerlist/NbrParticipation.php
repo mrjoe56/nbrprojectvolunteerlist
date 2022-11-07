@@ -133,8 +133,8 @@ class CRM_Nbrprojectvolunteerlist_NbrParticipation {
           }
           // remove all invalids from _contactIds and _componentIds in form object
           $resultIds = [];
-          foreach ($invitedIds as $invitedId => $invitedData) {
-            $resultIds[] = (string) $invitedId;
+          foreach ($invalidIds as $invalidId => $invalidData) {
+            $resultIds[] = (string) $invalidId;
           }
           $form->setVar("_contactIds", $resultIds);
           $form->setVar("_componentIds", $resultIds);
@@ -159,14 +159,13 @@ class CRM_Nbrprojectvolunteerlist_NbrParticipation {
   private function addInvalidVolunteer($contactId, $caseId, &$invitedIds, &$invalidIds, &$caseIds, $type) {
     $eligible = CRM_Nihrbackbone_NbrVolunteerCase::getCurrentEligibleStatus($caseId);
     $status = CRM_Nihrbackbone_NbrVolunteerCase::getCurrentStudyStatus($caseId);
-    $config = CRM_Nihrbackbone_BackboneConfig::singleton();
-    $invitationPendingStatus = $config->getStudyParticipationStatusInvitationPending();
+    $invitationPendingStatus = Civi::service('nbrBackbone')->getInvitationPendingParticipationStatusValue();
     if ($type == 'invite_pdf' && ($addressStatus = CRM_Nbrprojectvolunteerlist_Utils::checkAddressValidity($contactId))) {
       $invalidIds[$contactId] = [
         'display_name' => CRM_Nihrbackbone_Utils::getContactName($contactId, 'display_name'),
         'study_status' => CRM_Nihrbackbone_Utils::getOptionValueLabel($status, CRM_Nihrbackbone_BackboneConfig::singleton()->getStudyParticipationStatusOptionGroupId()),
         'eligible_status' => CRM_Nihrbackbone_Utils::getOptionValueLabel($eligible[0], CRM_Nihrbackbone_BackboneConfig::singleton()->getEligibleStatusOptionGroupId()),
-        'address_status' => $addressStatus,
+        'invalid_status' => $addressStatus,
       ];
     } elseif ($type == 'invite_pdf' && ($status == $invitationPendingStatus)) {
       $invitedIds[$contactId] = [
@@ -190,7 +189,7 @@ class CRM_Nbrprojectvolunteerlist_NbrParticipation {
         'display_name' => CRM_Nihrbackbone_Utils::getContactName($contactId, 'display_name'),
         'study_status' => CRM_Nihrbackbone_Utils::getOptionValueLabel($status, CRM_Nihrbackbone_BackboneConfig::singleton()->getStudyParticipationStatusOptionGroupId()),
         'eligible_status' => CRM_Nihrbackbone_Utils::getOptionValueLabel($eligible[0], CRM_Nihrbackbone_BackboneConfig::singleton()->getEligibleStatusOptionGroupId()),
-        'address_status' => '',
+        'invalid_status' => 'participant status does not allow invite by PDF',
       ];
     }
   }

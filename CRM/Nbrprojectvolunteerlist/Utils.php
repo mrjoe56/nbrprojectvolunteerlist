@@ -237,14 +237,14 @@ class CRM_Nbrprojectvolunteerlist_Utils {
   }
 
   /**
-   * Method to check address validaty
+   * Method to check address validity
    *
    * @param $contact_id
    * @return false|string
    */
   public static function checkAddressValidity($contact_id) {
     try {
-      $address = civicrm_api3('Address', 'getsingle', [
+      civicrm_api3('Address', 'getsingle', [
         'contact_id' => $contact_id,
         'is_primary' => '1'
       ]);

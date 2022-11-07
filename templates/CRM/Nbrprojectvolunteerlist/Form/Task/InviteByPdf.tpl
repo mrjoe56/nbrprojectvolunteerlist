@@ -23,7 +23,7 @@
                 <th>Volunteer</th>
                 <th>Status</th>
                 <th>Eligibility</th>
-                <th>Address Status</th>
+                <th>Reason not selected</th>
               </tr>
             </thead>
             <tbody>
@@ -32,7 +32,7 @@
                   <td>{$invalid.display_name}</td>
                   <td>{$invalid.study_status}</td>
                   <td>{$invalid.eligible_status}</td>
-                  <td>{$invalid.address_status}</td>
+                  <td>{$invalid.invalid_status}</td>
                 </tr>
               {/foreach}
             </tbody>

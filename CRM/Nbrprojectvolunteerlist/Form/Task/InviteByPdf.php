@@ -29,8 +29,6 @@ class CRM_Nbrprojectvolunteerlist_Form_Task_InviteByPdf extends CRM_Contact_Form
 
   public $_single = NULL;
 
-  public $_cid = NULL;
-
   public $_activityId = NULL;
 
   /**
