@@ -104,11 +104,13 @@ class CRM_Nbrprojectvolunteerlist_SearchTasks {
    */
   private static function setProjectVolunteerListTasks(&$tasks) {
     $formValues = self::getFormValues();
-    $studyId = 0;
     if (!isset($formValues['study_id']) || empty($formValues['study_id'])) {
       $studyId = (int) CRM_Utils_Request::retrieveValue('sid', "Integer");
+      if (!$studyId) {
+        $studyId = (int) CRM_Utils_Request::retrieveValue('study_id', "Integer");
+      }
     } else {
-      $studyId = $formValues['study_id'];
+      $studyId = (int) $formValues['study_id'];
     }
     $includeInviteTasks = FALSE;
     if (empty($studyId)) {
