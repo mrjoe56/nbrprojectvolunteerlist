@@ -1,3 +1,5 @@
+## Version 1.49
+* fix for regression in 1.48 change study status from MSP (see https://www.wrike.com/open.htm?id=709984945)
 ## Version 1.48
 * fix change study status from MSP (see https://www.wrike.com/open.htm?id=709984945)
 
