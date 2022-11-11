@@ -132,9 +132,11 @@ class CRM_Nbrprojectvolunteerlist_NbrParticipation {
             $session->nbr_email_pdf_case_ids = $caseIds;
           }
           // remove all invalids from _contactIds and _componentIds in form object
-          $resultIds = [];
+          $resultIds = $contactIds;
           foreach ($invalidIds as $invalidId => $invalidData) {
-            $resultIds[] = (string) $invalidId;
+            if (in_array($invalidId, $resultIds)) {
+              unset($resultIds[array_search($invalidId, $resultIds)]);
+            }
           }
           $form->setVar("_contactIds", $resultIds);
           $form->setVar("_componentIds", $resultIds);
