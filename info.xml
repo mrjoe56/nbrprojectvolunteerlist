@@ -27,4 +27,7 @@
   <civix>
     <namespace>CRM/Nbrprojectvolunteerlist</namespace>
   </civix>
+  <mixins>
+    <mixin>mgd-php@1.0.0</mixin>
+  </mixins>
 </extension>
