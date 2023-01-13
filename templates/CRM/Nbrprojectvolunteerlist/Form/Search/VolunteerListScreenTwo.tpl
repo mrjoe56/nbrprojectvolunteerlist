@@ -60,9 +60,16 @@
                         {if $form.$element.name == "invite_date_to"}
                             <td>{$form.inex_invite_date.html}</td>
                         {/if}
+
                         {if $form.$element.name == "age_to"}
                             <td>{$form.inex_age.html}</td>
                         {/if}
+
+
+                        {if $form.$element.name == "activity_status_id"}
+                            <td>{$form.inex_activity_status.html}</td>
+                        {/if}
+
                     </tr>
                 {/foreach}
             </table>

@@ -92,12 +92,29 @@ class CRM_Nbrprojectvolunteerlist_Form_Search_StageTwoScreen extends CRM_Contact
     $form->add('datepicker', 'invite_date_to', E::ts('Invite date to'), [],FALSE, ['time' => FALSE]);
     $form->addRadio('inex_invite_date', "", ['incl', 'excl'], [], " ");
     $defaults['inex_invite_date'] = 0;
+
     $form->add('select', 'age_from', E::ts('Age From'), CRM_Nihrbackbone_Utils::getAgeList(), FALSE,
       ['class' => 'crm-select2', 'placeholder' => '- select age from -']);
     $form->add('select', 'age_to', E::ts('Age To'), CRM_Nihrbackbone_Utils::getAgeList(), FALSE,
       ['class' => 'crm-select2', 'placeholder' => '- select age to -']);
     $form->addRadio('inex_age', "", ['incl', 'excl'], [], " ");
+
     $form->addRadio('has_email', E::ts('Has Email?'), ["All", "Yes", "No"], ['value' => "0"], NULL, TRUE);
+
+    $form->add('text', 'activity_subject', E::ts('Activity subject contains'), [], FALSE);
+
+
+    $form->add('select','activity_status_id', E::ts('activity status is one of'),  CRM_Nihrbackbone_Utils::getOptionValueList('activity_status'),
+      FALSE,
+      ['class' => 'crm-select2', 'placeholder' => ' - select activity status -', 'multiple' => TRUE]);
+
+    $form->addRadio('inex_activity_status_id', "", ['incl', 'excl'], [], " ");
+    $defaults['inex_activity_status_id'] = 0;
+
+    $form->add('select','activity_type_id', E::ts('Activity type is one of'),
+      CRM_Nihrbackbone_Utils::getOptionValueList('activity_type'), FALSE,
+      ['class' => 'crm-select2', 'placeholder' => ' - select activty type(s) -', 'multiple' => TRUE]);
+    $form->addRadio('inex_activity_type_id', "", ['incl', 'excl'], [], " ");
 
     $defaults['inex_age'] = 0;
     $defaults['has_email'] = 0;
@@ -131,6 +148,9 @@ class CRM_Nbrprojectvolunteerlist_Form_Search_StageTwoScreen extends CRM_Contact
       'age_from',
       'age_to',
       'has_email',
+      'activity_subject',
+      'activity_status_id',
+      'activity_type_id',
     ]);
   }
 
@@ -202,6 +222,8 @@ class CRM_Nbrprojectvolunteerlist_Form_Search_StageTwoScreen extends CRM_Contact
       'invite_date_to' => 'Invite Date ',
       'age_from' => 'Age ',
       'age_to' => 'Age ',
+      'activity_status_id'=>'Activity status is ',
+      'activity_type_id' => 'Activity type is'
     ];
     $filters = [];
     foreach ($searchFilters as $searchFilter => $searchTxt) {
@@ -244,6 +266,32 @@ class CRM_Nbrprojectvolunteerlist_Form_Search_StageTwoScreen extends CRM_Contact
             else {
               $filters[] = $searchTxt . implode(", ", $ethnicityLabels);
             }
+            break;
+
+          case "activity_status_id":
+            $activityStatusLabels = [];
+            foreach ($this->_formValues[$searchFilter] as $activity_status) {
+              $activityStatusLabels[] = CRM_Nihrbackbone_Utils::getOptionValueLabel($activity_status, 'activity_status');
+            }
+            if (isset($this->_formValues['inex_activity_status_id']) && $this->_formValues['inex_activity_status_id'] == 1) {
+              $filters[] = $searchTxt . " not ". implode(", ", $activityStatusLabels);
+            }
+            else {
+              $filters[] = $searchTxt . implode(", ", $activityStatusLabels);
+            }
+            break;
+          case "activity_type_id":
+            $activityTypeLabels = [];
+            foreach ($this->_formValues[$searchFilter] as $activityType) {
+              $activityTypeLabels[] = CRM_Nihrbackbone_Utils::getOptionValueLabel($activityType, CRM_Civirules_Utils::getOptionGroupIdWithName('activity_type'));
+            }
+            if (isset($this->_formValues['inex_activity_type_id']) && $this->_formValues['inex_activity_type_id'] == 1) {
+              $filters[] = $searchTxt . "not one of " . implode(", ", $activityTypeLabels);
+            }
+            else {
+              $filters[] = $searchTxt . "one of ". implode(", ", $activityTypeLabels);
+            }
+
             break;
           case "study_status_id":
             $statusLabels = [];
@@ -350,14 +398,11 @@ class CRM_Nbrprojectvolunteerlist_Form_Search_StageTwoScreen extends CRM_Contact
     $columns = [
       E::ts('Name') => 'sort_name',
       E::ts('Study/Part ID') => 'nvpd_study_participant_id',
-      E::ts('Study participation status') => 'nvpd_study_participation_status',
 
-      //      E::ts('Part. ID') => 'participant_id',
-//      E::ts("BioResource ID") => 'bioresource_id',
       E::ts('Email') => 'email',
       E::ts('Gndr') => 'gender',
       E::ts('Age') => 'birth_date',
-      E::ts('Phone number') => 'phone',
+      E::ts('Phone') => 'phone',
 
       E::ts('Ethn.') => 'ethnicity',
       E::ts('Loc.') => 'volunteer_address',
@@ -370,7 +415,10 @@ class CRM_Nbrprojectvolunteerlist_Form_Search_StageTwoScreen extends CRM_Contact
 //      E::ts('Researcher Date') => 'date_researcher',
 //      E::ts('Latest Visit Date') => 'latest_visit_date',
       E::ts('Case ID') => 'case_id',
-//      E::ts('Latest activity ') => 'case_id',
+      E::ts('Latest activity ') => 'activity_subject',
+      E::ts('Activity type') => 'activity_type',
+      E::ts('Latest activity date') => 'activity_date',
+      E::ts(' Activity status') => 'activity_status',
 
     ];
     return $columns;
@@ -399,6 +447,9 @@ class CRM_Nbrprojectvolunteerlist_Form_Search_StageTwoScreen extends CRM_Contact
   function select() {
     // todo add participant and bioresource ID
     $eligibleColumn = CRM_Nihrbackbone_BackboneConfig::singleton()->getParticipationCustomField('nvpd_eligible_status_id', 'column_name');
+
+
+
     $studyParticipantIDColumn = CRM_Nihrbackbone_BackboneConfig::singleton()->getParticipationCustomField('nvpd_study_participant_id', 'column_name');
     $dateInvitedColumn = CRM_Nihrbackbone_BackboneConfig::singleton()->getParticipationCustomField('nvpd_date_invited', 'column_name');
     $distanceColumn = CRM_Nihrbackbone_BackboneConfig::singleton()->getParticipationCustomField('nvpd_distance_volunteer_to_study_centre', 'column_name');
@@ -409,8 +460,12 @@ class CRM_Nbrprojectvolunteerlist_Form_Search_StageTwoScreen extends CRM_Contact
     $recallColumn = CRM_Nihrbackbone_BackboneConfig::singleton()->getParticipationCustomField('nvpd_recall_group', 'column_name');
     $participantIdColumn = CRM_Nihrbackbone_BackboneConfig::singleton()->getVolunteerIdsCustomField('nva_participant_id', 'column_name');
     $bioresourceIdColumn = CRM_Nihrbackbone_BackboneConfig::singleton()->getVolunteerIdsCustomField('nva_bioresource_id', 'column_name');
+
+
     return "
       DISTINCT(contact_a.id) AS contact_id, cas.id AS case_id, contact_a.sort_name, contact_a.birth_date, contact_a.created_date, phn.phone AS phone ,genderov.label AS gender,
+      act.subject AS activity_subject,      act.activity_date_time AS activity_date,
+actstatusov.label AS activity_status, activitytypeov.label AS activity_type, 
       ethnicov.label AS ethnicity, adr.city AS volunteer_address, nvpd." . $eligibleColumn . ", nvpd.". $studyParticipantIDColumn
       . ", nvpd." . $recallColumn . ", stustatus.label AS study_status, nvpd."
       . $dateInvitedColumn . ", nvpd." . $distanceColumn . ", '' AS date_researcher, '' AS latest_visit_date,
@@ -430,7 +485,8 @@ class CRM_Nbrprojectvolunteerlist_Form_Search_StageTwoScreen extends CRM_Contact
     $genderOptionGroupId = CRM_Nihrbackbone_BackboneConfig::singleton()->getGenderOptionGroupId();
     $ethnicityOptionGroupId = CRM_Nihrbackbone_BackboneConfig::singleton()->getEthnicityOptionGroupId();
 
-    $activityTypeOptionGroupId= CRM_Nihrbackbone_Utils::getOptionGroupIdWithName('activity_type');
+    $activityTypeOptionGroupId= CRM_Civirules_Utils::getOptionGroupIdWithName('activity_type');
+    $activityStatusOptionGroupId= CRM_Civirules_Utils::getOptionGroupIdWithName('activity_status');
 
     $studyStatusOptionGroupId = CRM_Nihrbackbone_BackboneConfig::singleton()->getStudyParticipationStatusOptionGroupId();
     $ethnicityColumn = CRM_Nihrbackbone_BackboneConfig::singleton()->getGeneralObservationCustomField('nvgo_ethnicity_id', 'column_name');
@@ -442,7 +498,8 @@ class CRM_Nbrprojectvolunteerlist_Form_Search_StageTwoScreen extends CRM_Contact
       JOIN civicrm_case_contact AS ccc ON contact_a.id = ccc.contact_id
       JOIN civicrm_case AS cas ON ccc.case_id = cas.id AND cas.is_deleted = 0
       
-      LEFT JOIN civicrm_case_activity AS caseAct ON cas.id = caseAct.case_id
+      JOIN civicrm_case_activity AS caseAct ON cas.id = caseAct.case_id
+      JOIN civicrm_activity AS act ON act.id = caseAct.activity_id
 
       LEFT JOIN " . $nvgoTable . " AS nvgo ON ccc.contact_id = nvgo.entity_id
       LEFT JOIN civicrm_address AS adr ON contact_a.id = adr.contact_id AND adr.is_primary = 1
@@ -450,8 +507,10 @@ class CRM_Nbrprojectvolunteerlist_Form_Search_StageTwoScreen extends CRM_Contact
      
       JOIN " . $nvpdTable . " AS nvpd ON cas.id = nvpd.entity_id
       JOIN " . $nviTable . " AS nvi ON contact_a.id = nvi.entity_id
-      LEFT JOIN civicrm_option_value AS activityov ON caseAct.activity_id = activityov.value AND activityov.option_group_id = " . $activityTypeOptionGroupId . "
+      
+      LEFT JOIN civicrm_option_value AS activitytypeov ON act.activity_type_id = activitytypeov.value AND activitytypeov.option_group_id = " . $activityTypeOptionGroupId . "
 
+      LEFT JOIN civicrm_option_value AS actstatusov ON act.status_id = actstatusov.value AND actstatusov.option_group_id = " . $activityStatusOptionGroupId . "
       LEFT JOIN civicrm_option_value AS genderov ON contact_a.gender_id = genderov.value AND genderov.option_group_id = " . $genderOptionGroupId . "
       LEFT JOIN civicrm_option_value AS ethnicov ON nvgo." . $ethnicityColumn . " = ethnicov.value AND ethnicov.option_group_id = " . $ethnicityOptionGroupId . "
       JOIN civicrm_option_value AS stustatus ON nvpd." . $studyStatusColumn . " = stustatus.value AND stustatus.option_group_id = " . $studyStatusOptionGroupId;
@@ -463,15 +522,19 @@ class CRM_Nbrprojectvolunteerlist_Form_Search_StageTwoScreen extends CRM_Contact
       JOIN civicrm_case_contact AS ccc ON contact_a.id = ccc.contact_id
       JOIN civicrm_case AS cas ON ccc.case_id = cas.id AND cas.is_deleted = 0
       
-      LEFT JOIN civicrm_case_activity AS caseAct ON cas.id = caseAct.case_id
+      JOIN civicrm_case_activity AS caseAct ON cas.id = caseAct.case_id
+      JOIN civicrm_activity AS act ON act.id = caseAct.activity_id
 
       LEFT JOIN " . $nvgoTable . " AS nvgo ON ccc.contact_id = nvgo.entity_id
       LEFT JOIN civicrm_address AS adr ON contact_a.id = adr.contact_id AND adr.is_primary = 1
       LEFT JOIN civicrm_phone AS phn ON contact_a.id = phn.contact_id
       JOIN " . $nvpdTable . " AS nvpd ON cas.id = nvpd.entity_id
       JOIN " . $nviTable . " AS nvi ON contact_a.id = nvi.entity_id
-      
-            LEFT JOIN civicrm_option_value AS activityov ON caseAct.activity_id = activityov.value AND activityov.option_group_id = " . $activityTypeOptionGroupId . "
+
+
+      LEFT JOIN civicrm_option_value AS activitytypeov ON act.activity_type_id = activitytypeov.value AND activitytypeov.option_group_id = " . $activityTypeOptionGroupId . "
+          
+      LEFT JOIN civicrm_option_value AS actstatusov ON act.status_id = actstatusov.value AND actstatusov.option_group_id = " . $activityStatusOptionGroupId . "
 
       
       LEFT JOIN civicrm_option_value AS genderov ON contact_a.gender_id = genderov.value AND genderov.option_group_id = " . $genderOptionGroupId ."
@@ -513,7 +576,7 @@ class CRM_Nbrprojectvolunteerlist_Form_Search_StageTwoScreen extends CRM_Contact
    * @param $params
    */
   private function addMultipleClauses(&$index, &$where, &$params) {
-    $multipleFields = ['gender_id', 'ethnicity_id', 'recall_group', 'study_status_id', 'eligibility_status_id', 'tags'];
+    $multipleFields = ['gender_id', 'ethnicity_id', 'recall_group', 'study_status_id', 'eligibility_status_id', 'tags', 'activity_status_id','activity_type_id'];
     foreach ($multipleFields as $multipleField) {
       $clauses = [];
       if (isset($this->_formValues[$multipleField]) && !empty($this->_formValues[$multipleField])) {
@@ -535,6 +598,36 @@ class CRM_Nbrprojectvolunteerlist_Form_Search_StageTwoScreen extends CRM_Contact
             }
             break;
 
+          case 'activity_status_id':
+            foreach ($this->_formValues[$multipleField] as $multipleValue) {
+              $index++;
+              $clauses[] = "act.status_id " . $operator . " %" . $index;
+              $params[$index] = [(int) $multipleValue, "Integer"];
+            }
+            if (!empty($clauses)) {
+              if ($operator == "=") {
+                $where .= " AND (" . implode(" OR ", $clauses) . ")";
+              }
+              else {
+                $where .= " AND (" . implode(" AND ", $clauses) . ")";
+              }
+            }
+            break;
+          case 'activity_type_id':
+            foreach ($this->_formValues[$multipleField] as $multipleValue) {
+              $index++;
+              $clauses[] = "act.activity_type_id " . $operator . " %" . $index;
+              $params[$index] = [(int) $multipleValue, "Integer"];
+            }
+            if (!empty($clauses)) {
+              if ($operator == "=") {
+                $where .= " AND (" . implode(" OR ", $clauses) . ")";
+              }
+              else {
+                $where .= " AND (" . implode(" AND ", $clauses) . ")";
+              }
+            }
+            break;
           case 'ethnicity_id':
             $ethnicityColumn = CRM_Nihrbackbone_BackboneConfig::singleton()->getGeneralObservationCustomField('nvgo_ethnicity_id', 'column_name');
             foreach ($this->_formValues[$multipleField] as $multipleValue) {
@@ -738,7 +831,7 @@ class CRM_Nbrprojectvolunteerlist_Form_Search_StageTwoScreen extends CRM_Contact
    * @param array $params
    */
   private function addLikeClauses(&$index, &$clauses, &$params) {
-    $likeFields = ['first_name', 'last_name', 'study_participant_id', 'participant_id', 'bioresource_id'];
+    $likeFields = ['first_name', 'last_name', 'study_participant_id', 'participant_id', 'bioresource_id', 'activity_subject'];
     $studyPartColumn = CRM_Nihrbackbone_BackboneConfig::singleton()->getParticipationCustomField('nvpd_study_participant_id', 'column_name');
     $participantIdColumn = CRM_Nihrbackbone_BackboneConfig::singleton()->getVolunteerIdsCustomField('nva_participant_id', 'column_name');
     $bioresourceIdColumn = CRM_Nihrbackbone_BackboneConfig::singleton()->getVolunteerIdsCustomField('nva_bioresource_id', 'column_name');
@@ -757,6 +850,10 @@ class CRM_Nbrprojectvolunteerlist_Form_Search_StageTwoScreen extends CRM_Contact
 
           case 'study_participant_id':
             $clauses[] = "nvpd." . $studyPartColumn . " " . $this->getOperator($likeField, "LIKE") . " %" . $index;
+            break;
+
+          case 'activity_subject':
+            $clauses[] = "act.subject" . " " . $this->getOperator($likeField, "LIKE") . " %" . $index;
             break;
 
           default:
