@@ -115,6 +115,7 @@ class CRM_Nbrprojectvolunteerlist_Form_Search_StageTwoScreen extends CRM_Contact
       CRM_Nihrbackbone_Utils::getOptionValueList('activity_type'), FALSE,
       ['class' => 'crm-select2', 'placeholder' => ' - select activty type(s) -', 'multiple' => TRUE]);
     $form->addRadio('inex_activity_type_id', "", ['incl', 'excl'], [], " ");
+    $defaults['inex_activity_type_id'] = 0;
 
     $defaults['inex_age'] = 0;
     $defaults['has_email'] = 0;
@@ -414,12 +415,14 @@ class CRM_Nbrprojectvolunteerlist_Form_Search_StageTwoScreen extends CRM_Contact
       E::ts('Inv. Date') => 'nvpd_date_invited',
 //      E::ts('Researcher Date') => 'date_researcher',
 //      E::ts('Latest Visit Date') => 'latest_visit_date',
-      E::ts('Case ID') => 'case_id',
-      E::ts('Latest activity ') => 'activity_subject',
-      E::ts('Activity type') => 'activity_type',
-      E::ts('Latest activity date') => 'activity_date',
-      E::ts(' Activity status') => 'activity_status',
 
+      E::ts('Latest activity ') => 'activity_subject',
+      E::ts('activity date') => 'activity_date',
+      E::ts('Activity type') => 'activity_type',
+      E::ts('Activity notes') => 'activity_notes',
+
+      E::ts(' Activity status') => 'activity_status',
+      E::ts('Case ID') => 'case_id',
     ];
     return $columns;
   }
@@ -465,6 +468,7 @@ class CRM_Nbrprojectvolunteerlist_Form_Search_StageTwoScreen extends CRM_Contact
     return "
       DISTINCT(contact_a.id) AS contact_id, cas.id AS case_id, contact_a.sort_name, contact_a.birth_date, contact_a.created_date, phn.phone AS phone ,genderov.label AS gender,
       act.subject AS activity_subject,      act.activity_date_time AS activity_date,
+      act.details AS activity_notes,
 actstatusov.label AS activity_status, activitytypeov.label AS activity_type, 
       ethnicov.label AS ethnicity, adr.city AS volunteer_address, nvpd." . $eligibleColumn . ", nvpd.". $studyParticipantIDColumn
       . ", nvpd." . $recallColumn . ", stustatus.label AS study_status, nvpd."
@@ -893,7 +897,7 @@ actstatusov.label AS activity_status, activitytypeov.label AS activity_type,
    * @return string, template path (findable through Smarty template path)
    */
   function templateFile() {
-    return 'CRM/Nbrprojectvolunteerlist/Form/Search/VolunteerList.tpl';
+    return 'CRM/Nbrprojectvolunteerlist/Form/Search/VolunteerListScreenTwo.tpl';
   }
 
   /**
@@ -918,7 +922,18 @@ actstatusov.label AS activity_status, activitytypeov.label AS activity_type,
             }
           }
           break;
+        case 'activity_notes':
+          $notes= $row['activity_notes'];
+          $notes = preg_replace("/<img[^>]+\>/i", "", $notes);
 
+          $notes= strip_tags($notes);
+          $stripped = preg_replace(array('/\s{2,}/', '/[\t\n]/'), ' ', $notes);
+//            if(strlen($notes) >500){
+//              $notes= substr($notes, 0, 800);
+//            }
+
+           $row['activity_notes']=$notes;
+          break;
 //        case 'date_researcher':
 //          $exportDate = CRM_Nihrbackbone_NbrVolunteerCase::getLatestExportDate($row['case_id']);
 //          if ($exportDate) {

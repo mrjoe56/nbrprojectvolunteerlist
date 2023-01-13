@@ -54,20 +54,22 @@
                         {if $form.$element.name == "eligibility_status_id"}
                             <td>{$form.inex_eligibility_status_id.html}</td>
                         {/if}
-                        {if $form.$element.name == "tags"}
-                            <td>{$form.inex_tags.html}</td>
-                        {/if}
+
                         {if $form.$element.name == "invite_date_to"}
                             <td>{$form.inex_invite_date.html}</td>
                         {/if}
 
                         {if $form.$element.name == "age_to"}
                             <td>{$form.inex_age.html}</td>
+
                         {/if}
 
 
                         {if $form.$element.name == "activity_status_id"}
-                            <td>{$form.inex_activity_status.html}</td>
+                            <td>{$form.inex_activity_status_id.html}</td>
+                        {/if}
+                        {if $form.$element.name == "activity_type_id"}
+                            <td>{$form.inex_activity_type_id.html}</td>
                         {/if}
 
                     </tr>
