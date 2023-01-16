@@ -410,7 +410,7 @@ class CRM_Nbrprojectvolunteerlist_Form_Search_StageTwoScreen extends CRM_Contact
 //      E::ts('Tag(s)') => 'volunteer_tags',
       E::ts('Distance') => 'nvpd_distance_volunteer_to_study_centre',
       E::ts('Eligibility') => 'nvpd_eligible_status_id',
-      E::ts('Recall Group') => 'nvpd_recall_group',
+      E::ts('Recall G.') => 'nvpd_recall_group',
       E::ts('Status') => 'study_status',
       E::ts('Inv. Date') => 'nvpd_date_invited',
 //      E::ts('Researcher Date') => 'date_researcher',
@@ -503,7 +503,8 @@ actstatusov.label AS activity_status, activitytypeov.label AS activity_type,
       JOIN civicrm_case AS cas ON ccc.case_id = cas.id AND cas.is_deleted = 0
       
       JOIN civicrm_case_activity AS caseAct ON cas.id = caseAct.case_id
-      JOIN civicrm_activity AS act ON act.id = caseAct.activity_id
+      JOIN civicrm_activity AS act ON act.id = caseAct.activity_id AND act.is_current_revision = TRUE AND act.is_deleted = FALSE
+
 
       LEFT JOIN " . $nvgoTable . " AS nvgo ON ccc.contact_id = nvgo.entity_id
       LEFT JOIN civicrm_address AS adr ON contact_a.id = adr.contact_id AND adr.is_primary = 1
@@ -514,10 +515,11 @@ actstatusov.label AS activity_status, activitytypeov.label AS activity_type,
       
       LEFT JOIN civicrm_option_value AS activitytypeov ON act.activity_type_id = activitytypeov.value AND activitytypeov.option_group_id = " . $activityTypeOptionGroupId . "
 
-      LEFT JOIN civicrm_option_value AS actstatusov ON act.status_id = actstatusov.value AND actstatusov.option_group_id = " . $activityStatusOptionGroupId . "
+      LEFT JOIN civicrm_option_value AS actstatusov ON act.status_id = actstatusov.value AND actstatusov.option_group_id = " . $activityStatusOptionGroupId . " 
       LEFT JOIN civicrm_option_value AS genderov ON contact_a.gender_id = genderov.value AND genderov.option_group_id = " . $genderOptionGroupId . "
       LEFT JOIN civicrm_option_value AS ethnicov ON nvgo." . $ethnicityColumn . " = ethnicov.value AND ethnicov.option_group_id = " . $ethnicityOptionGroupId . "
       JOIN civicrm_option_value AS stustatus ON nvpd." . $studyStatusColumn . " = stustatus.value AND stustatus.option_group_id = " . $studyStatusOptionGroupId;
+
     }
     else {
       $from = "
@@ -527,7 +529,8 @@ actstatusov.label AS activity_status, activitytypeov.label AS activity_type,
       JOIN civicrm_case AS cas ON ccc.case_id = cas.id AND cas.is_deleted = 0
       
       JOIN civicrm_case_activity AS caseAct ON cas.id = caseAct.case_id
-      JOIN civicrm_activity AS act ON act.id = caseAct.activity_id
+      
+      JOIN civicrm_activity AS act ON act.id = caseAct.activity_id AND act.is_current_revision = TRUE AND act.is_deleted = FALSE      
 
       LEFT JOIN " . $nvgoTable . " AS nvgo ON ccc.contact_id = nvgo.entity_id
       LEFT JOIN civicrm_address AS adr ON contact_a.id = adr.contact_id AND adr.is_primary = 1
@@ -540,10 +543,11 @@ actstatusov.label AS activity_status, activitytypeov.label AS activity_type,
           
       LEFT JOIN civicrm_option_value AS actstatusov ON act.status_id = actstatusov.value AND actstatusov.option_group_id = " . $activityStatusOptionGroupId . "
 
-      
       LEFT JOIN civicrm_option_value AS genderov ON contact_a.gender_id = genderov.value AND genderov.option_group_id = " . $genderOptionGroupId ."
       LEFT JOIN civicrm_option_value AS ethnicov ON nvgo." . $ethnicityColumn . " = ethnicov.value AND ethnicov.option_group_id = " . $ethnicityOptionGroupId . "
-      JOIN civicrm_option_value AS stustatus ON nvpd." . $studyStatusColumn . " = stustatus.value AND stustatus.option_group_id = " . $studyStatusOptionGroupId;
+      JOIN civicrm_option_value AS stustatus ON nvpd." . $studyStatusColumn . " = stustatus.value AND stustatus.option_group_id = " . $studyStatusOptionGroupId ."
+      ";
+
     }
     return $from;
   }
@@ -559,6 +563,9 @@ actstatusov.label AS activity_status, activitytypeov.label AS activity_type,
     $params = [1 => ["%nihr_volunteer%", "String"]];
     $index = 1;
     $where = "contact_a.contact_sub_type LIKE %1";
+//    $where .= " AND act.activity_date_time = (select max(activity_date_time) from civicrm_activity act2 where caseAct.activity_id= act2.id)";
+
+    //    $where = $where . " AND act.activity_date_time = (SELECT max(act.activity_date_time) from act )";
     $this->addEqualsClauses($index, $clauses, $params);
     $this->addLikeClauses($index, $clauses, $params);
     $this->addDateRangeClauses($index, $clauses, $params);
@@ -569,6 +576,7 @@ actstatusov.label AS activity_status, activitytypeov.label AS activity_type,
     if (isset($this->_formValues['has_email']) && $this->_formValues['has_email'] == "2") {
       $where .= " AND em.email IS NULL";
     }
+
     return $this->whereClause($where, $params);
   }
 
@@ -924,13 +932,18 @@ actstatusov.label AS activity_status, activitytypeov.label AS activity_type,
           break;
         case 'activity_notes':
           $notes= $row['activity_notes'];
+          $string = htmlentities($notes, null, 'utf-8');
+          $notes = str_replace("&nbsp;", "", $string);
+          $notes = html_entity_decode($notes);
+
           $notes = preg_replace("/<img[^>]+\>/i", "", $notes);
 
           $notes= strip_tags($notes);
           $stripped = preg_replace(array('/\s{2,}/', '/[\t\n]/'), ' ', $notes);
-//            if(strlen($notes) >500){
-//              $notes= substr($notes, 0, 800);
-//            }
+            if(strlen($notes) >300){
+              $notes= substr($stripped, 0, 300);
+              $notes= $notes ."....";
+            }
 
            $row['activity_notes']=$notes;
           break;
