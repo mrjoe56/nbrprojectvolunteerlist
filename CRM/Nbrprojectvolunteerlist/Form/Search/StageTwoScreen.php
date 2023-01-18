@@ -467,8 +467,7 @@ class CRM_Nbrprojectvolunteerlist_Form_Search_StageTwoScreen extends CRM_Contact
 
     return "
       DISTINCT(contact_a.id) AS contact_id, cas.id AS case_id, contact_a.sort_name, contact_a.birth_date, contact_a.created_date, phn.phone AS phone ,genderov.label AS gender,
-      caseActs.subject AS activity_subject, caseActs.details AS activity_notes, maxActDate as activity_date,
-       activitytypeov.label AS activity_type,actstatusov.label AS activity_status,
+      caseActs.subject AS activity_subject, caseActs.details AS activity_notes, maxActDate as activity_date,actId AS activity_status,
       ethnicov.label AS ethnicity, adr.city AS volunteer_address, nvpd." . $eligibleColumn . ", nvpd.". $studyParticipantIDColumn
       . ", nvpd." . $recallColumn . ", stustatus.label AS study_status, nvpd."
       . $dateInvitedColumn . ", nvpd." . $distanceColumn . ", '' AS date_researcher, '' AS latest_visit_date,
@@ -501,11 +500,12 @@ class CRM_Nbrprojectvolunteerlist_Form_Search_StageTwoScreen extends CRM_Contact
       JOIN civicrm_case_contact AS ccc ON contact_a.id = ccc.contact_id
       JOIN civicrm_case AS cas ON ccc.case_id = cas.id AND cas.is_deleted = 0
       
-      LEFT JOIN (select  DISTINCT(case_id) , ca1.id as caseActId, ca1.activity_id  ,act1.id as actId, act1.subject,  act1.details,
-      act1.activity_type_id, act1.status_id,
-      MAX(act1.activity_date_time) as maxActDate from civicrm_case_activity AS ca1 
-      LEFT JOIN civicrm_activity  as act1 on act1.id= ca1.activity_id GROUP by caseActId,ca1.case_id)  
-      AS caseActs ON cas.id = caseActs.case_id    
+        LEFT JOIN (SELECT ca1.case_id, ca1.id AS caseActId, ca1.activity_id, act1.id AS actId, act1.subject,  act1.details, act1.duration,
+       MAX(act1.activity_date_time) AS maxActDate FROM civicrm_case_activity AS ca1 
+      LEFT JOIN civicrm_activity AS act1 ON act1.id= ca1.activity_id GROUP by ca1.case_id)
+      AS caseActs ON cas.id = caseActs.case_id
+      
+      
 
     
       LEFT JOIN " . $nvgoTable . " AS nvgo ON ccc.contact_id = nvgo.entity_id
@@ -515,8 +515,6 @@ class CRM_Nbrprojectvolunteerlist_Form_Search_StageTwoScreen extends CRM_Contact
       JOIN " . $nvpdTable . " AS nvpd ON cas.id = nvpd.entity_id
       JOIN " . $nviTable . " AS nvi ON contact_a.id = nvi.entity_id
     
-      LEFT JOIN civicrm_option_value AS activitytypeov ON caseActs.activity_type_id = activitytypeov.value AND activitytypeov.option_group_id = " . $activityTypeOptionGroupId . "
-      LEFT JOIN civicrm_option_value AS actstatusov ON caseActs.status_id = actstatusov.value AND actstatusov.option_group_id = " . $activityStatusOptionGroupId . "
       
       LEFT JOIN civicrm_option_value AS genderov ON contact_a.gender_id = genderov.value AND genderov.option_group_id = " . $genderOptionGroupId . "
       LEFT JOIN civicrm_option_value AS ethnicov ON nvgo." . $ethnicityColumn . " = ethnicov.value AND ethnicov.option_group_id = " . $ethnicityOptionGroupId . "
@@ -530,14 +528,12 @@ class CRM_Nbrprojectvolunteerlist_Form_Search_StageTwoScreen extends CRM_Contact
       JOIN civicrm_case_contact AS ccc ON contact_a.id = ccc.contact_id
       JOIN civicrm_case AS cas ON ccc.case_id = cas.id AND cas.is_deleted = 0
       
-      LEFT JOIN (select  DISTINCT(case_id) , ca1.id as caseActId, ca1.activity_id  ,act1.id as actId, act1.subject,  act1.details,
-      act1.activity_type_id,act1.status_id,
-      MAX(act1.activity_date_time) as maxActDate from civicrm_case_activity AS ca1 
-      LEFT JOIN civicrm_activity  as act1 on act1.id= ca1.activity_id GROUP by caseActId,ca1.case_id)  
+       LEFT JOIN (SELECT ca1.case_id, ca1.id AS caseActId, ca1.activity_id, act1.id AS actId, act1.subject,  act1.details, act1.duration,
+       MAX(act1.activity_date_time) AS maxActDate FROM civicrm_case_activity AS ca1 
+      LEFT JOIN civicrm_activity AS act1 ON act1.id= ca1.activity_id GROUP by ca1.case_id)
       AS caseActs ON cas.id = caseActs.case_id
       
-      LEFT JOIN civicrm_option_value AS activitytypeov ON caseActs.activity_type_id = activitytypeov.value AND activitytypeov.option_group_id = " . $activityTypeOptionGroupId . "
-      LEFT JOIN civicrm_option_value AS actstatusov ON caseActs.status_id = actstatusov.value AND actstatusov.option_group_id = " . $activityStatusOptionGroupId . "
+
  
       LEFT JOIN " . $nvgoTable . " AS nvgo ON ccc.contact_id = nvgo.entity_id
       LEFT JOIN civicrm_address AS adr ON contact_a.id = adr.contact_id AND adr.is_primary = 1
@@ -567,9 +563,6 @@ class CRM_Nbrprojectvolunteerlist_Form_Search_StageTwoScreen extends CRM_Contact
     $params = [1 => ["%nihr_volunteer%", "String"]];
     $index = 1;
     $where = "contact_a.contact_sub_type LIKE %1";
-//    $where .= " AND act.activity_date_time = (select max(activity_date_time) from civicrm_activity act2 where caseAct.activity_id= act2.id)";
-
-    //    $where = $where . " AND act.activity_date_time = (SELECT max(act.activity_date_time) from act )";
     $this->addEqualsClauses($index, $clauses, $params);
     $this->addLikeClauses($index, $clauses, $params);
     $this->addDateRangeClauses($index, $clauses, $params);
@@ -617,7 +610,7 @@ class CRM_Nbrprojectvolunteerlist_Form_Search_StageTwoScreen extends CRM_Contact
           case 'activity_status_id':
             foreach ($this->_formValues[$multipleField] as $multipleValue) {
               $index++;
-              $clauses[] = "act.status_id " . $operator . " %" . $index;
+              $clauses[] = "caseActs.status_id " . $operator . " %" . $index;
               $params[$index] = [(int) $multipleValue, "Integer"];
             }
             if (!empty($clauses)) {
@@ -632,7 +625,7 @@ class CRM_Nbrprojectvolunteerlist_Form_Search_StageTwoScreen extends CRM_Contact
           case 'activity_type_id':
             foreach ($this->_formValues[$multipleField] as $multipleValue) {
               $index++;
-              $clauses[] = "act.activity_type_id " . $operator . " %" . $index;
+              $clauses[] = "caseActs.activity_type_id " . $operator . " %" . $index;
               $params[$index] = [(int) $multipleValue, "Integer"];
             }
             if (!empty($clauses)) {
@@ -869,7 +862,7 @@ class CRM_Nbrprojectvolunteerlist_Form_Search_StageTwoScreen extends CRM_Contact
             break;
 
           case 'activity_subject':
-            $clauses[] = "act.subject" . " " . $this->getOperator($likeField, "LIKE") . " %" . $index;
+            $clauses[] = "caseActs.subject" . " " . $this->getOperator($likeField, "LIKE") . " %" . $index;
             break;
 
           default:
