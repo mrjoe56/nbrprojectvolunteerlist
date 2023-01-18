@@ -467,7 +467,8 @@ class CRM_Nbrprojectvolunteerlist_Form_Search_StageTwoScreen extends CRM_Contact
 
     return "
       DISTINCT(contact_a.id) AS contact_id, cas.id AS case_id, contact_a.sort_name, contact_a.birth_date, contact_a.created_date, phn.phone AS phone ,genderov.label AS gender,
-      caseActs.subject AS activity_subject, caseActs.details AS activity_notes, maxActDate as activity_date,actId AS activity_status,
+      caseActs.subject AS activity_subject, caseActs.details AS activity_notes, maxActDate as activity_date,
+      activitystatusov.label AS activity_status,activitytypeov.label AS activity_type,
       ethnicov.label AS ethnicity, adr.city AS volunteer_address, nvpd." . $eligibleColumn . ", nvpd.". $studyParticipantIDColumn
       . ", nvpd." . $recallColumn . ", stustatus.label AS study_status, nvpd."
       . $dateInvitedColumn . ", nvpd." . $distanceColumn . ", '' AS date_researcher, '' AS latest_visit_date,
@@ -501,6 +502,7 @@ class CRM_Nbrprojectvolunteerlist_Form_Search_StageTwoScreen extends CRM_Contact
       JOIN civicrm_case AS cas ON ccc.case_id = cas.id AND cas.is_deleted = 0
       
         LEFT JOIN (SELECT ca1.case_id, ca1.id AS caseActId, ca1.activity_id, act1.id AS actId, act1.subject,  act1.details, act1.duration,
+        act1.activity_type_id, act1.status_id,
        MAX(act1.activity_date_time) AS maxActDate FROM civicrm_case_activity AS ca1 
       LEFT JOIN civicrm_activity AS act1 ON act1.id= ca1.activity_id GROUP by ca1.case_id)
       AS caseActs ON cas.id = caseActs.case_id
@@ -515,7 +517,9 @@ class CRM_Nbrprojectvolunteerlist_Form_Search_StageTwoScreen extends CRM_Contact
       JOIN " . $nvpdTable . " AS nvpd ON cas.id = nvpd.entity_id
       JOIN " . $nviTable . " AS nvi ON contact_a.id = nvi.entity_id
     
-      
+            LEFT JOIN civicrm_option_value AS activitytypeov ON caseActs.activity_type_id = activitytypeov.value AND activitytypeov.option_group_id = " . $activityTypeOptionGroupId . "
+      LEFT JOIN civicrm_option_value AS activitystatusov ON caseActs.status_id = activitystatusov.value AND activitystatusov.option_group_id = " . $activityStatusOptionGroupId . "
+
       LEFT JOIN civicrm_option_value AS genderov ON contact_a.gender_id = genderov.value AND genderov.option_group_id = " . $genderOptionGroupId . "
       LEFT JOIN civicrm_option_value AS ethnicov ON nvgo." . $ethnicityColumn . " = ethnicov.value AND ethnicov.option_group_id = " . $ethnicityOptionGroupId . "
       JOIN civicrm_option_value AS stustatus ON nvpd." . $studyStatusColumn . " = stustatus.value AND stustatus.option_group_id = " . $studyStatusOptionGroupId;
@@ -529,12 +533,15 @@ class CRM_Nbrprojectvolunteerlist_Form_Search_StageTwoScreen extends CRM_Contact
       JOIN civicrm_case AS cas ON ccc.case_id = cas.id AND cas.is_deleted = 0
       
        LEFT JOIN (SELECT ca1.case_id, ca1.id AS caseActId, ca1.activity_id, act1.id AS actId, act1.subject,  act1.details, act1.duration,
+       act1.activity_type_id, act1.status_id,
        MAX(act1.activity_date_time) AS maxActDate FROM civicrm_case_activity AS ca1 
       LEFT JOIN civicrm_activity AS act1 ON act1.id= ca1.activity_id GROUP by ca1.case_id)
       AS caseActs ON cas.id = caseActs.case_id
       
 
- 
+       LEFT JOIN civicrm_option_value AS activitytypeov ON caseActs.activity_type_id = activitytypeov.value AND activitytypeov.option_group_id = " . $activityTypeOptionGroupId . "
+      LEFT JOIN civicrm_option_value AS activitystatusov ON caseActs.status_id = activitystatusov.value AND activitystatusov.option_group_id = " . $activityStatusOptionGroupId . "
+
       LEFT JOIN " . $nvgoTable . " AS nvgo ON ccc.contact_id = nvgo.entity_id
       LEFT JOIN civicrm_address AS adr ON contact_a.id = adr.contact_id AND adr.is_primary = 1
       LEFT JOIN civicrm_phone AS phn ON contact_a.id = phn.contact_id AND phn.is_primary=1
