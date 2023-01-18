@@ -419,7 +419,7 @@ class CRM_Nbrprojectvolunteerlist_Form_Search_StageTwoScreen extends CRM_Contact
       E::ts('Latest activity ') => 'activity_subject',
       E::ts('activity date') => 'activity_date',
       E::ts('Activity type') => 'activity_type',
-      E::ts('Activity notes') => 'activity_notes',
+      E::ts('activity notes') => 'activity_notes',
 
       E::ts(' Activity status') => 'activity_status',
       E::ts('Case ID') => 'case_id',
@@ -467,9 +467,8 @@ class CRM_Nbrprojectvolunteerlist_Form_Search_StageTwoScreen extends CRM_Contact
 
     return "
       DISTINCT(contact_a.id) AS contact_id, cas.id AS case_id, contact_a.sort_name, contact_a.birth_date, contact_a.created_date, phn.phone AS phone ,genderov.label AS gender,
-      act.subject AS activity_subject,      act.activity_date_time AS activity_date,
-      act.details AS activity_notes,
-actstatusov.label AS activity_status, activitytypeov.label AS activity_type, 
+      caseActs.subject AS activity_subject, caseActs.details AS activity_notes, maxActDate as activity_date,
+       activitytypeov.label AS activity_type,actstatusov.label AS activity_status,
       ethnicov.label AS ethnicity, adr.city AS volunteer_address, nvpd." . $eligibleColumn . ", nvpd.". $studyParticipantIDColumn
       . ", nvpd." . $recallColumn . ", stustatus.label AS study_status, nvpd."
       . $dateInvitedColumn . ", nvpd." . $distanceColumn . ", '' AS date_researcher, '' AS latest_visit_date,
@@ -502,20 +501,23 @@ actstatusov.label AS activity_status, activitytypeov.label AS activity_type,
       JOIN civicrm_case_contact AS ccc ON contact_a.id = ccc.contact_id
       JOIN civicrm_case AS cas ON ccc.case_id = cas.id AND cas.is_deleted = 0
       
-      JOIN civicrm_case_activity AS caseAct ON cas.id = caseAct.case_id
-      JOIN civicrm_activity AS act ON act.id = caseAct.activity_id AND act.is_current_revision = TRUE AND act.is_deleted = FALSE
+      LEFT JOIN (select  DISTINCT(case_id) , ca1.id as caseActId, ca1.activity_id  ,act1.id as actId, act1.subject,  act1.details,
+      act1.activity_type_id, act1.status_id,
+      MAX(act1.activity_date_time) as maxActDate from civicrm_case_activity AS ca1 
+      LEFT JOIN civicrm_activity  as act1 on act1.id= ca1.activity_id GROUP by caseActId,ca1.case_id)  
+      AS caseActs ON cas.id = caseActs.case_id    
 
-
+    
       LEFT JOIN " . $nvgoTable . " AS nvgo ON ccc.contact_id = nvgo.entity_id
       LEFT JOIN civicrm_address AS adr ON contact_a.id = adr.contact_id AND adr.is_primary = 1
-      LEFT JOIN civicrm_phone AS phn ON contact_a.id = phn.contact_id
+      LEFT JOIN civicrm_phone AS phn ON contact_a.id = phn.contact_id AND phn.is_primary=1
      
       JOIN " . $nvpdTable . " AS nvpd ON cas.id = nvpd.entity_id
       JOIN " . $nviTable . " AS nvi ON contact_a.id = nvi.entity_id
+    
+      LEFT JOIN civicrm_option_value AS activitytypeov ON caseActs.activity_type_id = activitytypeov.value AND activitytypeov.option_group_id = " . $activityTypeOptionGroupId . "
+      LEFT JOIN civicrm_option_value AS actstatusov ON caseActs.status_id = actstatusov.value AND actstatusov.option_group_id = " . $activityStatusOptionGroupId . "
       
-      LEFT JOIN civicrm_option_value AS activitytypeov ON act.activity_type_id = activitytypeov.value AND activitytypeov.option_group_id = " . $activityTypeOptionGroupId . "
-
-      LEFT JOIN civicrm_option_value AS actstatusov ON act.status_id = actstatusov.value AND actstatusov.option_group_id = " . $activityStatusOptionGroupId . " 
       LEFT JOIN civicrm_option_value AS genderov ON contact_a.gender_id = genderov.value AND genderov.option_group_id = " . $genderOptionGroupId . "
       LEFT JOIN civicrm_option_value AS ethnicov ON nvgo." . $ethnicityColumn . " = ethnicov.value AND ethnicov.option_group_id = " . $ethnicityOptionGroupId . "
       JOIN civicrm_option_value AS stustatus ON nvpd." . $studyStatusColumn . " = stustatus.value AND stustatus.option_group_id = " . $studyStatusOptionGroupId;
@@ -528,20 +530,22 @@ actstatusov.label AS activity_status, activitytypeov.label AS activity_type,
       JOIN civicrm_case_contact AS ccc ON contact_a.id = ccc.contact_id
       JOIN civicrm_case AS cas ON ccc.case_id = cas.id AND cas.is_deleted = 0
       
-      JOIN civicrm_case_activity AS caseAct ON cas.id = caseAct.case_id
+      LEFT JOIN (select  DISTINCT(case_id) , ca1.id as caseActId, ca1.activity_id  ,act1.id as actId, act1.subject,  act1.details,
+      act1.activity_type_id,act1.status_id,
+      MAX(act1.activity_date_time) as maxActDate from civicrm_case_activity AS ca1 
+      LEFT JOIN civicrm_activity  as act1 on act1.id= ca1.activity_id GROUP by caseActId,ca1.case_id)  
+      AS caseActs ON cas.id = caseActs.case_id
       
-      JOIN civicrm_activity AS act ON act.id = caseAct.activity_id AND act.is_current_revision = TRUE AND act.is_deleted = FALSE      
-
+      LEFT JOIN civicrm_option_value AS activitytypeov ON caseActs.activity_type_id = activitytypeov.value AND activitytypeov.option_group_id = " . $activityTypeOptionGroupId . "
+      LEFT JOIN civicrm_option_value AS actstatusov ON caseActs.status_id = actstatusov.value AND actstatusov.option_group_id = " . $activityStatusOptionGroupId . "
+ 
       LEFT JOIN " . $nvgoTable . " AS nvgo ON ccc.contact_id = nvgo.entity_id
       LEFT JOIN civicrm_address AS adr ON contact_a.id = adr.contact_id AND adr.is_primary = 1
-      LEFT JOIN civicrm_phone AS phn ON contact_a.id = phn.contact_id
+      LEFT JOIN civicrm_phone AS phn ON contact_a.id = phn.contact_id AND phn.is_primary=1
       JOIN " . $nvpdTable . " AS nvpd ON cas.id = nvpd.entity_id
       JOIN " . $nviTable . " AS nvi ON contact_a.id = nvi.entity_id
 
 
-      LEFT JOIN civicrm_option_value AS activitytypeov ON act.activity_type_id = activitytypeov.value AND activitytypeov.option_group_id = " . $activityTypeOptionGroupId . "
-          
-      LEFT JOIN civicrm_option_value AS actstatusov ON act.status_id = actstatusov.value AND actstatusov.option_group_id = " . $activityStatusOptionGroupId . "
 
       LEFT JOIN civicrm_option_value AS genderov ON contact_a.gender_id = genderov.value AND genderov.option_group_id = " . $genderOptionGroupId ."
       LEFT JOIN civicrm_option_value AS ethnicov ON nvgo." . $ethnicityColumn . " = ethnicov.value AND ethnicov.option_group_id = " . $ethnicityOptionGroupId . "
