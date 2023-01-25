@@ -101,7 +101,7 @@ class CRM_Nbrprojectvolunteerlist_Form_Search_StageTwoScreen extends CRM_Contact
 
     $form->addRadio('has_email', E::ts('Has Email?'), ["All", "Yes", "No"], ['value' => "0"], NULL, TRUE);
 
-//    $form->add('text', 'activity_subject', E::ts('Activity subject contains'), [], FALSE);
+    $form->add('text', 'activity_subject', E::ts('Activity subject contains'), [], FALSE);
 
 
     $form->add('select','activity_status_id', E::ts('activity status is one of'),  CRM_Nihrbackbone_Utils::getOptionValueList('activity_status'),
@@ -467,7 +467,7 @@ class CRM_Nbrprojectvolunteerlist_Form_Search_StageTwoScreen extends CRM_Contact
 
     return "
       DISTINCT(contact_a.id) AS contact_id, cas.id AS case_id, contact_a.sort_name, contact_a.birth_date, contact_a.created_date, phn.phone AS phone ,genderov.label AS gender,
-      act.subject AS activity_subject,act.activity_date_time as activity_date, act.details as activity_notes,
+      caseActs.subject AS activity_subject, maxActDate as activity_date, caseActs.details as activity_notes,
       activitytypeov.label as activity_type, activitystatusov.label AS activity_status,
       ethnicov.label AS ethnicity, adr.city AS volunteer_address, nvpd." . $eligibleColumn . ", nvpd.". $studyParticipantIDColumn
       . ", nvpd." . $recallColumn . ", stustatus.label AS study_status, nvpd."
@@ -500,8 +500,17 @@ class CRM_Nbrprojectvolunteerlist_Form_Search_StageTwoScreen extends CRM_Contact
       JOIN civicrm_email AS em ON contact_a.id = em.contact_id AND em.is_primary = TRUE
       JOIN civicrm_case_contact AS ccc ON contact_a.id = ccc.contact_id
       JOIN civicrm_case AS cas ON ccc.case_id = cas.id AND cas.is_deleted = 0
-        LEFT JOIN civicrm_case_activity AS caseact ON cas.id= caseact.case_id 
-      LEFT JOIN civicrm_activity AS act ON act.id = caseact.activity_id AND act.is_current_revision= TRUE AND act.is_deleted=FALSE 
+
+
+      LEFT JOIN (SELECT ca1.case_id, ca1.id AS caseActId, ca1.activity_id, act1.id AS actId, act1.subject,  act1.details, act1.duration,
+       act1.is_current_revision, act1.is_deleted, act1.activity_type_id, act1.status_id,
+       MAX(act1.activity_date_time) AS maxActDate FROM civicrm_case_activity AS ca1 
+       LEFT JOIN civicrm_activity AS act1 ON act1.id= ca1.activity_id GROUP by ca1.case_id)
+      AS caseActs ON cas.id = caseActs.case_id AND caseActs.is_current_revision= TRUE AND caseActs.is_deleted=FALSE 
+
+    
+      LEFT JOIN civicrm_option_value AS activitytypeov ON caseActs.activity_type_id = activitytypeov.value AND activitytypeov.option_group_id = " . $activityTypeOptionGroupId . "
+      LEFT JOIN civicrm_option_value AS activitystatusov ON caseActs.status_id = activitystatusov.value AND activitystatusov.option_group_id = " . $activityStatusOptionGroupId . "
 
     
       LEFT JOIN " . $nvgoTable . " AS nvgo ON ccc.contact_id = nvgo.entity_id
@@ -511,9 +520,6 @@ class CRM_Nbrprojectvolunteerlist_Form_Search_StageTwoScreen extends CRM_Contact
       JOIN " . $nvpdTable . " AS nvpd ON cas.id = nvpd.entity_id
       JOIN " . $nviTable . " AS nvi ON contact_a.id = nvi.entity_id
     
-            LEFT JOIN civicrm_option_value AS activitytypeov ON act.activity_type_id = activitytypeov.value AND activitytypeov.option_group_id = " . $activityTypeOptionGroupId . "
-      LEFT JOIN civicrm_option_value AS activitystatusov ON act.status_id = activitystatusov.value AND activitystatusov.option_group_id = " . $activityStatusOptionGroupId . "
-
       LEFT JOIN civicrm_option_value AS genderov ON contact_a.gender_id = genderov.value AND genderov.option_group_id = " . $genderOptionGroupId . "
       LEFT JOIN civicrm_option_value AS ethnicov ON nvgo." . $ethnicityColumn . " = ethnicov.value AND ethnicov.option_group_id = " . $ethnicityOptionGroupId . "
       JOIN civicrm_option_value AS stustatus ON nvpd." . $studyStatusColumn . " = stustatus.value AND stustatus.option_group_id = " . $studyStatusOptionGroupId;
@@ -526,12 +532,14 @@ class CRM_Nbrprojectvolunteerlist_Form_Search_StageTwoScreen extends CRM_Contact
       JOIN civicrm_case_contact AS ccc ON contact_a.id = ccc.contact_id
       JOIN civicrm_case AS cas ON ccc.case_id = cas.id AND cas.is_deleted = 0
       
-      LEFT JOIN civicrm_case_activity AS caseact ON cas.id= caseact.case_id 
-LEFT JOIN civicrm_activity AS act ON act.id = caseact.activity_id AND act.is_current_revision= TRUE AND act.is_deleted=FALSE         
-   
+      LEFT JOIN (SELECT ca1.case_id, ca1.id AS caseActId, ca1.activity_id, act1.id AS actId, act1.subject,  act1.details, act1.duration,
+       act1.is_current_revision, act1.is_deleted, act1.activity_type_id, act1.status_id,
+       MAX(act1.activity_date_time) AS maxActDate FROM civicrm_case_activity AS ca1 
+       LEFT JOIN civicrm_activity AS act1 ON act1.id= ca1.activity_id GROUP by ca1.case_id)
+      AS caseActs ON cas.id = caseActs.case_id AND caseActs.is_current_revision= TRUE AND caseActs.is_deleted=FALSE
       
-               LEFT JOIN civicrm_option_value AS activitytypeov ON act.activity_type_id = activitytypeov.value AND activitytypeov.option_group_id = " . $activityTypeOptionGroupId . "
-      LEFT JOIN civicrm_option_value AS activitystatusov ON act.status_id = activitystatusov.value AND activitystatusov.option_group_id = " . $activityStatusOptionGroupId . "
+      LEFT JOIN civicrm_option_value AS activitytypeov ON caseActs.activity_type_id = activitytypeov.value AND activitytypeov.option_group_id = " . $activityTypeOptionGroupId . "
+      LEFT JOIN civicrm_option_value AS activitystatusov ON caseActs.status_id = activitystatusov.value AND activitystatusov.option_group_id = " . $activityStatusOptionGroupId . "
 
 
 
@@ -540,7 +548,6 @@ LEFT JOIN civicrm_activity AS act ON act.id = caseact.activity_id AND act.is_cur
       LEFT JOIN civicrm_phone AS phn ON contact_a.id = phn.contact_id AND phn.is_primary=1
       JOIN " . $nvpdTable . " AS nvpd ON cas.id = nvpd.entity_id
       JOIN " . $nviTable . " AS nvi ON contact_a.id = nvi.entity_id
-
 
 
       LEFT JOIN civicrm_option_value AS genderov ON contact_a.gender_id = genderov.value AND genderov.option_group_id = " . $genderOptionGroupId ."
@@ -563,9 +570,6 @@ LEFT JOIN civicrm_activity AS act ON act.id = caseact.activity_id AND act.is_cur
     $params = [1 => ["%nihr_volunteer%", "String"]];
     $index = 1;
     $where = "contact_a.contact_sub_type LIKE %1";
-
-    $where .= " AND act.subject LIKE '%Screening%'";
-
     $this->addEqualsClauses($index, $clauses, $params);
     $this->addLikeClauses($index, $clauses, $params);
     $this->addDateRangeClauses($index, $clauses, $params);
@@ -613,7 +617,7 @@ LEFT JOIN civicrm_activity AS act ON act.id = caseact.activity_id AND act.is_cur
           case 'activity_status_id':
             foreach ($this->_formValues[$multipleField] as $multipleValue) {
               $index++;
-              $clauses[] = "act.status_id " . $operator . " %" . $index;
+              $clauses[] = "caseActs.status_id " . $operator . " %" . $index;
               $params[$index] = [(int) $multipleValue, "Integer"];
             }
             if (!empty($clauses)) {
@@ -628,7 +632,7 @@ LEFT JOIN civicrm_activity AS act ON act.id = caseact.activity_id AND act.is_cur
           case 'activity_type_id':
             foreach ($this->_formValues[$multipleField] as $multipleValue) {
               $index++;
-              $clauses[] = "act.activity_type_id " . $operator . " %" . $index;
+              $clauses[] = "caseActs.activity_type_id " . $operator . " %" . $index;
               $params[$index] = [(int) $multipleValue, "Integer"];
             }
             if (!empty($clauses)) {
@@ -843,7 +847,7 @@ LEFT JOIN civicrm_activity AS act ON act.id = caseact.activity_id AND act.is_cur
    * @param array $params
    */
   private function addLikeClauses(&$index, &$clauses, &$params) {
-    $likeFields = ['first_name', 'last_name', 'study_participant_id', 'participant_id', 'bioresource_id'];
+    $likeFields = ['first_name', 'last_name', 'study_participant_id', 'participant_id', 'bioresource_id',"activity_subject"];
     $studyPartColumn = CRM_Nihrbackbone_BackboneConfig::singleton()->getParticipationCustomField('nvpd_study_participant_id', 'column_name');
     $participantIdColumn = CRM_Nihrbackbone_BackboneConfig::singleton()->getVolunteerIdsCustomField('nva_participant_id', 'column_name');
     $bioresourceIdColumn = CRM_Nihrbackbone_BackboneConfig::singleton()->getVolunteerIdsCustomField('nva_bioresource_id', 'column_name');
@@ -864,9 +868,11 @@ LEFT JOIN civicrm_activity AS act ON act.id = caseact.activity_id AND act.is_cur
             $clauses[] = "nvpd." . $studyPartColumn . " " . $this->getOperator($likeField, "LIKE") . " %" . $index;
             break;
 
-//          case 'activity_subject':
-//            $clauses[] = "act.subject LIKE %Screening%" . $index;
-//            break;
+          case 'activity_subject':
+            $clauses[] = "caseActs.subject" . " " . $this->getOperator($likeField, "LIKE") . " %" . $index;
+            break;
+
+
 
           default:
             $clauses[] = "contact_a." . $likeField . " " . $this->getOperator($likeField, "LIKE") . " %" . $index;
