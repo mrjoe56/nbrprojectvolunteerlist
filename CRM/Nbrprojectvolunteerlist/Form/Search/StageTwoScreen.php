@@ -444,18 +444,38 @@ class CRM_Nbrprojectvolunteerlist_Form_Search_StageTwoScreen extends CRM_Contact
 
   // For adding where params to activity in the from/ alter queries
   function customActivityLike(&$params, &$index){
-    $likeFields = ['activity_subject'];
+    $activityFields = ['activity_subject','activity_status_id','activity_type_id'];
 
     $on="";
-    foreach ($likeFields as $likeField) {
-      if (isset($this->_formValues[$likeField]) && !empty($this->_formValues[$likeField])) {
-        $params[$index] = [ "%" . $this->_formValues[$likeField] . "%", "String"];
-        switch ($likeField) {
+    foreach ($activityFields as $activityField) {
+      $clauses=[];
+      if (isset($this->_formValues[$activityField]) && !empty($this->_formValues[$activityField])) {
+        switch ($activityField) {
           case 'activity_subject':
-            $on = "AND act.subject " . $this->getOperator($likeField, "LIKE") . " %" . $index;
+            $index++;
+
+            $params[$index] = [ "%" . $this->_formValues[$activityField] . "%", "String"];
+            $on = "AND act.subject " . $this->getOperator($activityField, "LIKE") . " %" . $index;
             break;
-          case 'activity_type':
+          case 'activity_status_id':
+            $operator = $this->getOperator($activityField, "=");
+            foreach ($this->_formValues[$activityField] as $multipleValue) {
+
+              $index++;
+              $clauses[] = "act.status_id " . $operator . " %" . $index;
+              $params[$index] = [(int) $multipleValue, "Integer"];
+            }
+            $on .= $this->multipleClauseSeparator($clauses,$operator);
             break;
+          case 'activity_type_id':
+            $operator = $this->getOperator($activityField, "=");
+
+            foreach ($this->_formValues[$activityField] as $multipleValue) {
+              $index++;
+              $clauses[] = "act.activity_type_id " . $operator . " %" . $index;
+              $params[$index] = [(int) $multipleValue, "Integer"];
+            }
+            $on .= $this->multipleClauseSeparator($clauses,$operator);
         }
         $index++;
 
@@ -535,7 +555,7 @@ class CRM_Nbrprojectvolunteerlist_Form_Search_StageTwoScreen extends CRM_Contact
       */
       JOIN civicrm_case AS cas ON ccc.case_id = cas.id AND cas.is_deleted = 0
       
-      JOIN (SELECT ca.case_id, ca.id AS caseActId,ca.activity_id, act.is_current_revision,
+      JOIN (SELECT ca.case_id, ca.id AS caseActId,ca.activity_id, act.is_current_revision, act.status_id, act.activity_type_id,
      act.id AS actId, act.subject, MAX(act.activity_date_time) AS maxActDate FROM civicrm_case_activity AS ca
      JOIN civicrm_activity AS act ON act.id= ca.activity_id ".$activityWhere." GROUP by ca.case_id ) AS caseActs ON cas.id = caseActs.case_id AND caseActs.is_current_revision =TRUE
       
@@ -580,6 +600,21 @@ class CRM_Nbrprojectvolunteerlist_Form_Search_StageTwoScreen extends CRM_Contact
     return $this->whereClause($where, $params);
   }
 
+
+  // Refactoring repeated code
+  function multipleClauseSeparator($clauses,$operator){
+    $where="";
+    if (!empty($clauses)) {
+      if ($operator == "=") {
+        $where .= " AND (" . implode(" OR ", $clauses) . ")";
+      }
+      else {
+        $where .= " AND (" . implode(" AND ", $clauses) . ")";
+      }
+    }
+    return $where;
+
+  }
   /**
    * Method to add multiple clauses
    *
@@ -600,14 +635,7 @@ class CRM_Nbrprojectvolunteerlist_Form_Search_StageTwoScreen extends CRM_Contact
               $clauses[] = "contact_a.gender_id " . $operator . " %" . $index;
               $params[$index] = [(int) $multipleValue, "Integer"];
             }
-            if (!empty($clauses)) {
-              if ($operator == "=") {
-                $where .= " AND (" . implode(" OR ", $clauses) . ")";
-              }
-              else {
-                $where .= " AND (" . implode(" AND ", $clauses) . ")";
-              }
-            }
+            $where .= $this->multipleClauseSeparator($clauses,$operator);
             break;
 
           case 'activity_status_id':
@@ -616,14 +644,7 @@ class CRM_Nbrprojectvolunteerlist_Form_Search_StageTwoScreen extends CRM_Contact
               $clauses[] = "caseActs.status_id " . $operator . " %" . $index;
               $params[$index] = [(int) $multipleValue, "Integer"];
             }
-            if (!empty($clauses)) {
-              if ($operator == "=") {
-                $where .= " AND (" . implode(" OR ", $clauses) . ")";
-              }
-              else {
-                $where .= " AND (" . implode(" AND ", $clauses) . ")";
-              }
-            }
+            $where .= $this->multipleClauseSeparator($clauses,$operator);
             break;
           case 'activity_type_id':
             foreach ($this->_formValues[$multipleField] as $multipleValue) {
@@ -631,14 +652,7 @@ class CRM_Nbrprojectvolunteerlist_Form_Search_StageTwoScreen extends CRM_Contact
               $clauses[] = "caseActs.activity_type_id " . $operator . " %" . $index;
               $params[$index] = [(int) $multipleValue, "Integer"];
             }
-            if (!empty($clauses)) {
-              if ($operator == "=") {
-                $where .= " AND (" . implode(" OR ", $clauses) . ")";
-              }
-              else {
-                $where .= " AND (" . implode(" AND ", $clauses) . ")";
-              }
-            }
+            $where .= $this->multipleClauseSeparator($clauses,$operator);
             break;
           case 'ethnicity_id':
             $ethnicityColumn = CRM_Nihrbackbone_BackboneConfig::singleton()->getGeneralObservationCustomField('nvgo_ethnicity_id', 'column_name');
@@ -647,14 +661,7 @@ class CRM_Nbrprojectvolunteerlist_Form_Search_StageTwoScreen extends CRM_Contact
               $clauses[] = "nvgo." . $ethnicityColumn . " " . $operator . " %". $index;
               $params[$index] = [$multipleValue, "String"];
             }
-            if (!empty($clauses)) {
-              if ($operator == "=") {
-                $where .= " AND (" . implode(" OR ", $clauses) . ")";
-              }
-              else {
-                $where .= " AND (" . implode(" AND ", $clauses) . ")";
-              }
-            }
+            $where .= $this->multipleClauseSeparator($clauses,$operator);
             break;
 
           case 'recall_group':
@@ -664,14 +671,7 @@ class CRM_Nbrprojectvolunteerlist_Form_Search_StageTwoScreen extends CRM_Contact
               $clauses[] = "nvpd." . $recallColumn . " " . $operator . " %". $index;
               $params[$index] = [$multipleValue, "String"];
             }
-            if (!empty($clauses)) {
-              if ($operator == "=") {
-                $where .= " AND (" . implode(" OR ", $clauses) . ")";
-              }
-              else {
-                $where .= " AND (" . implode(" AND ", $clauses) . ")";
-              }
-            }
+            $where .= $this->multipleClauseSeparator($clauses,$operator);
             break;
 
           case 'study_status_id':
@@ -681,14 +681,7 @@ class CRM_Nbrprojectvolunteerlist_Form_Search_StageTwoScreen extends CRM_Contact
               $clauses[] = "nvpd." . $statusColumn . " " . $operator . " %". $index;
               $params[$index] = [$multipleValue, "String"];
             }
-            if (!empty($clauses)) {
-              if ($operator == "=") {
-                $where .= " AND (" . implode(" OR ", $clauses) . ")";
-              }
-              else {
-                $where .= " AND (" . implode(" AND ", $clauses) . ")";
-              }
-            }
+            $where .= $this->multipleClauseSeparator($clauses,$operator);
             break;
 
           case 'eligibility_status_id':
@@ -698,24 +691,7 @@ class CRM_Nbrprojectvolunteerlist_Form_Search_StageTwoScreen extends CRM_Contact
               $clauses[] = "nvpd." . $eligibleColumn . " " . $operator . " %". $index;
               $params[$index] = [$multipleValue, "String"];
             }
-            if (!empty($clauses)) {
-              if ($operator == "=") {
-                $where .= " AND (" . implode(" OR ", $clauses) . ")";
-              }
-              else {
-                $where .= " AND (" . implode(" AND ", $clauses) . ")";
-              }
-            }
-            break;
-
-          case 'tags':
-            $tagIds = [];
-            foreach ($this->_formValues['tags'] as $key => $tagId) {
-              $tagIds[] = $tagId;
-            }
-            if (!empty($tagIds)) {
-              $where .= " AND ccc.contact_id ". $this->getOperator('tags', 'IN') . " (SELECT entity_id FROM civicrm_entity_tag WHERE entity_table = 'civicrm_contact' AND tag_id IN(" . implode(",", $tagIds) ."))";
-            }
+            $where .= $this->multipleClauseSeparator($clauses,$operator);
             break;
         }
       }
