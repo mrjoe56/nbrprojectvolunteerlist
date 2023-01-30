@@ -119,8 +119,8 @@
                                     and $header.name ne "Status" and $header.name ne "Part. ID" and $header.name ne "Email" and $header.name ne "Tag(s)"
                                     and $header.name ne "Inv. Date" and $header.name ne "Researcher Date" and $header.name ne "Latest Visit Date"
                                     and $header.name ne "BioResource ID" and $header.name ne "Eligibility" and $header.name ne "Recall Group"
-                                    and $header.name ne "Activity Type" and $header.name ne "Activity Notes" and $header.name ne "Activity Status"
-                                    and $header.name ne "Latest Activity"}
+                                    and $header.name ne "Activity Type" and $header.name ne "Notes" and $header.name ne "Activity Status"
+                                    and $header.name ne "Subject"}
                                         {assign var='key' value=$header.sort}
                                         {$sort->_response.$key.link}
                                     {else}
@@ -148,7 +148,7 @@
                                         {/if}
                                     {/foreach}
                                     <td><a href="{crmURL p='civicrm/contact/view/case' q="reset=1&id=`$row.case_id`&cid=`$row.contact_id`&action=view&context=case"}">Manage Case</a></td>
-                                    <td><a class="action-item button" href="{crmURL p='civicrm/nbrprojectvolunteerlist/displayactivities' q="reset=1&caseid=`$row.case_id`&cid=`$row.contact_id`"}">Manage Activities</a></td>
+                                    <td><a class="action-item button" href="{crmURL p='civicrm/nbrprojectvolunteerlist/displayactivities' q="reset=1&caseid=`$row.case_id`&cid=`$row.contact_id`"}">View Activities</a></td>
                                 </tr>
                             {/foreach}
                         </table>

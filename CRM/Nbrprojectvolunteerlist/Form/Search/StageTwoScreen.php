@@ -387,25 +387,23 @@ class CRM_Nbrprojectvolunteerlist_Form_Search_StageTwoScreen extends CRM_Contact
     // return by reference
     $columns = [
       E::ts('Name') => 'sort_name',
-      E::ts('Study/Part ID') => 'nvpd_study_participant_id',
-
+      E::ts('Study ID') => 'nvpd_study_participant_id',
       E::ts('Email') => 'email',
       E::ts('Gndr') => 'gender',
       E::ts('Age') => 'birth_date',
-      E::ts('Phone') => 'phone',
+      E::ts('Phn') => 'phone',
 
       E::ts('Ethn.') => 'ethnicity',
       E::ts('Loc.') => 'volunteer_address',
-      E::ts('Distance') => 'nvpd_distance_volunteer_to_study_centre',
+      E::ts('Dist') => 'nvpd_distance_volunteer_to_study_centre',
       E::ts('Eligibility') => 'nvpd_eligible_status_id',
       E::ts('Recall G.') => 'nvpd_recall_group',
       E::ts('Status') => 'study_status',
       E::ts('Inv. Date') => 'nvpd_date_invited',
-      E::ts('Latest Activity') => 'activity_subject',
-      E::ts('Activity Date') => 'activity_date',
       E::ts('Activity Type') => 'activity_type',
-      E::ts('Activity Notes') => 'activity_notes',
-
+      E::ts('Subject') => 'activity_subject',
+      E::ts('Activity Date') => 'activity_date',
+      E::ts('Notes') => 'activity_notes',
       E::ts('Activity Status') => 'activity_status',
       E::ts('Case ID') => 'case_id',
     ];
