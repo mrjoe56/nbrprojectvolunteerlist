@@ -197,6 +197,24 @@ class CRM_Nbrprojectvolunteerlist_Utils {
     return CRM_Core_DAO::executeQuery($query, $queryParams);
   }
 
+  // Function used to trim details to be readable from a table
+  public static function alterActivityDetails($details){
+    $string = htmlentities($details, null, 'utf-8');
+    // Delete all &nbsp spaces
+
+    $details = str_replace("&nbsp;", "", $string);
+    $details = html_entity_decode($details);
+
+    $details = preg_replace("/<img[^>]+\>/i", "", $details);
+
+    $details= strip_tags($details);
+    $stripped = preg_replace(array('/\s{2,}/', '/[\t\n]/'), ' ', $details);
+    if(strlen($details) >300){
+      $details= substr($stripped, 0, 300);
+      $details= $details ."....";
+    }
+    return $details;
+  }
   /**
    * Method to check email or guardian email validity
    *

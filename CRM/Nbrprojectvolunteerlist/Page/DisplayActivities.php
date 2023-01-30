@@ -39,7 +39,8 @@ class CRM_Nbrprojectvolunteerlist_Page_DisplayActivities extends CRM_Core_Page {
     $activityTemplate = [];
     $activityTemplate['id'] = $caseActivity->id;
     $activityTemplate['activity_subject']= $caseActivity->subject;
-    $activityTemplate['activity_notes']= $caseActivity->details;
+
+    $activityTemplate['activity_notes']= CRM_Nbrprojectvolunteerlist_Utils::alterActivityDetails($caseActivity->details);
     $activityTemplate['activity_date']= $caseActivity->activity_date_time;
     $activityTemplate['activity_type']= CRM_Nihrbackbone_Utils::getOptionValueLabel($caseActivity->activity_type_id, 'activity_type');
     $activityTemplate['activity_status']= CRM_Nihrbackbone_Utils::getOptionValueLabel($caseActivity->status_id, 'activity_status');

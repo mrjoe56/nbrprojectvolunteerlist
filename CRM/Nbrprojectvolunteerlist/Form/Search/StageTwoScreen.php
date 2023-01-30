@@ -913,21 +913,9 @@ class CRM_Nbrprojectvolunteerlist_Form_Search_StageTwoScreen extends CRM_Contact
           }
           break;
         case 'activity_notes':
-          $notes= $row['activity_notes'];
-          $string = htmlentities($notes, null, 'utf-8');
-          $notes = str_replace("&nbsp;", "", $string);
-          $notes = html_entity_decode($notes);
 
-          $notes = preg_replace("/<img[^>]+\>/i", "", $notes);
-
-          $notes= strip_tags($notes);
-          $stripped = preg_replace(array('/\s{2,}/', '/[\t\n]/'), ' ', $notes);
-            if(strlen($notes) >300){
-              $notes= substr($stripped, 0, 300);
-              $notes= $notes ."....";
-            }
-
-           $row['activity_notes']=$notes;
+          $notes=CRM_Nbrprojectvolunteerlist_Utils::alterActivityDetails($row['activity_notes']);
+          $row['activity_notes']=$notes;
           break;
 
 
