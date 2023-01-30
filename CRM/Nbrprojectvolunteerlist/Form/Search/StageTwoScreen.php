@@ -233,17 +233,6 @@ class CRM_Nbrprojectvolunteerlist_Form_Search_StageTwoScreen extends CRM_Contact
           case "study_id":
             $filters[] = $searchTxt . CRM_Nihrbackbone_NbrStudy::getStudyNumberWithId($this->_formValues[$searchFilter]);
             break;
-//          case "tags":
-//            $tagLabels = [];
-//            $tagList = $this->getTagList();
-//            foreach ($this->_formValues[$searchFilter] as $key => $tag) {
-//              $tagLabels[] = $tagList[$tag];
-//            }
-//            if (isset($this->_formValues['inex_tags']) && $this->_formValues['inex_tags'] == 1) {
-//              $filters[] = "does not have " . $searchTxt . implode(",", $tagLabels);
-//            }
-//            $filters[] = "has " . $searchTxt . implode(",", $tagLabels);
-//            break;
           case "gender_id":
             $genderLabels = [];
             foreach ($this->_formValues[$searchFilter] as $gender) {
@@ -407,15 +396,11 @@ class CRM_Nbrprojectvolunteerlist_Form_Search_StageTwoScreen extends CRM_Contact
 
       E::ts('Ethn.') => 'ethnicity',
       E::ts('Loc.') => 'volunteer_address',
-//      E::ts('Tag(s)') => 'volunteer_tags',
       E::ts('Distance') => 'nvpd_distance_volunteer_to_study_centre',
       E::ts('Eligibility') => 'nvpd_eligible_status_id',
       E::ts('Recall G.') => 'nvpd_recall_group',
       E::ts('Status') => 'study_status',
       E::ts('Inv. Date') => 'nvpd_date_invited',
-//      E::ts('Researcher Date') => 'date_researcher',
-//      E::ts('Latest Visit Date') => 'latest_visit_date',
-
       E::ts('Latest Activity') => 'activity_subject',
       E::ts('Activity Date') => 'activity_date',
       E::ts('Activity Type') => 'activity_type',
@@ -623,7 +608,7 @@ class CRM_Nbrprojectvolunteerlist_Form_Search_StageTwoScreen extends CRM_Contact
    * @param $params
    */
   private function addMultipleClauses(&$index, &$where, &$params) {
-    $multipleFields = ['gender_id', 'ethnicity_id', 'recall_group', 'study_status_id', 'eligibility_status_id', 'tags', 'activity_status_id','activity_type_id'];
+    $multipleFields = ['gender_id', 'ethnicity_id', 'recall_group', 'study_status_id', 'eligibility_status_id', 'activity_status_id','activity_type_id'];
     foreach ($multipleFields as $multipleField) {
       $clauses = [];
       if (isset($this->_formValues[$multipleField]) && !empty($this->_formValues[$multipleField])) {
@@ -893,11 +878,7 @@ class CRM_Nbrprojectvolunteerlist_Form_Search_StageTwoScreen extends CRM_Contact
   function alterRow(&$row) {
     $caseId= $row['case_id'];
 
-//    $activityId= $row['activity_id'];
-//    $where="act.subject" . " " . $this->getOperator('activity_subject', "LIKE") . " %" . $index;";
-    $alterIndex=1;
-    $alterParams= [1=>[$caseId,"Integer"]
-    ];
+    $alterParams= [1=>[$caseId,"Integer"]];
 
     $alterIndex=2;
     $alterWhere= $this->customActivityLike($alterParams,$alterIndex);
@@ -948,12 +929,7 @@ class CRM_Nbrprojectvolunteerlist_Form_Search_StageTwoScreen extends CRM_Contact
 
            $row['activity_notes']=$notes;
           break;
-//        case 'date_researcher':
-//          $exportDate = CRM_Nihrbackbone_NbrVolunteerCase::getLatestExportDate($row['case_id']);
-//          if ($exportDate) {
-//            $row['date_researcher'] = $exportDate;
-//          }
-//          break;
+
 
         case 'ethnicity':
           $parts = explode('(', $row['ethnicity']);
@@ -967,14 +943,6 @@ class CRM_Nbrprojectvolunteerlist_Form_Search_StageTwoScreen extends CRM_Contact
         case 'gender':
           $row['gender'] = substr($row['gender'],0,1);
           break;
-//        case 'activity_date_time':
-//          $date= $row['activity_date_time'];
-//          $case_id = $row['case_id'];
-//          if (!$this->_caseId && $this->_activityId) {
-//            $this->_caseId = (array) CRM_Core_DAO::getFieldValue('CRM_Case_DAO_CaseActivity', $this->_activityId,
-//              'case_id', 'activity_id'
-//            );}
-//          break;
 
         case 'latest_visit_date':
           $latestVisitDate = CRM_Nihrbackbone_NbrVolunteerCase::getNearestVisit($row['case_id']);

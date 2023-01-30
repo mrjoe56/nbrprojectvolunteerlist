@@ -148,7 +148,7 @@
                                         {/if}
                                     {/foreach}
                                     <td><a href="{crmURL p='civicrm/contact/view/case' q="reset=1&id=`$row.case_id`&cid=`$row.contact_id`&action=view&context=case"}">Manage Case</a></td>
-                                    <td><a href="{crmURL p='civicrm/contact/view/case' q="reset=1&id=`$row.case_id`&cid=`$row.contact_id`&action=view&context=case"}">Manage Activities</a></td>
+                                    <td><a class="action-item button" href="{crmURL p='civicrm/nbrprojectvolunteerlist/displayactivities' q="reset=1&caseid=`$row.case_id`&cid=`$row.contact_id`"}">Manage Activities</a></td>
                                 </tr>
                             {/foreach}
                         </table>
