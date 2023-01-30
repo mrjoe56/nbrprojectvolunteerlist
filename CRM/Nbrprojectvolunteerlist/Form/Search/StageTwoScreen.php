@@ -416,12 +416,12 @@ class CRM_Nbrprojectvolunteerlist_Form_Search_StageTwoScreen extends CRM_Contact
 //      E::ts('Researcher Date') => 'date_researcher',
 //      E::ts('Latest Visit Date') => 'latest_visit_date',
 
-      E::ts('Latest activity ') => 'activity_subject',
-      E::ts('activity date') => 'activity_date',
-      E::ts('Activity type') => 'activity_type',
-      E::ts('activity notes') => 'activity_notes',
+      E::ts('Latest Activity') => 'activity_subject',
+      E::ts('Activity Date') => 'activity_date',
+      E::ts('Activity Type') => 'activity_type',
+      E::ts('Activity Notes') => 'activity_notes',
 
-      E::ts(' Activity status') => 'activity_status',
+      E::ts('Activity Status') => 'activity_status',
       E::ts('Case ID') => 'case_id',
     ];
     return $columns;
@@ -907,9 +907,6 @@ class CRM_Nbrprojectvolunteerlist_Form_Search_StageTwoScreen extends CRM_Contact
     ORDER BY act.activity_date_time DESC LIMIT 1";
 
     $alterSQL = CRM_Core_DAO::composeQuery($query, $alterParams);
-//    $paramStr= implode(",", implode(","$alterParams);
-//    $row['activity_notes']= $query . " index is ". $alterIndex . " ---- ".$alterParams[1][0];
-
     $caseActivity=  CRM_Core_DAO::executeQuery($alterSQL);
     while ($caseActivity->fetch()) {
       $row['activity_subject']= $caseActivity->subject;
