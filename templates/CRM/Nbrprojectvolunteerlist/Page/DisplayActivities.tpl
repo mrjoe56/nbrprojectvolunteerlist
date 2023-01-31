@@ -4,6 +4,7 @@
     <thead>
     <tr>
         <th id="sortable">{ts}ID{/ts}</th>
+        <th id="sortable">{ts}Case ID{/ts}</th>
 
         <th id="sortable">{ts}Activity date{/ts}</th>
         <th id="sortable">{ts}Subject{/ts}</th>
@@ -17,6 +18,8 @@
     {foreach from=$activities key=activity_id item=activity}
         <tr id="activity-{$activity_id}" class="crm-entity {cycle values="odd-row,even-row"} {$row.class} nbr-study-row">
             <td>{$activity.id}</td>
+            <td>{$activity.case_id}</td>
+
             <td>{$activity.activity_date}</td>
             <td>{$activity.activity_subject}</td>
             <td>{$activity.activity_type}</td>

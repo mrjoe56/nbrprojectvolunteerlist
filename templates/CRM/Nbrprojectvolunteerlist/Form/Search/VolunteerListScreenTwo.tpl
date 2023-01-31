@@ -120,7 +120,7 @@
                                     and $header.name ne "Inv. Date" and $header.name ne "Researcher Date" and $header.name ne "Latest Visit Date"
                                     and $header.name ne "BioResource ID" and $header.name ne "Eligibility" and $header.name ne "Recall Group"
                                     and $header.name ne "Activity Type" and $header.name ne "Notes" and $header.name ne "Activity Status"
-                                    and $header.name ne "Subject"}
+                                    and $header.name ne "Subject"  and $header.name ne "Activity Assignee"}
                                         {assign var='key' value=$header.sort}
                                         {$sort->_response.$key.link}
                                     {else}

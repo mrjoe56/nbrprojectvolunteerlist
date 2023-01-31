@@ -401,6 +401,8 @@ class CRM_Nbrprojectvolunteerlist_Form_Search_StageTwoScreen extends CRM_Contact
       E::ts('Status') => 'study_status',
       E::ts('Inv. Date') => 'nvpd_date_invited',
       E::ts('Activity Type') => 'activity_type',
+      E::ts('Activity Assignee') => 'activity_assignee',
+
       E::ts('Subject') => 'activity_subject',
       E::ts('Activity Date') => 'activity_date',
       E::ts('Notes') => 'activity_notes',
@@ -881,7 +883,7 @@ class CRM_Nbrprojectvolunteerlist_Form_Search_StageTwoScreen extends CRM_Contact
     $alterIndex=2;
     $alterWhere= $this->customActivityLike($alterParams,$alterIndex);
 
-    $query= "SELECT * from civicrm_case_activity AS ca
+    $query= "SELECT * from civicrm_case_activity AS ca  
     JOIN civicrm_activity AS act ON act.id=ca.activity_id WHERE ca.case_id=%1 ".$alterWhere."
     ORDER BY act.activity_date_time DESC LIMIT 1";
 
@@ -893,6 +895,20 @@ class CRM_Nbrprojectvolunteerlist_Form_Search_StageTwoScreen extends CRM_Contact
       $row['activity_date']= $caseActivity->activity_date_time;
       $row['activity_type']= CRM_Nihrbackbone_Utils::getOptionValueLabel($caseActivity->activity_type_id, 'activity_type');
       $row['activity_status']= CRM_Nihrbackbone_Utils::getOptionValueLabel($caseActivity->status_id, 'activity_status');
+
+      // I don't like this but seems best way about it without overcrowding original SQL
+      // Add activity assignees
+      $assigneeQuery= "SELECT  * from civicrm_activity_contact actC JOIN civicrm_contact con ON con.id= actC.contact_id  
+              WHERE actC.activity_id=%1 AND actC.record_type_id=1";
+      $assigneeQuerySQL = CRM_Core_DAO::composeQuery($assigneeQuery, [1=>[$caseActivity->activity_id,"Integer"]]);
+      $asigneeData=  CRM_Core_DAO::executeQuery($assigneeQuerySQL);
+      $assignees=[];
+      while ($asigneeData->fetch()) {
+        $assignees[]= $asigneeData->display_name;
+      }
+      $assignees= implode(", ",$assignees);
+      $row['activity_assignee']=$assignees;
+
     }
 
 
