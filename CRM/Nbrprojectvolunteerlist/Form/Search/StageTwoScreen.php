@@ -56,7 +56,6 @@ class CRM_Nbrprojectvolunteerlist_Form_Search_StageTwoScreen extends CRM_Contact
   function buildForm(&$form) {
     CRM_Utils_System::setTitle(E::ts('Stage 2 study participation'));
     $selectedIds = $this->getSelectedIds();
-    $this->getTagList();
     $form->assign_by_ref('selectedIds', $selectedIds);
     $form->add('select', 'study_id', E::ts('Study'), $this->getStudyList(), FALSE,
       ['class' => 'crm-select2', 'placeholder' => '- select study -']);
@@ -122,10 +121,6 @@ class CRM_Nbrprojectvolunteerlist_Form_Search_StageTwoScreen extends CRM_Contact
       'excl',
     ], [], " ", TRUE);
     $defaults['inex_eligibility_status_id'] = 0;
-    //    $form->add('select', 'tags', E::ts('Tags'), $this->getTagList(), FALSE,
-    //      ['class' => 'crm-select2', 'placeholder' => '- select tag(s) -', 'multiple' => TRUE]);
-    //    $form->addRadio('inex_tags', "", ['incl', 'excl'], [], " ");
-    $defaults['inex_tags'] = 0;
     $form->add('datepicker', 'invite_date_from', E::ts('Invite date from'), [], FALSE, ['time' => FALSE]);
     $form->add('datepicker', 'invite_date_to', E::ts('Invite date to'), [], FALSE, ['time' => FALSE]);
     $form->addRadio('inex_invite_date', "", ['incl', 'excl'], [], " ");
@@ -191,7 +186,6 @@ class CRM_Nbrprojectvolunteerlist_Form_Search_StageTwoScreen extends CRM_Contact
       'gender_id',
       'ethnicity_id',
       'recall_group',
-      //      'tags',
       'study_status_id',
       'eligibility_status_id',
       'invite_date_from',
@@ -205,23 +199,6 @@ class CRM_Nbrprojectvolunteerlist_Form_Search_StageTwoScreen extends CRM_Contact
     ]);
   }
 
-  /**
-   * Method to build the list of tags
-   *
-   * @return array
-   * @throws API_Exception
-   * @throws \Civi\API\Exception\UnauthorizedException
-   */
-  private function getTagList() {
-    $result = [];
-    $tags = Tag::get()
-      ->addSelect('id', 'name')
-      ->execute();
-    foreach ($tags as $tag) {
-      $result[$tag['id']] = $tag['name'];
-    }
-    return $result;
-  }
 
   /**
    * Method to build the list of studies
@@ -269,7 +246,6 @@ class CRM_Nbrprojectvolunteerlist_Form_Search_StageTwoScreen extends CRM_Contact
       'participant_id' => 'Participant ID ',
       'bioresource_id' => 'BioResource ID ',
       'recall_group' => 'Recall Group is ',
-      //      'tags' => ' Tag(s) ',
       'study_status_id' => 'Status is ',
       'eligibility_status_id' => 'Eligibility is ',
       'invite_date_from' => 'Invite Date ',
@@ -695,8 +671,6 @@ class CRM_Nbrprojectvolunteerlist_Form_Search_StageTwoScreen extends CRM_Contact
       'recall_group',
       'study_status_id',
       'eligibility_status_id',
-      'activity_status_id',
-      'activity_type_id',
     ];
     foreach ($multipleFields as $multipleField) {
       $clauses = [];
@@ -712,22 +686,6 @@ class CRM_Nbrprojectvolunteerlist_Form_Search_StageTwoScreen extends CRM_Contact
             $where .= $this->multipleClauseSeparator($clauses, $operator);
             break;
 
-          case 'activity_status_id':
-            foreach ($this->_formValues[$multipleField] as $multipleValue) {
-              $index++;
-              $clauses[] = "caseActs.status_id " . $operator . " %" . $index;
-              $params[$index] = [(int) $multipleValue, "Integer"];
-            }
-            $where .= $this->multipleClauseSeparator($clauses, $operator);
-            break;
-          case 'activity_type_id':
-            foreach ($this->_formValues[$multipleField] as $multipleValue) {
-              $index++;
-              $clauses[] = "caseActs.activity_type_id " . $operator . " %" . $index;
-              $params[$index] = [(int) $multipleValue, "Integer"];
-            }
-            $where .= $this->multipleClauseSeparator($clauses, $operator);
-            break;
           case 'ethnicity_id':
             $ethnicityColumn = CRM_Nihrbackbone_BackboneConfig::singleton()
               ->getGeneralObservationCustomField('nvgo_ethnicity_id', 'column_name');
@@ -932,9 +890,6 @@ class CRM_Nbrprojectvolunteerlist_Form_Search_StageTwoScreen extends CRM_Contact
           case 'study_participant_id':
             $clauses[] = "nvpd." . $studyPartColumn . " " . $this->getOperator($likeField, "LIKE") . " %" . $index;
             break;
-          //          case 'activity_subject':
-          //            $clauses[] = "caseActs.subject" . " " . $this->getOperator($likeField, "LIKE") . " %" . $index;
-          //            break;
 
           default:
             $clauses[] = "contact_a." . $likeField . " " . $this->getOperator($likeField, "LIKE") . " %" . $index;
@@ -977,6 +932,8 @@ class CRM_Nbrprojectvolunteerlist_Form_Search_StageTwoScreen extends CRM_Contact
   function templateFile() {
     return 'CRM/Nbrprojectvolunteerlist/Form/Search/VolunteerListScreenTwo.tpl';
   }
+
+
 
   /**
    * Modify the content of each row

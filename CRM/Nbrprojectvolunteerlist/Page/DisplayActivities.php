@@ -41,17 +41,21 @@ class CRM_Nbrprojectvolunteerlist_Page_DisplayActivities extends CRM_Core_Page {
     $activityTemplate['case_id'] = $caseActivity->case_id;
 
     $activityTemplate['activity_subject']= $caseActivity->subject;
-
     $activityTemplate['activity_notes']= CRM_Nbrprojectvolunteerlist_Utils::alterActivityDetails($caseActivity->details);
     $activityTemplate['activity_date']= $caseActivity->activity_date_time;
     $activityTemplate['activity_type']= CRM_Nihrbackbone_Utils::getOptionValueLabel($caseActivity->activity_type_id, 'activity_type');
     $activityTemplate['activity_status']= CRM_Nihrbackbone_Utils::getOptionValueLabel($caseActivity->status_id, 'activity_status');
 
-    // Find some way to link in activity contact to add assignee researcher
-//    $activityTemplate['activity_type']= CRM_Nihrbackbone_Utils::getOptionValueLabel($caseActivity->record_type_id, 'activity_contacts');
-
-
-
+    $assigneeQuery = "SELECT  * from civicrm_activity_contact actC JOIN civicrm_contact con ON con.id= actC.contact_id 
+              WHERE actC.activity_id=%1 AND actC.record_type_id=1";
+    $assigneeQuerySQL = CRM_Core_DAO::composeQuery($assigneeQuery, [ 1 => [ $caseActivity->activity_id, "Integer",]]);
+    $asigneeData = CRM_Core_DAO::executeQuery($assigneeQuerySQL);
+    $assignees = [];
+    while ($asigneeData->fetch()) {
+      $assignees[] = $asigneeData->display_name;
+    }
+    $assignees = implode(", ", $assignees);
+    $activityTemplate['activity_assignee'] = $assignees;
     return $activityTemplate;
   }
 
