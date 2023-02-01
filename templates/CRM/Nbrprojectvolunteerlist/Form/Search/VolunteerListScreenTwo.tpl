@@ -114,13 +114,17 @@
                                 <th scope="col" title="Select All Rows">{$form.toggleSelect.html}</th>
                                 {foreach from=$columnHeaders item=header}
                                 {if $header.name != "Case ID"}
+                        {* Turn off sorting on columns, as when they're sorted the add activity button doesn't select them,
+                        I think because they're not part of the contact table *}
                                 <th scope="col">
                                     {if $header.sort and $header.name ne "Gndr" and $header.name ne "Ethn." and $header.name ne "Loc."
                                     and $header.name ne "Status" and $header.name ne "Part. ID" and $header.name ne "Email" and $header.name ne "Tag(s)"
                                     and $header.name ne "Inv. Date" and $header.name ne "Researcher Date" and $header.name ne "Latest Visit Date"
                                     and $header.name ne "BioResource ID" and $header.name ne "Eligibility" and $header.name ne "Recall Group"
-                                    and $header.name ne "Latest Activity Type" and $header.name ne "Notes" and $header.name ne "Activity Status"
-                                    and $header.name ne "Subject"  and $header.name ne "Activity Assignee"}
+                                    and $header.name ne "Latest Activity Type" and $header.name ne "Activity Date" and $header.name ne "Notes"
+                                    and $header.name ne "Activity Status" and $header.name ne "Subject"  and $header.name ne "Activity Assignee"}
+
+
                                         {assign var='key' value=$header.sort}
                                         {$sort->_response.$key.link}
                                     {else}
