@@ -429,10 +429,12 @@ class CRM_Nbrprojectvolunteerlist_Form_Search_StageTwoScreen extends CRM_Contact
       E::ts('Ethn.') => 'ethnicity',
       E::ts('Loc.') => 'volunteer_address',
       E::ts('Dist') => 'nvpd_distance_volunteer_to_study_centre',
-      E::ts('Eligibility') => 'nvpd_eligible_status_id',
+//      E::ts('Eligibility') => 'nvpd_eligible_status_id',
       E::ts('Recall G.') => 'nvpd_recall_group',
       E::ts('Status') => 'study_status',
-      E::ts('Inv. Date') => 'nvpd_date_invited',
+//      E::ts('Inv. Date') => 'nvpd_date_invited',
+      E::ts('Latest Visit Date') => 'latest_visit_date',
+
       E::ts('Latest Activity Type') => 'activity_type',
       E::ts('Activity Assignee') => 'activity_assignee',
 
