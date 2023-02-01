@@ -278,6 +278,23 @@ class CRM_Nbrprojectvolunteerlist_Utils {
     return FALSE;
   }
 
+  // Check if manage study participation or stage 2 screen
+  public static function isSearchForm($csId){
+    $searchScreen= FALSE;
+    if(!empty($csId)) {
+      $csId=(int) $csId;
+      $msp = new CRM_Nbrprojectvolunteerlist_SearchTasks();
+      $mspCsId = $msp->getCsId();
+
+      $stageTwo = new CRM_Nbrprojectvolunteerlist_SearchTasks("CRM_Nbrprojectvolunteerlist_Form_Search_StageTwoScreen");
+      $stageTwoCsId = $stageTwo->getCsId();
+      // Check if the csid is equal to either stage 2 screen or the MSP
+      $searchScreen = (($csId == $mspCsId) || ($csId == $stageTwoCsId));
+    }
+
+    return $searchScreen;
+
+  }
   /**
    * Method to find the relevant case ids for tasks change study status and add follow up activity
    *
