@@ -421,23 +421,18 @@ class CRM_Nbrprojectvolunteerlist_Form_Search_StageTwoScreen extends CRM_Contact
     $columns = [
       E::ts('Name') => 'sort_name',
       E::ts('Study ID') => 'nvpd_study_participant_id',
-      E::ts('Email') => 'email',
+      E::ts('Recall G.') => 'nvpd_recall_group',
       E::ts('Gndr') => 'gender',
       E::ts('Age') => 'birth_date',
-      E::ts('Phone') => 'phone',
-
       E::ts('Ethn.') => 'ethnicity',
+      E::ts('Email') => 'email',
+      E::ts('Phone') => 'phone',
       E::ts('Loc.') => 'volunteer_address',
       E::ts('Dist') => 'nvpd_distance_volunteer_to_study_centre',
-//      E::ts('Eligibility') => 'nvpd_eligible_status_id',
-      E::ts('Recall G.') => 'nvpd_recall_group',
       E::ts('Status') => 'study_status',
-//      E::ts('Inv. Date') => 'nvpd_date_invited',
       E::ts('Latest Visit Date') => 'latest_visit_date',
-
       E::ts('Latest Activity Type') => 'activity_type',
       E::ts('Activity Assignee') => 'activity_assignee',
-
       E::ts('Subject') => 'activity_subject',
       E::ts('Activity Date') => 'activity_date',
       E::ts('Notes') => 'activity_notes',
@@ -523,18 +518,12 @@ class CRM_Nbrprojectvolunteerlist_Form_Search_StageTwoScreen extends CRM_Contact
     // todo add participant and bioresource ID
     $eligibleColumn = CRM_Nihrbackbone_BackboneConfig::singleton()
       ->getParticipationCustomField('nvpd_eligible_status_id', 'column_name');
-
-
     $studyParticipantIDColumn = CRM_Nihrbackbone_BackboneConfig::singleton()
       ->getParticipationCustomField('nvpd_study_participant_id', 'column_name');
     $dateInvitedColumn = CRM_Nihrbackbone_BackboneConfig::singleton()
       ->getParticipationCustomField('nvpd_date_invited', 'column_name');
     $distanceColumn = CRM_Nihrbackbone_BackboneConfig::singleton()
       ->getParticipationCustomField('nvpd_distance_volunteer_to_study_centre', 'column_name');
-    // Add in a phone column
-    //    $distanceColumn = CRM_Nihrbackbone_BackboneConfig::singleton()->getParticipationCustomField('nvpd_distance_volunteer_to_study_centre', 'column_name');
-
-
     $recallColumn = CRM_Nihrbackbone_BackboneConfig::singleton()
       ->getParticipationCustomField('nvpd_recall_group', 'column_name');
     $participantIdColumn = CRM_Nihrbackbone_BackboneConfig::singleton()

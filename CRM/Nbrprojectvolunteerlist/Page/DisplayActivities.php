@@ -22,7 +22,7 @@ class CRM_Nbrprojectvolunteerlist_Page_DisplayActivities extends CRM_Core_Page {
 
     // Select all case activities where the case matches
     $query= "SELECT * from civicrm_case_activity AS ca
-    JOIN civicrm_activity AS act ON act.id=ca.activity_id WHERE ca.case_id=%1 ORDER BY act.activity_date_time DESC LIMIT 5";
+    JOIN civicrm_activity AS act ON act.id=ca.activity_id WHERE ca.case_id=%1 ORDER BY act.activity_date_time DESC LIMIT 20";
     $alterSQL = CRM_Core_DAO::composeQuery($query, $alterParams);
     $dao=  CRM_Core_DAO::executeQuery($alterSQL);
 
@@ -39,7 +39,6 @@ class CRM_Nbrprojectvolunteerlist_Page_DisplayActivities extends CRM_Core_Page {
     $activityTemplate = [];
     $activityTemplate['id'] = $caseActivity->id;
     $activityTemplate['case_id'] = $caseActivity->case_id;
-
     $activityTemplate['activity_subject']= $caseActivity->subject;
     $activityTemplate['activity_notes']= CRM_Nbrprojectvolunteerlist_Utils::alterActivityDetails($caseActivity->details);
     $activityTemplate['activity_date']= $caseActivity->activity_date_time;
