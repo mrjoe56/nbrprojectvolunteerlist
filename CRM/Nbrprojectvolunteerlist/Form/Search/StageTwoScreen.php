@@ -227,6 +227,18 @@ class CRM_Nbrprojectvolunteerlist_Form_Search_StageTwoScreen extends CRM_Contact
     return $result;
   }
 
+  // Summary for filters that may or may not have multiple values (Adds one of for multi, leaves as is for singular)
+  function multiChoiceSummary($searchFilter, $optionGroupId){
+    $labels = [];
+
+    foreach ($this->_formValues[$searchFilter] as $value) {
+      $labels[] = CRM_Nihrbackbone_Utils::getOptionValueLabel($value, $optionGroupId);
+    }
+    $not= (isset($this->_formValues['inex_'.$searchFilter]) && $this->_formValues['inex_'.$searchFilter] == 1)?" not " :"";
+    $oneOf= (sizeof($labels)>1)? " one of " : "";
+    $text= $not .$oneOf.  implode(", ", $labels);
+    return $text;
+  }
   /**
    * Get a list of summary data points
    *
@@ -252,6 +264,7 @@ class CRM_Nbrprojectvolunteerlist_Form_Search_StageTwoScreen extends CRM_Contact
       'invite_date_to' => 'Invite Date ',
       'age_from' => 'Age ',
       'age_to' => 'Age ',
+      'activity_subject'=> 'Activity subject ',
       'activity_status_id' => 'Activity status is ',
       'activity_type_id' => 'Activity type is ',
     ];
@@ -263,81 +276,28 @@ class CRM_Nbrprojectvolunteerlist_Form_Search_StageTwoScreen extends CRM_Contact
             $filters[] = $searchTxt . CRM_Nihrbackbone_NbrStudy::getStudyNumberWithId($this->_formValues[$searchFilter]);
             break;
           case "gender_id":
-            $genderLabels = [];
-            foreach ($this->_formValues[$searchFilter] as $gender) {
-              $genderLabels[] = CRM_Nihrbackbone_Utils::getOptionValueLabel($gender, 'gender');
-            }
-            if (isset($this->_formValues['inex_gender_id']) && $this->_formValues['inex_gender_id'] == 1) {
-              $filters[] = $searchTxt . " not " . implode(", ", $genderLabels);
-            }
-            else {
-              $filters[] = $searchTxt . implode(", ", $genderLabels);
-            }
+            $text= $this->multiChoiceSummary($searchFilter, 'gender');
+            $filters[]= $searchTxt. $text;
             break;
           case "ethnicity_id":
-            $ethnicityLabels = [];
-            foreach ($this->_formValues[$searchFilter] as $ethnicity) {
-              $ethnicityLabels[] = CRM_Nihrbackbone_Utils::getOptionValueLabel($ethnicity, CRM_Nihrbackbone_BackboneConfig::singleton()
-                ->getEthnicityOptionGroupId());
-            }
-            if (isset($this->_formValues['inex_ethnicity_id']) && $this->_formValues['inex_ethnicity_id'] == 1) {
-              $filters[] = $searchTxt . " not " . implode(", ", $ethnicityLabels);
-            }
-            else {
-              $filters[] = $searchTxt . implode(", ", $ethnicityLabels);
-            }
+            $text= $this->multiChoiceSummary($searchFilter, CRM_Nihrbackbone_BackboneConfig::singleton()->getEthnicityOptionGroupId());
+            $filters[]= $searchTxt. $text;
             break;
-
           case "activity_status_id":
-            $activityStatusLabels = [];
-            foreach ($this->_formValues[$searchFilter] as $activity_status) {
-              $activityStatusLabels[] = CRM_Nihrbackbone_Utils::getOptionValueLabel($activity_status, 'activity_status');
-            }
-            if (isset($this->_formValues['inex_activity_status_id']) && $this->_formValues['inex_activity_status_id'] == 1) {
-              $filters[] = $searchTxt . " not " . implode(", ", $activityStatusLabels);
-            }
-            else {
-              $filters[] = $searchTxt . implode(", ", $activityStatusLabels);
-            }
+              $text= $this->multiChoiceSummary($searchFilter, "activity_status");
+              $filters[]= $searchTxt. $text;
             break;
           case "activity_type_id":
-            $activityTypeLabels = [];
-            foreach ($this->_formValues[$searchFilter] as $activityType) {
-              $activityTypeLabels[] = CRM_Nihrbackbone_Utils::getOptionValueLabel($activityType, CRM_Civirules_Utils::getOptionGroupIdWithName('activity_type'));
-            }
-            if (isset($this->_formValues['inex_activity_type_id']) && $this->_formValues['inex_activity_type_id'] == 1) {
-              $filters[] = $searchTxt . "not one of " . implode(", ", $activityTypeLabels);
-            }
-            else {
-              $filters[] = $searchTxt . "one of " . implode(", ", $activityTypeLabels);
-            }
-
+            $text= $this->multiChoiceSummary($searchFilter, "activity_type");
+            $filters[]= $searchTxt. $text;
             break;
           case "study_status_id":
-            $statusLabels = [];
-            foreach ($this->_formValues[$searchFilter] as $status) {
-              $statusLabels[] = CRM_Nihrbackbone_Utils::getOptionValueLabel($status, CRM_Nihrbackbone_BackboneConfig::singleton()
-                ->getStudyParticipationStatusOptionGroupId());
-            }
-            if (isset($this->_formValues['inex_study_status_id']) && $this->_formValues['inex_study_status_id'] == 1) {
-              $filters[] = $searchTxt . "not one of " . implode(", ", $statusLabels);
-            }
-            else {
-              $filters[] = $searchTxt . "one of " . implode(", ", $statusLabels);
-            }
+            $text= $this->multiChoiceSummary($searchFilter, CRM_Nihrbackbone_BackboneConfig::singleton()->getStudyParticipationStatusOptionGroupId());
+            $filters[]= $searchTxt. $text;
             break;
           case "eligibility_status_id":
-            $eligibilityLabels = [];
-            foreach ($this->_formValues[$searchFilter] as $eligibilityStatus) {
-              $eligibilityLabels[] = CRM_Nihrbackbone_Utils::getOptionValueLabel($eligibilityStatus, CRM_Nihrbackbone_BackboneConfig::singleton()
-                ->getEligibleStatusOptionGroupId());
-            }
-            if (isset($this->_formValues['inex_eligibility_status_id']) && $this->_formValues['inex_eligibility_status_id'] == 1) {
-              $filters[] = $searchTxt . "not one of " . implode(", ", $eligibilityLabels);
-            }
-            else {
-              $filters[] = $searchTxt . "one of " . implode(", ", $eligibilityLabels);
-            }
+            $text= $this->multiChoiceSummary($searchFilter, CRM_Nihrbackbone_BackboneConfig::singleton()->getEligibleStatusOptionGroupId());
+            $filters[]= $searchTxt. $text;
             break;
           case "age_from":
             if (isset($this->_formValues['inex_age']) && $this->_formValues['inex_age'] == 1) {
@@ -376,6 +336,14 @@ class CRM_Nbrprojectvolunteerlist_Form_Search_StageTwoScreen extends CRM_Contact
               $filters[] = $searchTxt . "is less than or equal to " . $this->_formValues["invite_date_to"];
             }
             break;
+          case "last_name":
+          case "activity_subject":
+          case "first_name":
+          case "bioresource_id":
+          case"participant_id":
+            $filters[] = $searchTxt . "contains " . $this->_formValues[$searchFilter];
+            break;
+
           default:
             $inex = "inex_" . $searchFilter;
             if (is_array($this->_formValues[$searchFilter])) {
@@ -383,12 +351,10 @@ class CRM_Nbrprojectvolunteerlist_Form_Search_StageTwoScreen extends CRM_Contact
               foreach ($this->_formValues[$searchFilter] as $value) {
                 $textLabels[] = $value;
               }
-              if (isset($this->_formValues[$inex]) && $this->_formValues[$inex] == 1) {
-                $filters[] = $searchTxt . "not one of " . implode(", ", $textLabels);
-              }
-              else {
-                $filters[] = $searchTxt . "one of " . implode(", ", $textLabels);
-              }
+
+              $not= (isset($this->_formValues[$inex]) && $this->_formValues[$inex] == 1) ?" not " :"";
+              $oneOf= (sizeof($textLabels)>1)? " one of " : "";
+              $filters[] = $searchTxt . $not. $oneOf. implode(", ", $textLabels);
             }
             else {
               if (isset($this->_formValues[$inex]) && $this->_formValues[$inex] == 1) {
