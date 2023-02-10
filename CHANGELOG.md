@@ -1,3 +1,6 @@
+## Version 1.51
+* Added stage 2 study management screen  (see https://www.wrike.com/open.htm?id=863917880)
+
 ## Version 1.50
 * fix for regression in 1.49 change study status from MSP (see https://www.wrike.com/open.htm?id=709984945)
 ## Version 1.48
