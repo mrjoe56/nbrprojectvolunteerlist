@@ -44,7 +44,7 @@ class CRM_Nbrprojectvolunteerlist_NbrParticipation {
 
   /**
    * Method to process the build form hook for email
-   * (only when coming from the MSP screen)
+   * (only when coming from the MSP screen /Stage 2 study screen)
    * @param $form
    */
   public function emailBuildForm(&$form) {
@@ -52,10 +52,9 @@ class CRM_Nbrprojectvolunteerlist_NbrParticipation {
     $context = $form->getVar('_context');
     if ($context == "custom") {
       $searchFormValues = $form->controller->exportValues('Custom');
-      // only if search form = Manage Study Participation
-      $msp = new CRM_Nbrprojectvolunteerlist_SearchTasks();
-      $mspCsId = $msp->getCsId();
-      if (isset($searchFormValues['csid']) && (int) $searchFormValues['csid'] == $mspCsId) {
+      // only if search form = Manage Study Participation / Stage 2 study screen
+      if(CRM_Nbrprojectvolunteerlist_Utils::isSearchForm($searchFormValues['csid'])){
+
         if (isset($searchFormValues['study_id'])) {
           $studyId = (int) $searchFormValues['study_id'];
           if ($studyId) {
@@ -76,15 +75,14 @@ class CRM_Nbrprojectvolunteerlist_NbrParticipation {
 
   /**
    * Method to process the build form hook for pdf
-   * (only when coming from the MSP screen) -> add study id to form
+   * (only when coming from the MSP screen/ Stage 2 study screen) -> add study id to form
    * @param $form
    */
   public function pdfBuildForm(&$form) {
     $searchFormValues = $form->controller->exportValues();
     // only if search form = Manage Study Participation
-    $msp = new CRM_Nbrprojectvolunteerlist_SearchTasks();
-    $mspCsId = $msp->getCsId();
-    if (isset($searchFormValues['csid']) && (int) $searchFormValues['csid'] == $mspCsId) {
+    if(CRM_Nbrprojectvolunteerlist_Utils::isSearchForm($searchFormValues['csid'])){
+
       if (isset($searchFormValues['study_id'])) {
         $caseIds = [];
         $studyId = (int) $searchFormValues['study_id'];
@@ -102,15 +100,14 @@ class CRM_Nbrprojectvolunteerlist_NbrParticipation {
 
   /**
    * Method to process the build form hook for pdf invite
-   * (only when coming from the MSP screen)
+   * (only when coming from the MSP screen/Stage 2 study screen)
    * @param $form
    */
   public function pdfInviteBuildForm(&$form) {
     $searchFormValues = $form->controller->exportValues();
     // only if search form = Manage Study Participation
-    $msp = new CRM_Nbrprojectvolunteerlist_SearchTasks();
-    $mspCsId = $msp->getCsId();
-    if (isset($searchFormValues['csid']) && (int) $searchFormValues['csid'] == $mspCsId) {
+    if(CRM_Nbrprojectvolunteerlist_Utils::isSearchForm($searchFormValues['csid'])){
+
       if (isset($searchFormValues['study_id'])) {
         $studyId = (int) $searchFormValues['study_id'];
         $contactIds = $form->getVar('_contactIds');

@@ -16,12 +16,12 @@ class CRM_Nbrprojectvolunteerlist_SearchTasks {
   /**
    * CRM_Nbrprojectvolunteerlist_SearchTasks constructor.
    */
-  public function __construct() {
+  public function __construct($className="CRM_Nbrprojectvolunteerlist_Form_Search_VolunteerList") {
     try {
       $this->_csId = (int) civicrm_api3('OptionValue', 'getvalue', [
         'return' => "value",
         'option_group_id' => "custom_search",
-        'name' => "CRM_Nbrprojectvolunteerlist_Form_Search_VolunteerList",
+        'name' => $className,
       ]);
     }
     catch (CiviCRM_API3_Exception $ex) {
@@ -52,13 +52,11 @@ class CRM_Nbrprojectvolunteerlist_SearchTasks {
    * @throws CRM_Core_Exception
    */
   private static function loadNbrTaskList() {
-    $st = new CRM_Nbrprojectvolunteerlist_SearchTasks();
     $csId = (int) CRM_Utils_Request::retrieveValue('csid', "Integer");
     if (isset($_GET['q'])) {
       $q = $_GET['q'];
     }
-    if (!empty($csId)) {
-      if ($csId == $st->_csId) {
+      if(CRM_Nbrprojectvolunteerlist_Utils::isSearchForm($csId)){
         // get qfKey, if no qfKey clear
         $qfKey = CRM_Utils_Request::retrieveValue('qfKey', "String");
         if ($qfKey) {
@@ -75,7 +73,7 @@ class CRM_Nbrprojectvolunteerlist_SearchTasks {
           return TRUE;
         }
       }
-    }
+
     // if custom search or display and key correct, return TRUE
     if ($q == 'civicrm/contact/search/custom') {
       $qfKey = CRM_Utils_Request::retrieveValue('qfKey', "String");
