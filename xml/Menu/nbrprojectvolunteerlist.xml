@@ -1,0 +1,9 @@
+<?xml version="1.0"?>
+<menu>
+  <item>
+    <path>civicrm/nbrprojectvolunteerlist/displayactivities</path>
+    <page_callback>CRM_Nbrprojectvolunteerlist_Page_DisplayActivities</page_callback>
+    <title>DisplayActivities</title>
+    <access_arguments>access CiviCRM</access_arguments>
+  </item>
+</menu>
