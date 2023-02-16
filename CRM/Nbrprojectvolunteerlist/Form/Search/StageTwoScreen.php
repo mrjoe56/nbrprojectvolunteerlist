@@ -4,7 +4,10 @@ use Civi\Api4\Tag;
 use CRM_Nbrprojectvolunteerlist_ExtensionUtil as E;
 
 /**
- * A custom contact search
+ * Custom search class for stage 2 study management screen
+ *
+ * @author Aly Dunbar <aly.dunbar@bioresource.nihr.ac.uk>)
+ * @date  13 Feb 2023
  */
 class CRM_Nbrprojectvolunteerlist_Form_Search_StageTwoScreen extends CRM_Contact_Form_Search_Custom_Base implements CRM_Contact_Form_Search_Interface {
 

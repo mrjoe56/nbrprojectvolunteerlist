@@ -1,6 +1,12 @@
 <?php
 use CRM_Nbrprojectvolunteerlist_ExtensionUtil as E;
 
+/**
+ * Class used in page that displays case activities of a user
+ *
+ * @author Aly Dunbar <aly.dunbar@bioresource.nihr.ac.uk>)
+ * @date  13 Feb 2023
+ */
 class CRM_Nbrprojectvolunteerlist_Page_DisplayActivities extends CRM_Core_Page {
 
   public function run() {
