@@ -127,7 +127,14 @@ class CRM_Nbrprojectvolunteerlist_SearchTasks {
         CRM_Core_Session::setStatus(E::ts('No Study found'), '', 'error');
       }
     }
+
+    // Hacky way of preventing invite tasks being included if its the stage 2 screen. Not ideal but seems to work
+    if($formValues['stageTwo']){
+      $includeInviteTasks = FALSE;
+    }
+
     $nbrTasks = [];
+
     if ($includeInviteTasks) {
       $nbrTasks[] = [
         'title' => "Invite Volunteer(s) by Email (max. 50)",
