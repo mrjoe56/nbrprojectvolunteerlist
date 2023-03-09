@@ -7,6 +7,7 @@ use CRM_Nbrprojectvolunteerlist_ExtensionUtil as E;
  * @author Aly Dunbar <aly.dunbar@bioresource.nihr.ac.uk>)
  * @date  13 Feb 2023
  */
+
 class CRM_Nbrprojectvolunteerlist_Page_DisplayActivities extends CRM_Core_Page {
 
   public function run() {
