@@ -54,7 +54,9 @@
                         {if $form.$element.name == "eligibility_status_id"}
                             <td>{$form.inex_eligibility_status_id.html}</td>
                         {/if}
-
+                        {if $form.$element.name == "tags"}
+                            <td>{$form.inex_tags.html}</td>
+                        {/if}
                         {if $form.$element.name == "invite_date_to"}
                             <td>{$form.inex_invite_date.html}</td>
                         {/if}

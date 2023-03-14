@@ -1,3 +1,6 @@
+## Version 1.52
+* User requested changes to stage 2 study management screen  (see https://www.wrike.com/open.htm?id=863917880)
+
 ## Version 1.51
 * Added stage 2 study management screen  (see https://www.wrike.com/open.htm?id=863917880)
 

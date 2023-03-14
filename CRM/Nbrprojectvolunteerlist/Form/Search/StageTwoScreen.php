@@ -1,10 +1,11 @@
 <?php
-
-use Civi\Api4\Tag;
 use CRM_Nbrprojectvolunteerlist_ExtensionUtil as E;
 
 /**
- * A custom contact search
+ * Custom search class for stage 2 study management screen
+ *
+ * @author Aly Dunbar <aly.dunbar@bioresource.nihr.ac.uk>)
+ * @date  13 Feb 2023
  */
 class CRM_Nbrprojectvolunteerlist_Form_Search_StageTwoScreen extends CRM_Contact_Form_Search_Custom_Base implements CRM_Contact_Form_Search_Interface {
 
@@ -56,7 +57,17 @@ class CRM_Nbrprojectvolunteerlist_Form_Search_StageTwoScreen extends CRM_Contact
   function buildForm(&$form) {
     CRM_Utils_System::setTitle(E::ts('Stage 2 study participation'));
     $selectedIds = $this->getSelectedIds();
+    $this->getTagList();
     $form->assign_by_ref('selectedIds', $selectedIds);
+
+
+    // Hacky way to allow searchTasks.phps setProjectVolunteerListTasks issue to know whether this is a stageTwoform or not.
+    // Ideally I would prefer a better solution to this.
+    $form->add('hidden', 'stageTwo');
+    $form->setDefaults(['stageTwo' => TRUE]);
+
+
+
     $form->add('select', 'study_id', E::ts('Study'), $this->getStudyList(), FALSE,
       ['class' => 'crm-select2', 'placeholder' => '- select study -']);
 
@@ -100,27 +111,24 @@ class CRM_Nbrprojectvolunteerlist_Form_Search_StageTwoScreen extends CRM_Contact
     }
     $form->addRadio('inex_recall_group', "", ['incl', 'excl'], [], " ");
     $defaults['inex_recall_group'] = 0;
-    $form->add('select', 'study_status_id', E::ts('Status'), CRM_Nihrbackbone_Utils::getOptionValueList(CRM_Nihrbackbone_BackboneConfig::singleton()
-      ->getStudyParticipationStatusOptionGroupId()), FALSE,
-      [
-        'class' => 'crm-select2',
-        'placeholder' => '- select status -',
-        'multiple' => TRUE,
-      ]);
+    $form->add('select', 'study_status_id', E::ts('Status'), CRM_Nihrbackbone_Utils::getOptionValueList(CRM_Nihrbackbone_BackboneConfig::singleton()->getStudyParticipationStatusOptionGroupId()), FALSE,
+      ['class' => 'crm-select2', 'placeholder' => '- select status -', 'multiple' => TRUE,]);
+
     $form->addRadio('inex_study_status_id', "", ['incl', 'excl'], [], " ");
     $defaults['inex_study_status_id'] = 0;
     $form->add('select', 'eligibility_status_id', E::ts('Eligibility'), CRM_Nihrbackbone_Utils::getOptionValueList(CRM_Nihrbackbone_BackboneConfig::singleton()
       ->getEligibleStatusOptionGroupId()), FALSE,
-      [
-        'class' => 'crm-select2',
-        'placeholder' => '- select eligibility -',
-        'multiple' => TRUE,
-      ]);
-    $form->addRadio('inex_eligibility_status_id', "", [
-      'incl',
-      'excl',
-    ], [], " ", TRUE);
+      ['class' => 'crm-select2', 'placeholder' => '- select eligibility -', 'multiple' => TRUE,]);
+
+    $form->addRadio('inex_eligibility_status_id', "", ['incl', 'excl',], [], " ", TRUE);
+
     $defaults['inex_eligibility_status_id'] = 0;
+
+    $form->add('select', 'tags', E::ts('Tags'), $this->getTagList(), FALSE,
+      ['class' => 'crm-select2', 'placeholder' => '- select tag(s) -', 'multiple' => TRUE]);
+    $form->addRadio('inex_tags', "", ['incl', 'excl'], [], " ");
+    $defaults['inex_tags'] = 0;
+
     $form->add('datepicker', 'invite_date_from', E::ts('Invite date from'), [], FALSE, ['time' => FALSE]);
     $form->add('datepicker', 'invite_date_to', E::ts('Invite date to'), [], FALSE, ['time' => FALSE]);
     $form->addRadio('inex_invite_date', "", ['incl', 'excl'], [], " ");
@@ -186,6 +194,7 @@ class CRM_Nbrprojectvolunteerlist_Form_Search_StageTwoScreen extends CRM_Contact
       'gender_id',
       'ethnicity_id',
       'recall_group',
+      'tags',
       'study_status_id',
       'eligibility_status_id',
       'invite_date_from',
@@ -197,6 +206,23 @@ class CRM_Nbrprojectvolunteerlist_Form_Search_StageTwoScreen extends CRM_Contact
       'activity_status_id',
       'activity_type_id',
     ]);
+  }
+
+  /**
+   * Method to build the list of tags
+   * @return array
+   * @throws API_Exception
+   * @throws \Civi\API\Exception\UnauthorizedException
+   */
+  private function getTagList() {
+    $result = [];
+    $tags = \Civi\Api4\Tag::get()
+      ->addSelect('id', 'name')
+      ->execute();
+    foreach ($tags as $tag) {
+      $result[$tag['id']] = $tag['name'];
+    }
+    return $result;
   }
 
 
@@ -258,6 +284,7 @@ class CRM_Nbrprojectvolunteerlist_Form_Search_StageTwoScreen extends CRM_Contact
       'participant_id' => 'Participant ID ',
       'bioresource_id' => 'BioResource ID ',
       'recall_group' => 'Recall Group is ',
+      'tags' => ' Tag(s) ',
       'study_status_id' => 'Status is ',
       'eligibility_status_id' => 'Eligibility is ',
       'invite_date_from' => 'Invite Date ',
@@ -274,6 +301,17 @@ class CRM_Nbrprojectvolunteerlist_Form_Search_StageTwoScreen extends CRM_Contact
         switch ($searchFilter) {
           case "study_id":
             $filters[] = $searchTxt . CRM_Nihrbackbone_NbrStudy::getStudyNumberWithId($this->_formValues[$searchFilter]);
+            break;
+          case "tags":
+            $tagLabels = [];
+            $tagList = $this->getTagList();
+            foreach ($this->_formValues[$searchFilter] as $key => $tag) {
+              $tagLabels[] = $tagList[$tag];
+            }
+            if (isset($this->_formValues['inex_tags']) && $this->_formValues['inex_tags'] == 1) {
+              $filters[] = "does not have " . $searchTxt . implode(",", $tagLabels);
+            }
+            $filters[] = "has " . $searchTxt . implode(",", $tagLabels);
             break;
           case "gender_id":
             $text= $this->multiChoiceSummary($searchFilter, 'gender');
@@ -628,6 +666,7 @@ class CRM_Nbrprojectvolunteerlist_Form_Search_StageTwoScreen extends CRM_Contact
       'recall_group',
       'study_status_id',
       'eligibility_status_id',
+      'tags'
     ];
     foreach ($multipleFields as $multipleField) {
       $clauses = [];
@@ -685,6 +724,16 @@ class CRM_Nbrprojectvolunteerlist_Form_Search_StageTwoScreen extends CRM_Contact
               $params[$index] = [$multipleValue, "String"];
             }
             $where .= $this->multipleClauseSeparator($clauses, $operator);
+            break;
+
+          case 'tags':
+            $tagIds = [];
+            foreach ($this->_formValues['tags'] as $key => $tagId) {
+              $tagIds[] = $tagId;
+            }
+            if (!empty($tagIds)) {
+              $where .= " AND ccc.contact_id ". $this->getOperator('tags', 'IN') . " (SELECT entity_id FROM civicrm_entity_tag WHERE entity_table = 'civicrm_contact' AND tag_id IN(" . implode(",", $tagIds) ."))";
+            }
             break;
         }
       }
