@@ -425,7 +425,7 @@ class CRM_Nbrprojectvolunteerlist_Form_Search_StageTwoScreen extends CRM_Contact
     $columns = [
       E::ts('Name') => 'sort_name',
       E::ts('Study ID') => 'nvpd_study_participant_id',
-      E::ts('Recall G.') => 'nvpd_recall_group',
+      E::ts('Recall G.') => 'recall_groups',
       E::ts('Gndr') => 'gender',
       E::ts('Age') => 'birth_date',
       E::ts('Ethn.') => 'ethnicity',
@@ -528,8 +528,6 @@ class CRM_Nbrprojectvolunteerlist_Form_Search_StageTwoScreen extends CRM_Contact
       ->getParticipationCustomField('nvpd_date_invited', 'column_name');
     $distanceColumn = CRM_Nihrbackbone_BackboneConfig::singleton()
       ->getParticipationCustomField('nvpd_distance_volunteer_to_study_centre', 'column_name');
-    $recallColumn = CRM_Nihrbackbone_BackboneConfig::singleton()
-      ->getParticipationCustomField('nvpd_recall_group', 'column_name');
     $participantIdColumn = CRM_Nihrbackbone_BackboneConfig::singleton()
       ->getVolunteerIdsCustomField('nva_participant_id', 'column_name');
     $bioresourceIdColumn = CRM_Nihrbackbone_BackboneConfig::singleton()
@@ -538,9 +536,9 @@ class CRM_Nbrprojectvolunteerlist_Form_Search_StageTwoScreen extends CRM_Contact
     return "
       DISTINCT(contact_a.id) AS contact_id, cas.id AS case_id, contact_a.sort_name, contact_a.birth_date, contact_a.created_date, phn.phone AS phone ,genderov.label AS gender,
       maxActDate as activity_date,
-       
+
       ethnicov.label AS ethnicity, adr.city AS volunteer_address, nvpd." . $eligibleColumn . ", nvpd." . $studyParticipantIDColumn
-      . ", nvpd." . $recallColumn . ", stustatus.label AS study_status, nvpd."
+      . ", '' AS recall_groups, stustatus.label AS study_status, nvpd."
       . $dateInvitedColumn . ", nvpd." . $distanceColumn . ", '' AS date_researcher, '' AS latest_visit_date,
       '' AS volunteer_tags, nvi." . $participantIdColumn . " AS participant_id, nvi." . $bioresourceIdColumn
       . " AS bioresource_id, em.email AS email";
@@ -581,7 +579,7 @@ class CRM_Nbrprojectvolunteerlist_Form_Search_StageTwoScreen extends CRM_Contact
       FROM civicrm_contact AS contact_a
        " . $hasEmail . "JOIN civicrm_email AS em ON contact_a.id = em.contact_id AND em.is_primary = TRUE
       JOIN civicrm_case_contact AS ccc ON contact_a.id = ccc.contact_id
-      
+
       /*Case stuff begins here
        JOIN civicrm_case_activity AS caseact ON caseact.case_id = cas.id
       JOIN civicrm_activity AS caseActs ON caseact.activity_id = caseActs.id AND caseActs.is_deleted=FALSE AND caseActs.is_current_revision=TRUE
@@ -589,17 +587,18 @@ class CRM_Nbrprojectvolunteerlist_Form_Search_StageTwoScreen extends CRM_Contact
       LEFT JOIN civicrm_option_value AS activitystatusov ON caseActs.status_id = activitystatusov.value AND activitystatusov.option_group_id = " . $activityStatusOptionGroupId . ";
       */
       JOIN civicrm_case AS cas ON ccc.case_id = cas.id AND cas.is_deleted = 0
-      
+
       JOIN (SELECT ca.case_id, ca.id AS caseActId,ca.activity_id, act.is_current_revision, act.status_id, act.activity_type_id,
      act.id AS actId, act.subject, MAX(act.activity_date_time) AS maxActDate FROM civicrm_case_activity AS ca
      JOIN civicrm_activity AS act ON act.id= ca.activity_id " . $activityWhere . " GROUP by ca.case_id ) AS caseActs ON cas.id = caseActs.case_id AND caseActs.is_current_revision =TRUE
-      
-      
+
+
       LEFT JOIN " . $nvgoTable . " AS nvgo ON ccc.contact_id = nvgo.entity_id
       LEFT JOIN civicrm_address AS adr ON contact_a.id = adr.contact_id AND adr.is_primary = 1
       LEFT JOIN civicrm_phone AS phn ON contact_a.id = phn.contact_id AND phn.is_primary=1
       JOIN " . $nvpdTable . " AS nvpd ON cas.id = nvpd.entity_id
       JOIN " . $nviTable . " AS nvi ON contact_a.id = nvi.entity_id
+      LEFT JOIN civicrm_nbr_recall_group AS rcgrp ON cas.id = rcgrp.case_id
 
       LEFT JOIN civicrm_option_value AS genderov ON contact_a.gender_id = genderov.value AND genderov.option_group_id = " . $genderOptionGroupId . "
       LEFT JOIN civicrm_option_value AS ethnicov ON nvgo." . $ethnicityColumn . " = ethnicov.value AND ethnicov.option_group_id = " . $ethnicityOptionGroupId . "
@@ -694,14 +693,19 @@ class CRM_Nbrprojectvolunteerlist_Form_Search_StageTwoScreen extends CRM_Contact
             break;
 
           case 'recall_group':
-            $recallColumn = CRM_Nihrbackbone_BackboneConfig::singleton()
-              ->getParticipationCustomField('nvpd_recall_group', 'column_name');
             foreach ($this->_formValues[$multipleField] as $multipleValue) {
               $index++;
-              $clauses[] = "nvpd." . $recallColumn . " " . $operator . " %" . $index;
+              $clauses[] = "rcgrp.recall_group " . $operator . " %". $index;
               $params[$index] = [$multipleValue, "String"];
             }
-            $where .= $this->multipleClauseSeparator($clauses, $operator);
+            if (!empty($clauses)) {
+              if ($operator == "=") {
+                $where .= " AND (" . implode(" OR ", $clauses) . ")";
+              }
+              else {
+                $where .= " AND (" . implode(" AND ", $clauses) . ")";
+              }
+            }
             break;
 
           case 'study_status_id':
@@ -957,7 +961,7 @@ class CRM_Nbrprojectvolunteerlist_Form_Search_StageTwoScreen extends CRM_Contact
     $alterIndex = 2;
     $alterWhere = $this->customActivityLike($alterParams, $alterIndex);
 
-    $query = "SELECT * from civicrm_case_activity AS ca  
+    $query = "SELECT * from civicrm_case_activity AS ca
     JOIN civicrm_activity AS act ON act.id=ca.activity_id WHERE ca.case_id=%1 " . $alterWhere . "
     ORDER BY act.activity_date_time DESC LIMIT 1";
 
@@ -972,7 +976,7 @@ class CRM_Nbrprojectvolunteerlist_Form_Search_StageTwoScreen extends CRM_Contact
 
       // I don't like this but seems best way about it without overcrowding original SQL
       // Add activity assignees
-      $assigneeQuery = "SELECT  * from civicrm_activity_contact actC JOIN civicrm_contact con ON con.id= actC.contact_id  
+      $assigneeQuery = "SELECT  * from civicrm_activity_contact actC JOIN civicrm_contact con ON con.id= actC.contact_id
               WHERE actC.activity_id=%1 AND actC.record_type_id=1";
       $assigneeQuerySQL = CRM_Core_DAO::composeQuery($assigneeQuery, [
         1 => [
@@ -1060,9 +1064,15 @@ class CRM_Nbrprojectvolunteerlist_Form_Search_StageTwoScreen extends CRM_Contact
           }
           $row['volunteer_tags'] = $tags;
           break;
+
+        case 'recall_groups':
+          $recallGroups = CRM_Nihrbackbone_BAO_NbrRecallGroup::getRecallGroupsForCase($row['case_id']);
+          $row['recall_groups'] = implode(", ", $recallGroups);
+          if (strlen($row['recall_groups']) > 80) {
+            $row['recall_groups'] = substr($row['recall_groups'], 0, 77) . "...";
+          }
+          break;
       }
-
-
     }
   }
 

@@ -1,3 +1,6 @@
+## Version 1.53
+* adapt to multiple recall groups for msp and stage 2 screen (see https://www.wrike.com/open.htm?id=1069401733)
+
 ## Version 1.52
 * User requested changes to stage 2 study management screen  (see https://www.wrike.com/open.htm?id=863917880)
 
