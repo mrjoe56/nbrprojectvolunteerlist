@@ -359,7 +359,7 @@ class CRM_Nbrprojectvolunteerlist_Form_Search_VolunteerList extends CRM_Contact_
       E::ts('Tag(s)') => 'volunteer_tags',
       E::ts('Distance') => 'nvpd_distance_volunteer_to_study_centre',
       E::ts('Eligibility') => 'nvpd_eligible_status_id',
-      E::ts('Recall Group') => 'nvpd_recall_group',
+      E::ts('Recall Group') => 'recall_groups',
       E::ts('Status') => 'study_status',
       E::ts('Inv. Date') => 'nvpd_date_invited',
       E::ts('Researcher Date') => 'date_researcher',
@@ -395,13 +395,12 @@ class CRM_Nbrprojectvolunteerlist_Form_Search_VolunteerList extends CRM_Contact_
     $studyParticipantIDColumn = CRM_Nihrbackbone_BackboneConfig::singleton()->getParticipationCustomField('nvpd_study_participant_id', 'column_name');
     $dateInvitedColumn = CRM_Nihrbackbone_BackboneConfig::singleton()->getParticipationCustomField('nvpd_date_invited', 'column_name');
     $distanceColumn = CRM_Nihrbackbone_BackboneConfig::singleton()->getParticipationCustomField('nvpd_distance_volunteer_to_study_centre', 'column_name');
-    $recallColumn = CRM_Nihrbackbone_BackboneConfig::singleton()->getParticipationCustomField('nvpd_recall_group', 'column_name');
     $participantIdColumn = CRM_Nihrbackbone_BackboneConfig::singleton()->getVolunteerIdsCustomField('nva_participant_id', 'column_name');
     $bioresourceIdColumn = CRM_Nihrbackbone_BackboneConfig::singleton()->getVolunteerIdsCustomField('nva_bioresource_id', 'column_name');
     return "
       DISTINCT(contact_a.id) AS contact_id, cas.id AS case_id, contact_a.sort_name, contact_a.birth_date, genderov.label AS gender,
       ethnicov.label AS ethnicity, adr.city AS volunteer_address, nvpd." . $eligibleColumn . ", nvpd.". $studyParticipantIDColumn
-      . ", nvpd." . $recallColumn . ", stustatus.label AS study_status, nvpd."
+      . ", stustatus.label AS study_status, '' AS recall_groups, nvpd."
       . $dateInvitedColumn . ", nvpd." . $distanceColumn . ", '' AS date_researcher, '' AS latest_visit_date,
       '' AS volunteer_tags, nvi." . $participantIdColumn . " AS participant_id, nvi." . $bioresourceIdColumn
       . " AS bioresource_id, em.email AS email";
@@ -433,7 +432,8 @@ class CRM_Nbrprojectvolunteerlist_Form_Search_VolunteerList extends CRM_Contact_
       JOIN " . $nviTable . " AS nvi ON contact_a.id = nvi.entity_id
       LEFT JOIN civicrm_option_value AS genderov ON contact_a.gender_id = genderov.value AND genderov.option_group_id = " . $genderOptionGroupId . "
       LEFT JOIN civicrm_option_value AS ethnicov ON nvgo." . $ethnicityColumn . " = ethnicov.value AND ethnicov.option_group_id = " . $ethnicityOptionGroupId . "
-      JOIN civicrm_option_value AS stustatus ON nvpd." . $studyStatusColumn . " = stustatus.value AND stustatus.option_group_id = " . $studyStatusOptionGroupId;
+      JOIN civicrm_option_value AS stustatus ON nvpd." . $studyStatusColumn . " = stustatus.value AND stustatus.option_group_id = " . $studyStatusOptionGroupId . "
+      LEFT JOIN civicrm_nbr_recall_group AS rcgrp ON cas.id = rcgrp.case_id";
     }
     else {
       $from = "
@@ -447,7 +447,8 @@ class CRM_Nbrprojectvolunteerlist_Form_Search_VolunteerList extends CRM_Contact_
       JOIN " . $nviTable . " AS nvi ON contact_a.id = nvi.entity_id
       LEFT JOIN civicrm_option_value AS genderov ON contact_a.gender_id = genderov.value AND genderov.option_group_id = " . $genderOptionGroupId ."
       LEFT JOIN civicrm_option_value AS ethnicov ON nvgo." . $ethnicityColumn . " = ethnicov.value AND ethnicov.option_group_id = " . $ethnicityOptionGroupId . "
-      JOIN civicrm_option_value AS stustatus ON nvpd." . $studyStatusColumn . " = stustatus.value AND stustatus.option_group_id = " . $studyStatusOptionGroupId;
+      JOIN civicrm_option_value AS stustatus ON nvpd." . $studyStatusColumn . " = stustatus.value AND stustatus.option_group_id = " . $studyStatusOptionGroupId . "
+      LEFT JOIN civicrm_nbr_recall_group AS rcgrp ON cas.id = rcgrp.case_id";
     }
     return $from;
   }
@@ -524,10 +525,9 @@ class CRM_Nbrprojectvolunteerlist_Form_Search_VolunteerList extends CRM_Contact_
             break;
 
           case 'recall_group':
-            $recallColumn = CRM_Nihrbackbone_BackboneConfig::singleton()->getParticipationCustomField('nvpd_recall_group', 'column_name');
             foreach ($this->_formValues[$multipleField] as $multipleValue) {
               $index++;
-              $clauses[] = "nvpd." . $recallColumn . " " . $operator . " %". $index;
+              $clauses[] = "rcgrp.recall_group " . $operator . " %". $index;
               $params[$index] = [$multipleValue, "String"];
             }
             if (!empty($clauses)) {
@@ -843,6 +843,14 @@ class CRM_Nbrprojectvolunteerlist_Form_Search_VolunteerList extends CRM_Contact_
             $tags = substr($tags,0,77) . '...';
           }
           $row['volunteer_tags'] = $tags;
+          break;
+
+        case 'recall_groups':
+          $recallGroups = CRM_Nihrbackbone_BAO_NbrRecallGroup::getRecallGroupsForCase($row['case_id']);
+          $row['recall_groups'] = implode(", ", $recallGroups);
+          if (strlen($row['recall_groups']) > 80) {
+            $row['recall_groups'] = substr($row['recall_groups'], 0, 77) . "...";
+          }
           break;
       }
     }
