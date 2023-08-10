@@ -17,6 +17,10 @@
   <releaseDate>2023-04-11</releaseDate>
   <version>1.53</version>
   <develStage>stable</develStage>
+  <classloader>
+    <psr4 prefix="Civi\" path="Civi"/>
+    <psr0 prefix="CRM_" path="."/>
+  </classloader>
   <compatibility>
     <ver>4.7</ver>
   </compatibility>
@@ -26,5 +30,6 @@
   <comments>Extension is live</comments>
   <civix>
     <namespace>CRM/Nbrprojectvolunteerlist</namespace>
+    <format>22.12.1</format>
   </civix>
 </extension>
