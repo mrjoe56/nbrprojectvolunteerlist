@@ -114,7 +114,7 @@ class CRM_Nbrprojectvolunteerlist_NbrVolunteer {
       ->addSelect('tag.name')
       ->addWhere('entity_table', '=', 'civicrm_contact')
       ->addWhere('entity_id', '=', $contactId)
-      ->execute();
+      ->setCheckPermissions(FALSE)->execute();
     foreach ($entityTags as $entityTag) {
       $result[] = $entityTag['tag.name'];
     }

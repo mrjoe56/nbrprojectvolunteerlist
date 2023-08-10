@@ -1,3 +1,6 @@
+## Version 1.54
+* fix setCheckPermissions for API4
+
 ## Version 1.53
 * adapt to multiple recall groups for msp and stage 2 screen (see https://www.wrike.com/open.htm?id=1069401733)
 

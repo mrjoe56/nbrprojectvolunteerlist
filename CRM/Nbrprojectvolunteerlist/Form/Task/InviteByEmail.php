@@ -69,15 +69,14 @@ class CRM_Nbrprojectvolunteerlist_Form_Task_InviteByEmail extends CRM_Contact_Fo
           ->addSelect('email', 'contact.display_name')
           ->addWhere('contact_id', '=', CRM_Core_Session::getLoggedInContactID())
           ->addWhere('is_primary', '=', TRUE)
-          ->setLimit(1)
-          ->execute();
-        $result = $userEmail->first();
-        $this->_fromEmails[0] = '"' . $result['contact.display_name']. '" <' . $result['email'] . ">";
+          ->setLimit(1)->setCheckPermissions(FALSE)
+          ->execute()->first();
+        $this->_fromEmails[0] = '"' . $userEmail['contact.display_name']. '" <' . $userEmail['email'] . ">";
       }
       $optionValues = \Civi\Api4\OptionValue::get()
         ->addSelect('label', 'value')
         ->addWhere('option_group_id:name', '=', 'from_email_address')
-        ->execute();
+        ->setCheckPermissions(FALSE)->execute();
       foreach ($optionValues as $optionValue) {
         $this->_fromEmails[$optionValue['value']] = $optionValue['label'];
         $this->_displayEmails[$optionValue['value']] = htmlspecialchars($optionValue['label']);
