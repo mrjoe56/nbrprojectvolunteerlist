@@ -218,7 +218,7 @@ class CRM_Nbrprojectvolunteerlist_Form_Search_StageTwoScreen extends CRM_Contact
     $result = [];
     $tags = \Civi\Api4\Tag::get()
       ->addSelect('id', 'name')
-      ->execute();
+      ->setCheckPermissions(FALSE)->execute();
     foreach ($tags as $tag) {
       $result[$tag['id']] = $tag['name'];
     }
