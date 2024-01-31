@@ -431,13 +431,13 @@ class CRM_Nbrprojectvolunteerlist_Form_Search_VolunteerList extends CRM_Contact_
         $hasEmailLeft = ($hasEmail == 1) ? "" : "LEFT";
 
         $hasMobile = $this->_formValues['has_mobile'];
-
-        $hasPhoneSql = ($hasMobile == 1) ? "" : "LEFT";
+        $hasPhoneLeft = ($hasMobile == 1) ? "" : "LEFT";
+        $phoneSql=($hasMobile==0)?" " :$hasPhoneLeft." JOIN civicrm_phone AS phone ON contact_a.id = phone.contact_id AND phone.phone_type_id=2";
 
         $from = "
     FROM civicrm_contact AS contact_a " .
       $hasEmailLeft . " JOIN civicrm_email AS em ON contact_a.id = em.contact_id AND em.is_primary = TRUE " .
-      $hasPhoneSql . " JOIN civicrm_phone AS phone ON contact_a.id = phone.contact_id AND phone.phone_type_id=2
+            $phoneSql . "
       JOIN civicrm_case_contact AS ccc ON contact_a.id = ccc.contact_id
       JOIN civicrm_case AS cas ON ccc.case_id = cas.id AND cas.is_deleted = 0
       LEFT JOIN " . $nvgoTable . " AS nvgo ON ccc.contact_id = nvgo.entity_id
