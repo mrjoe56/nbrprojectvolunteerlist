@@ -1,3 +1,7 @@
+## Version 1.56
+* Change to SQL so there's less calls
+
+
 ## Version 1.55
 * Added check to see if user has mobile phones (https://www.wrike.com/open.htm?id=1281777112)
 

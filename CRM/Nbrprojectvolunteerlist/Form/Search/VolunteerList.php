@@ -404,9 +404,9 @@ class CRM_Nbrprojectvolunteerlist_Form_Search_VolunteerList extends CRM_Contact_
         $participantIdColumn = CRM_Nihrbackbone_BackboneConfig::singleton()->getVolunteerIdsCustomField('nva_participant_id', 'column_name');
         $bioresourceIdColumn = CRM_Nihrbackbone_BackboneConfig::singleton()->getVolunteerIdsCustomField('nva_bioresource_id', 'column_name');
         return "
-      DISTINCT(contact_a.id) AS contact_id, cas.id AS case_id, contact_a.sort_name, contact_a.birth_date, genderov.label AS gender,
-      ethnicov.label AS ethnicity, adr.city AS volunteer_address, nvpd." . $eligibleColumn . ", nvpd." . $studyParticipantIDColumn
-            . ", stustatus.label AS study_status, '' AS recall_groups, nvpd."
+      DISTINCT(contact_a.id) AS contact_id, cas.id AS case_id, contact_a.sort_name, contact_a.birth_date, contact_a.gender_id AS gender,
+      nvgo.nvgo_ethnicity_id AS ethnicity, adr.city AS volunteer_address, nvpd." . $eligibleColumn . ", nvpd." . $studyParticipantIDColumn
+            . ", nvpd.nvpd_study_participation_status AS study_status, '' AS recall_groups, nvpd."
             . $dateInvitedColumn . ", nvpd." . $distanceColumn . ", '' AS date_researcher, '' AS latest_visit_date,
       '' AS volunteer_tags, nvi." . $participantIdColumn . " AS participant_id, nvi." . $bioresourceIdColumn
             . " AS bioresource_id, em.email AS email";
@@ -422,14 +422,9 @@ class CRM_Nbrprojectvolunteerlist_Form_Search_VolunteerList extends CRM_Contact_
         $nvgoTable = CRM_Nihrbackbone_BackboneConfig::singleton()->getVolunteerGeneralObservationsCustomGroup('table_name');
         $nvpdTable = CRM_Nihrbackbone_BackboneConfig::singleton()->getParticipationDataCustomGroup('table_name');
         $nviTable = CRM_Nihrbackbone_BackboneConfig::singleton()->getVolunteerIdsCustomGroup('table_name');
-        $genderOptionGroupId = CRM_Nihrbackbone_BackboneConfig::singleton()->getGenderOptionGroupId();
-        $ethnicityOptionGroupId = CRM_Nihrbackbone_BackboneConfig::singleton()->getEthnicityOptionGroupId();
-        $studyStatusOptionGroupId = CRM_Nihrbackbone_BackboneConfig::singleton()->getStudyParticipationStatusOptionGroupId();
-        $ethnicityColumn = CRM_Nihrbackbone_BackboneConfig::singleton()->getGeneralObservationCustomField('nvgo_ethnicity_id', 'column_name');
-        $studyStatusColumn = CRM_Nihrbackbone_BackboneConfig::singleton()->getParticipationCustomField('nvpd_study_participation_status', 'column_name');
+
         $hasEmail = $this->_formValues['has_email'];
         $hasEmailLeft = ($hasEmail == 1) ? "" : "LEFT";
-
         $hasMobile = $this->_formValues['has_mobile'];
         $hasPhoneLeft = ($hasMobile == 1) ? "" : "LEFT";
         $phoneSql=($hasMobile==0)?" " :$hasPhoneLeft." JOIN civicrm_phone AS phone ON contact_a.id = phone.contact_id AND phone.phone_type_id=2";
@@ -444,9 +439,6 @@ class CRM_Nbrprojectvolunteerlist_Form_Search_VolunteerList extends CRM_Contact_
       LEFT JOIN civicrm_address AS adr ON contact_a.id = adr.contact_id AND adr.is_primary = 1
       JOIN " . $nvpdTable . " AS nvpd ON cas.id = nvpd.entity_id
       JOIN " . $nviTable . " AS nvi ON contact_a.id = nvi.entity_id
-      LEFT JOIN civicrm_option_value AS genderov ON contact_a.gender_id = genderov.value AND genderov.option_group_id = " . $genderOptionGroupId . "
-      LEFT JOIN civicrm_option_value AS ethnicov ON nvgo." . $ethnicityColumn . " = ethnicov.value AND ethnicov.option_group_id = " . $ethnicityOptionGroupId . "
-      JOIN civicrm_option_value AS stustatus ON nvpd." . $studyStatusColumn . " = stustatus.value AND stustatus.option_group_id = " . $studyStatusOptionGroupId . "
       LEFT JOIN civicrm_nbr_recall_group AS rcgrp ON cas.id = rcgrp.case_id";
 
         return $from;
@@ -778,6 +770,10 @@ class CRM_Nbrprojectvolunteerlist_Form_Search_VolunteerList extends CRM_Contact_
      */
     function alterRow(&$row)
     {
+
+        $genderOptions = CRM_Core_BAO_OptionValue::getOptionValuesAssocArrayFromName('gender');
+        $ethnicityOptions = CRM_Core_BAO_OptionValue::getOptionValuesAssocArrayFromName('nihr_ethnicity');
+        $studyStatusOptions = CRM_Core_BAO_OptionValue::getOptionValuesAssocArrayFromName('nbr_study_participation_status');
         foreach ($row as $fieldName => &$field) {
             switch ($fieldName) {
                 case 'birth_date':
@@ -801,12 +797,14 @@ class CRM_Nbrprojectvolunteerlist_Form_Search_VolunteerList extends CRM_Contact_
                     break;
 
                 case 'ethnicity':
-                    $parts = explode('(', $row['ethnicity']);
+                    $ethnicityLabel= $ethnicityOptions[$row['ethnicity']];
+                    $parts = explode('(', $ethnicityLabel);
                     $row['ethnicity'] = trim($parts[0]);
                     break;
 
                 case 'gender':
-                    $row['gender'] = substr($row['gender'], 0, 1);
+                    $genderLabel=$genderOptions[$row['gender']];
+                    $row['gender'] = substr($genderLabel,0,1);
                     break;
 
                 case 'latest_visit_date':
@@ -821,7 +819,9 @@ class CRM_Nbrprojectvolunteerlist_Form_Search_VolunteerList extends CRM_Contact_
                         $row[$fieldName] = date('d-m-Y', strtotime($row[$fieldName]));
                     }
                     break;
-
+                case 'study_status':
+                    $row['study_status']=$studyStatusOptions[$row['study_status']];
+                    break;
                 case 'nvpd_eligible_status_id':
                     if (in_array($row['study_status'], $this->_eligibleParticipationStatus)) {
                         if (empty($row[$fieldName])) {
