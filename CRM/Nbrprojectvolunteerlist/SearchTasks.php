@@ -37,8 +37,15 @@ class CRM_Nbrprojectvolunteerlist_SearchTasks {
    */
   public static function processSearchTasksHook(&$tasks) {
     $loadNbrTaskList = self::loadNbrTaskList();
+
+        // Always have bulk email
+      $tasks []=[
+          'title' => "Bulk email test  ",
+          'class' => "CRM_Nbrprojectvolunteerlist_Form_Task_BulkEmailNoStudy",
+      ];
+
     if ($loadNbrTaskList) {
-      self::setProjectVolunteerListTasks($tasks);
+        self::setProjectVolunteerListTasks($tasks);
     }
     else {
       Civi::settings()->set(CRM_Nbrprojectvolunteerlist_Utils::getQfKeySettingName(), "");
@@ -53,7 +60,8 @@ class CRM_Nbrprojectvolunteerlist_SearchTasks {
    */
   private static function loadNbrTaskList() {
     $csId = (int) CRM_Utils_Request::retrieveValue('csid', "Integer");
-    if (isset($_GET['q'])) {
+
+      if (isset($_GET['q'])) {
       $q = $_GET['q'];
     }
       if(CRM_Nbrprojectvolunteerlist_Utils::isSearchForm($csId)){

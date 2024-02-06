@@ -49,7 +49,7 @@ class CRM_Nbrprojectvolunteerlist_NbrVolunteer {
     }
     // do not allow if email is invalid (or guardian email is empty!) unless invite pdf
     if ($type != "invite_pdf") {
-      $invalidReason = CRM_Nbrprojectvolunteerlist_Utils::checkEmailValidity($dao);
+        $invalidReason = CRM_Nbrprojectvolunteerlist_Utils::checkEmailValidity($dao);
       if ($invalidReason) {
         $countInvalids++;
         $volunteer['reason'] = $invalidReason;
