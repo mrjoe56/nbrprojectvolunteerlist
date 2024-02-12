@@ -1,5 +1,5 @@
 {* Confirm contacts and select template for InviteByEmail *}
-<h2>{ts}Testing bulk mailing (50+){/ts}</h2>
+<h2>{ts} Bulk mailing (50+){/ts}</h2>
 <div class="messages status no-popup">
     <div class="help-block" id="help">
         {ts}You can mail 50+ volunteers in 1 bulk mailing. If you need to mail less you can but you could also use Send Email (max. 50) action.{/ts}

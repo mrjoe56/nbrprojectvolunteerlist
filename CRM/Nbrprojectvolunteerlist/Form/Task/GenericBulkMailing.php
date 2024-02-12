@@ -9,7 +9,7 @@ use CRM_Nbrprojectvolunteerlist_ExtensionUtil as E;
  * @date 7 Sep 2020
  * @license AGPL-3.0
  */
-class CRM_Nbrprojectvolunteerlist_Form_Task_BulkEmailNoStudy extends CRM_Contact_Form_Task {
+class CRM_Nbrprojectvolunteerlist_Form_Task_GenericBulkMailing extends CRM_Contact_Form_Task {
 
     private $_countSelected = NULL;
     private $_countInvalid = NULL;
@@ -59,7 +59,7 @@ class CRM_Nbrprojectvolunteerlist_Form_Task_BulkEmailNoStudy extends CRM_Contact
      */
     public function buildQuickForm()   {
 
-        $this->add('text', 'mailing_name', E::ts("title"), ['maxlength'=>64], TRUE);
+        $this->add('text', 'mailing_name', E::ts("Title"), ['maxlength'=>64], TRUE);
         $this->assign('selected_txt', E::ts('Volunteers that will be mailed by this bulk mailing:') . $this->_countSelected);
         $this->assign('invalid_txt', E::ts('Volunteers that will NOT be mailed with reason:') . $this->_countInvalid);
         $this->getVolunteerData();
@@ -103,6 +103,7 @@ class CRM_Nbrprojectvolunteerlist_Form_Task_BulkEmailNoStudy extends CRM_Contact
                 // next add all volunteers to invite to group
                 $this->addVolunteersToGroup($group['id']);
                 $this->createMailing($group['id']);
+                CRM_Core_Session::setStatus("Draft bulk mailing successfully created.", "Draft Bulk mailing created", "success");
             }
             catch (CiviCRM_API3_Exception $ex) {
                 Civi::log()->error('Could not create a temporary group for bulk mailing in '

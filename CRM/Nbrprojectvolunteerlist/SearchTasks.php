@@ -40,8 +40,8 @@ class CRM_Nbrprojectvolunteerlist_SearchTasks {
 
         // Always have bulk email
       $tasks []=[
-          'title' => "Bulk email test  ",
-          'class' => "CRM_Nbrprojectvolunteerlist_Form_Task_BulkEmailNoStudy",
+          'title' => "Bulk mailing (More than 50)",
+          'class' => "CRM_Nbrprojectvolunteerlist_Form_Task_GenericBulkMailing",
       ];
 
     if ($loadNbrTaskList) {
@@ -91,7 +91,7 @@ class CRM_Nbrprojectvolunteerlist_SearchTasks {
       }
     }
     // if one of specific actions, return TRUE
-    $taskClasses = ['InviteByEmail', 'ChangeStudyStatus', 'InviteBulk', 'BulkMailing', 'AddFollowUp'];
+    $taskClasses = ['InviteByEmail', 'ChangeStudyStatus', 'InviteBulk', 'StudyBulkMailing', 'AddFollowUp'];
     foreach ($taskClasses as $taskClass) {
       $checkDisplay = CRM_Utils_Request::retrieveValue('_qf_' . $taskClass . '_display', 'String');
       $checkNext = CRM_Utils_Request::retrieveValue('_qf_' . $taskClass . '_next', 'String');
@@ -158,8 +158,8 @@ class CRM_Nbrprojectvolunteerlist_SearchTasks {
       ];
     }
     $nbrTasks[] = [
-      'title' => "Send bulk mailing to Volunteer(s) (50+)",
-      'class' => "CRM_Nbrprojectvolunteerlist_Form_Task_BulkMailing",
+      'title' => "Send bulk mailing to study Volunteer(s) (50+)",
+      'class' => "CRM_Nbrprojectvolunteerlist_Form_Task_StudyBulkMailing",
     ];
     $nbrTasks[] = [
       'title' => "Change Status on Study for Volunteer(s)",
