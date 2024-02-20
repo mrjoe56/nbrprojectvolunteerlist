@@ -40,7 +40,7 @@ class CRM_Nbrprojectvolunteerlist_SearchTasks {
 
         // Always have bulk email
       $tasks []=[
-          'title' => "Bulk mailing (More than 50)",
+          'title' => "Generic Bulk mailing (More than 50)",
           'class' => "CRM_Nbrprojectvolunteerlist_Form_Task_GenericBulkMailing",
       ];
 
